@@ -16,6 +16,7 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      resources :exercises, only: :index
       resource :wearable_sync, only: :create, controller: "wearable_sync"
     end
   end

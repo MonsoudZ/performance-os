@@ -1,6 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "preDeployCommand": "bin/rails db:migrate"
+    "preDeployCommand": "bin/rails db:migrate && bin/rails catalog:import"
   }
 }

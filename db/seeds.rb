@@ -7,92 +7,67 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
-user = User.find_or_initialize_by(email_address: "athlete@performanceos.local")
-user.assign_attributes(
-  password: "performance",
-  password_confirmation: "performance",
-  unit_system: "imperial",
-  time_zone: "America/Denver"
-)
-user.save!
+ExerciseCatalogImporter.new.call
 
-goal = user.goal_periods.find_or_create_by!(ended_on: nil) do |goal|
-  goal.goal_type = "build_muscle"
-  goal.started_on = user.local_date.beginning_of_week
-end
-goal.update!(
-  goal_type: "build_muscle",
-  params: goal.params.merge(
-    "primary_lift" => "barbell back squat",
-    "target_kcal" => 2_800,
-    "target_protein_g" => 180
+if ENV["SEED_DEMO_USER"] == "true"
+  user = User.find_or_initialize_by(email_address: "athlete@performanceos.local")
+  user.assign_attributes(
+    password: "performance",
+    password_confirmation: "performance",
+    unit_system: "imperial",
+    time_zone: "America/Denver"
   )
-)
+  user.save!
 
-muscles = %w[chest back shoulders biceps triceps quads hamstrings glutes calves].index_with do |name|
-  MuscleGroup.find_or_create_by!(name: name)
-end
+  goal = user.goal_periods.find_or_create_by!(ended_on: nil) do |goal|
+    goal.goal_type = "build_muscle"
+    goal.started_on = user.local_date.beginning_of_week
+  end
+  goal.update!(
+    goal_type: "build_muscle",
+    params: goal.params.merge(
+      "primary_lift" => "barbell back squat",
+      "target_kcal" => 2_800,
+      "target_protein_g" => 180
+    )
+  )
 
-exercise_data = [
-  [ "Barbell Back Squat", "barbell", true, [ [ "quads", "primary", 1.0 ], [ "glutes", "secondary", 0.5 ] ] ],
-  [ "Barbell Bench Press", "barbell", true, [ [ "chest", "primary", 1.0 ], [ "triceps", "secondary", 0.5 ] ] ],
-  [ "Romanian Deadlift", "barbell", true, [ [ "hamstrings", "primary", 1.0 ], [ "glutes", "secondary", 0.5 ] ] ],
-  [ "Lat Pulldown", "cable", true, [ [ "back", "primary", 1.0 ], [ "biceps", "secondary", 0.5 ] ] ],
-  [ "Dumbbell Lateral Raise", "dumbbell", false, [ [ "shoulders", "primary", 1.0 ] ] ]
-]
-
-exercise_data.each do |name, modality, compound, contributions|
-  exercise = Exercise.find_or_create_by!(user_id: nil, name: name) do |record|
-    record.modality = modality
-    record.is_compound = compound
+  squat = Exercise.find_by!(user_id: nil, name: "Barbell Back Squat")
+  user.exercise_prescriptions.find_or_create_by!(exercise: squat, ended_on: nil) do |prescription|
+    prescription.rep_min = 6
+    prescription.rep_max = 8
+    prescription.target_rir_min = 1
+    prescription.target_rir_max = 2
+    prescription.increment_kg = 2.5
+    prescription.working_sets = 3
+    prescription.started_on = user.local_date
   end
 
-  contributions.each do |muscle_name, role, fraction|
-    ExerciseMuscleContribution.find_or_create_by!(
-      exercise: exercise,
-      muscle_group: muscles.fetch(muscle_name)
-    ) do |contribution|
-      contribution.role = role
-      contribution.fraction = fraction
+  food_data = [
+    [ "Chicken Breast", nil, 100, 165, 31, 0, 3.6 ],
+    [ "Cooked White Rice", nil, 100, 130, 2.7, 28, 0.3 ],
+    [ "Greek Yogurt", nil, 100, 73, 10, 4, 1.9 ],
+    [ "Whey Protein", nil, 30, 120, 24, 3, 2 ]
+  ]
+
+  food_data.each do |name, brand, serving_grams, kcal, protein, carbs, fat|
+    Food.find_or_create_by!(user_id: nil, name: name, brand: brand) do |food|
+      food.serving_grams = serving_grams
+      food.kcal = kcal
+      food.protein_g = protein
+      food.carb_g = carbs
+      food.fat_g = fat
+      food.source = "verified"
     end
   end
-end
 
-squat = Exercise.find_by!(user_id: nil, name: "Barbell Back Squat")
-user.exercise_prescriptions.find_or_create_by!(exercise: squat, ended_on: nil) do |prescription|
-  prescription.rep_min = 6
-  prescription.rep_max = 8
-  prescription.target_rir_min = 1
-  prescription.target_rir_max = 2
-  prescription.increment_kg = 2.5
-  prescription.working_sets = 3
-  prescription.started_on = user.local_date
-end
-
-food_data = [
-  [ "Chicken Breast", nil, 100, 165, 31, 0, 3.6 ],
-  [ "Cooked White Rice", nil, 100, 130, 2.7, 28, 0.3 ],
-  [ "Greek Yogurt", nil, 100, 73, 10, 4, 1.9 ],
-  [ "Whey Protein", nil, 30, 120, 24, 3, 2 ]
-]
-
-food_data.each do |name, brand, serving_grams, kcal, protein, carbs, fat|
-  Food.find_or_create_by!(user_id: nil, name: name, brand: brand) do |food|
-    food.serving_grams = serving_grams
-    food.kcal = kcal
-    food.protein_g = protein
-    food.carb_g = carbs
-    food.fat_g = fat
-    food.source = "verified"
+  today_input = user.daily_readiness_inputs.find_by(metric_date: user.local_date)
+  if today_input && user.coaching_decisions.where(decision_type: "daily_readiness")
+      .where("inputs ->> 'metric_date' = ?", user.local_date.iso8601).none?
+    user.readiness_scores.find_by(score_date: user.local_date)&.destroy!
+    ReadinessEvaluator.new(today_input).call
   end
-end
 
-today_input = user.daily_readiness_inputs.find_by(metric_date: user.local_date)
-if today_input && user.coaching_decisions.where(decision_type: "daily_readiness")
-    .where("inputs ->> 'metric_date' = ?", user.local_date.iso8601).none?
-  user.readiness_scores.find_by(score_date: user.local_date)&.destroy!
-  ReadinessEvaluator.new(today_input).call
+  NutritionEvaluator.new(user).call
+  DailyTrainingOrchestrator.new(user).call
 end
-
-NutritionEvaluator.new(user).call
-DailyTrainingOrchestrator.new(user).call

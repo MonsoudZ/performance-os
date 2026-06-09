@@ -1,0 +1,187 @@
+- name: Barbell Back Squat
+  modality: barbell
+  compound: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Barbell Front Squat
+  modality: barbell
+  compound: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Romanian Deadlift
+  modality: barbell
+  compound: true
+  muscles:
+    hamstrings: primary
+    glutes: secondary
+- name: Conventional Deadlift
+  modality: barbell
+  compound: true
+  muscles:
+    back: primary
+    glutes: primary
+    hamstrings: secondary
+- name: Barbell Hip Thrust
+  modality: barbell
+  compound: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Leg Press
+  modality: machine
+  compound: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Bulgarian Split Squat
+  modality: dumbbell
+  compound: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Leg Extension
+  modality: machine
+  compound: false
+  muscles:
+    quads: primary
+- name: Seated Leg Curl
+  modality: machine
+  compound: false
+  muscles:
+    hamstrings: primary
+- name: Standing Calf Raise
+  modality: machine
+  compound: false
+  muscles:
+    calves: primary
+- name: Barbell Bench Press
+  modality: barbell
+  compound: true
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Incline Barbell Bench Press
+  modality: barbell
+  compound: true
+  muscles:
+    chest: primary
+    shoulders: secondary
+    triceps: secondary
+- name: Dumbbell Bench Press
+  modality: dumbbell
+  compound: true
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Incline Dumbbell Bench Press
+  modality: dumbbell
+  compound: true
+  muscles:
+    chest: primary
+    shoulders: secondary
+- name: Cable Chest Fly
+  modality: cable
+  compound: false
+  muscles:
+    chest: primary
+- name: Push-Up
+  modality: bodyweight
+  compound: true
+  default_unit: reps
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Barbell Overhead Press
+  modality: barbell
+  compound: true
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Dumbbell Shoulder Press
+  modality: dumbbell
+  compound: true
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Dumbbell Lateral Raise
+  modality: dumbbell
+  compound: false
+  muscles:
+    shoulders: primary
+- name: Cable Lateral Raise
+  modality: cable
+  compound: false
+  muscles:
+    shoulders: primary
+- name: Pull-Up
+  modality: bodyweight
+  compound: true
+  default_unit: reps
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Chin-Up
+  modality: bodyweight
+  compound: true
+  default_unit: reps
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Lat Pulldown
+  modality: cable
+  compound: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Barbell Row
+  modality: barbell
+  compound: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Seated Cable Row
+  modality: cable
+  compound: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Chest-Supported Dumbbell Row
+  modality: dumbbell
+  compound: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Face Pull
+  modality: cable
+  compound: false
+  muscles:
+    shoulders: primary
+    back: secondary
+- name: Barbell Curl
+  modality: barbell
+  compound: false
+  muscles:
+    biceps: primary
+- name: Dumbbell Hammer Curl
+  modality: dumbbell
+  compound: false
+  muscles:
+    biceps: primary
+- name: Cable Triceps Pressdown
+  modality: cable
+  compound: false
+  muscles:
+    triceps: primary
+- name: Skull Crusher
+  modality: barbell
+  compound: false
+  muscles:
+    triceps: primary
+- name: Plank
+  modality: bodyweight
+  compound: false
+  default_unit: seconds
+  muscles:
+    abs: primary
