@@ -10,11 +10,16 @@ module Api
           .order(:name)
         exercises = exercises.where(modality: params[:modality]) if params[:modality].present?
         exercises = search(exercises) if params[:query].present?
-        exercises = exercises.limit(limit)
+        total = exercises.count
+        returned_exercises = exercises.limit(limit)
 
         render json: {
-          data: exercises.map { |exercise| serialize(exercise) },
-          meta: { count: exercises.length }
+          data: returned_exercises.map { |exercise| serialize(exercise) },
+          meta: {
+            returned: returned_exercises.length,
+            total: total,
+            limit: limit
+          }
         }
       end
 
