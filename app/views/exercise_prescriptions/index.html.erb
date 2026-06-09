@@ -1,0 +1,34 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Programming layer</p>
+      <h1>Your prescriptions.</h1>
+      <p>Targets are effective-dated, personal, and separate from the exercise catalog.</p>
+    </div>
+    <%= link_to "New prescription", new_exercise_prescription_path, class: "button button--inline" %>
+  </section>
+
+  <section class="panel">
+    <% if @prescriptions.any? %>
+      <div class="prescription-grid">
+        <% @prescriptions.each do |prescription| %>
+          <article class="prescription-card">
+            <p class="eyebrow"><%= prescription.exercise.modality %></p>
+            <h2><%= prescription.exercise.name %></h2>
+            <strong><%= prescription.target_label %></strong>
+            <dl>
+              <div><dt>Increment</dt><dd><%= number_with_precision prescription.increment_kg, precision: 2, strip_insignificant_zeros: true %> kg</dd></div>
+              <div><dt>Effective</dt><dd><%= prescription.started_on.strftime("%b %-d, %Y") %></dd></div>
+            </dl>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>No active prescriptions yet.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

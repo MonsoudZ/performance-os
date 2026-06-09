@@ -1,0 +1,15 @@
+<fieldset class="rating-field">
+  <legend><%= label %></legend>
+  <div class="rating-field__options">
+    <% 1.upto(5) do |value| %>
+      <label>
+        <%= form.radio_button field, value, required: true %>
+        <span><%= value %></span>
+      </label>
+    <% end %>
+  </div>
+  <div class="rating-field__scale">
+    <span><%= low %></span>
+    <span><%= high %></span>
+  </div>
+</fieldset>

@@ -1,0 +1,45 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Session complete</p>
+      <h1><%= @workout_session.performed_at.strftime("%B %-d training") %></h1>
+      <p><%= pluralize @workout_session.set_entries.size, "logged set" %></p>
+    </div>
+    <%= link_to "Log another", new_workout_session_path, class: "button button--inline" %>
+  </section>
+
+  <section class="decision-grid">
+    <% @decisions.each do |decision| %>
+      <article class="panel decision-card decision-card--<%= decision.output["status"] %>">
+        <p class="eyebrow"><%= decision.inputs["exercise_name"] %></p>
+        <h2><%= decision.output["headline"] %></h2>
+        <p><%= decision.output["guidance"] %></p>
+        <% if decision.output["next_weight_kg"] %>
+          <strong class="next-load"><%= number_with_precision decision.output["next_weight_kg"], precision: 2, strip_insignificant_zeros: true %> kg</strong>
+        <% end %>
+        <span class="confidence"><%= decision.confidence %> confidence · <%= decision.rule_key %></span>
+      </article>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Audit trail</p>
+        <h2>Logged sets</h2>
+      </div>
+    </div>
+    <div class="logged-sets">
+      <% @set_entries.each do |set| %>
+        <div>
+          <span>#<%= set.set_index %></span>
+          <strong><%= set.exercise.name %></strong>
+          <span><%= set.weight_kg %> kg × <%= set.reps %></span>
+          <span><%= set.rir %> RIR</span>
+        </div>
+      <% end %>
+    </div>
+  </section>
+</main>

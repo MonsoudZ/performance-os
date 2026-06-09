@@ -1,0 +1,153 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Nutrition evidence</p>
+      <h1>Fuel the objective.</h1>
+      <p>Food logs snapshot their macros. Weight trends stay historically stable. Targets come from the active goal or enough evidence—not guesswork.</p>
+    </div>
+  </section>
+
+  <% if @nutrition_decision %>
+    <section class="nutrition-summary">
+      <article class="panel nutrition-status nutrition-status--<%= @nutrition_decision.output["status"] %>">
+        <p class="eyebrow">Today’s nutrition decision</p>
+        <h2><%= @nutrition_decision.output["headline"] %></h2>
+        <p><%= @nutrition_decision.output["guidance"] %></p>
+        <span class="confidence"><%= @nutrition_decision.confidence %> confidence · <%= @nutrition_decision.rule_key %></span>
+      </article>
+
+      <article class="panel macro-panel">
+        <div>
+          <span>Calories</span>
+          <strong><%= @nutrition_decision.output.dig("totals", "kcal").round %></strong>
+          <small>/ <%= @nutrition_decision.output.dig("targets", "kcal")&.round || "—" %> kcal</small>
+        </div>
+        <div>
+          <span>Protein</span>
+          <strong><%= @nutrition_decision.output.dig("totals", "protein_g").round %></strong>
+          <small>/ <%= @nutrition_decision.output.dig("targets", "protein_g")&.round || "—" %> g</small>
+        </div>
+        <div>
+          <span>Carbs</span>
+          <strong><%= @nutrition_decision.output.dig("totals", "carb_g").round %></strong>
+          <small>g logged</small>
+        </div>
+        <div>
+          <span>Fat</span>
+          <strong><%= @nutrition_decision.output.dig("totals", "fat_g").round %></strong>
+          <small>g logged</small>
+        </div>
+      </article>
+    </section>
+  <% end %>
+
+  <section class="nutrition-workspace">
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Log food</p>
+          <h2>Snapshot a serving.</h2>
+        </div>
+      </div>
+
+      <% if @foods.any? %>
+        <%= form_with model: @food_log_entry, class: "stacked-form" do |form| %>
+          <label>
+            <span>Food</span>
+            <%= form.collection_select :food_id, @foods, :id, :display_name %>
+          </label>
+          <div class="form-grid">
+            <label><span>Quantity (g)</span><%= form.number_field :quantity_grams, min: 1, step: 0.1, required: true %></label>
+            <label><span>Logged at</span><%= form.datetime_local_field :logged_at, required: true %></label>
+          </div>
+          <%= form.submit "Log food", class: "button" %>
+        <% end %>
+      <% else %>
+        <div class="empty-state"><p>Add a food to your catalog first.</p></div>
+      <% end %>
+    </article>
+
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Body weight</p>
+          <h2>Update the trend.</h2>
+        </div>
+      </div>
+
+      <%= form_with model: @body_metric, class: "stacked-form" do |form| %>
+        <div class="form-grid">
+          <label><span>Weight (kg)</span><%= form.number_field :weight_kg, min: 1, step: 0.01, required: true %></label>
+          <label><span>Measured on</span><%= form.date_field :measured_on, required: true %></label>
+        </div>
+        <%= form.submit "Log weight", class: "button" %>
+      <% end %>
+
+      <% if @weight_trends.any? %>
+        <div class="trend-strip">
+          <% @weight_trends.reverse_each do |trend| %>
+            <div>
+              <span><%= trend.trend_date.strftime("%b %-d") %></span>
+              <strong><%= number_with_precision trend.ewma_kg, precision: 2 %></strong>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <p class="evidence-note">
+        <% if @expenditure %>
+          Adaptive expenditure: <strong><%= @expenditure.estimated_tdee.round %> kcal</strong> · <%= @expenditure.confidence %> confidence
+        <% else %>
+          Adaptive expenditure unlocks after 7 logged intake days and at least 7 days of weight-trend evidence.
+        <% end %>
+      </p>
+    </article>
+  </section>
+
+  <section class="nutrition-workspace">
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Today’s entries</p>
+          <h2>Logged evidence.</h2>
+        </div>
+      </div>
+      <% if @entries.any? %>
+        <div class="compact-list">
+          <% @entries.each do |entry| %>
+            <div class="compact-list__item">
+              <strong><%= entry.food&.display_name || "Quick entry" %></strong>
+              <span><%= entry.quantity_grams %> g · <%= entry.protein_g %> g protein</span>
+              <small><%= entry.kcal %> kcal</small>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="empty-state"><p>No food logged today.</p></div>
+      <% end %>
+    </article>
+
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Food catalog</p>
+          <h2>Add a staple.</h2>
+        </div>
+      </div>
+      <%= form_with model: @food, class: "stacked-form" do |form| %>
+        <div class="form-grid">
+          <label><span>Name</span><%= form.text_field :name, required: true %></label>
+          <label><span>Brand</span><%= form.text_field :brand %></label>
+          <label><span>Serving grams</span><%= form.number_field :serving_grams, min: 1, step: 0.1, required: true %></label>
+          <label><span>Calories</span><%= form.number_field :kcal, min: 0, step: 0.1, required: true %></label>
+          <label><span>Protein (g)</span><%= form.number_field :protein_g, min: 0, step: 0.1, required: true %></label>
+          <label><span>Carbs (g)</span><%= form.number_field :carb_g, min: 0, step: 0.1, required: true %></label>
+          <label><span>Fat (g)</span><%= form.number_field :fat_g, min: 0, step: 0.1, required: true %></label>
+        </div>
+        <%= form.submit "Add food", class: "button" %>
+      <% end %>
+    </article>
+  </section>
+</main>

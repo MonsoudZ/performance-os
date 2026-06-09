@@ -1,0 +1,50 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Training log</p>
+      <h1>Record what happened.</h1>
+      <p>The evaluator compares completed working sets against the prescription active at this session’s date.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <% if @prescriptions.empty? %>
+      <div class="empty-state">
+        <p>You need an active prescription before logging progression work.</p>
+        <%= link_to "Create prescription", new_exercise_prescription_path, class: "button button--inline" %>
+      </div>
+    <% else %>
+      <% if @workout_session.errors.any? %>
+        <div class="form-errors"><%= @workout_session.errors.full_messages.to_sentence %></div>
+      <% end %>
+
+      <%= form_with model: @workout_session, class: "stacked-form stacked-form--wide" do |form| %>
+        <div class="form-grid">
+          <label><span>Performed at</span><%= form.datetime_local_field :performed_at, required: true %></label>
+          <label><span>Session RPE</span><%= form.number_field :session_rpe, min: 0, max: 10, step: 0.5 %></label>
+        </div>
+
+        <div class="set-table">
+          <div class="set-table__header">
+            <span>Set</span><span>Exercise</span><span>kg</span><span>Reps</span><span>RIR</span><span>Warm-up</span>
+          </div>
+          <%= form.fields_for :set_entries do |set_form| %>
+            <div class="set-table__row">
+              <%= set_form.number_field :set_index, value: set_form.index + 1, min: 1, aria: { label: "Set number" } %>
+              <%= set_form.collection_select :exercise_id, @prescriptions.map(&:exercise), :id, :name %>
+              <%= set_form.number_field :weight_kg, min: 0, step: 0.25, aria: { label: "Weight kg" } %>
+              <%= set_form.number_field :reps, min: 1, aria: { label: "Reps" } %>
+              <%= set_form.number_field :rir, min: 0, step: 0.5, aria: { label: "RIR" } %>
+              <%= set_form.check_box :is_warmup, aria: { label: "Warm-up set" } %>
+            </div>
+          <% end %>
+        </div>
+
+        <label><span>Notes</span><%= form.text_area :notes, rows: 3, placeholder: "Optional session context" %></label>
+        <%= form.submit "Save and evaluate", class: "button" %>
+      <% end %>
+    <% end %>
+  </section>
+</main>

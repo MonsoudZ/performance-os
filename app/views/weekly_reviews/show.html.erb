@@ -1,0 +1,162 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading weekly-heading">
+    <div>
+      <p class="eyebrow">Weekly evidence review</p>
+      <h1>Is the plan working?</h1>
+      <p>The daily engine tells you what to do. This review asks whether seven days of training, readiness, nutrition, and weight evidence justify changing the plan.</p>
+    </div>
+    <%= button_to @review ? "Refresh review" : "Run first review", weekly_review_path, class: "button" %>
+  </section>
+
+  <% if @review %>
+    <% evidence = @review.output["evidence"] %>
+    <% band = @review.output["target_rate_band"] %>
+
+    <section class="weekly-verdict">
+      <article class="panel weekly-verdict__main weekly-verdict__main--<%= @review.output["status"] %>">
+        <p class="eyebrow">Verdict</p>
+        <h2><%= @review.output["headline"] %></h2>
+        <p><%= @review.output["guidance"] %></p>
+        <span class="confidence"><%= @review.confidence %> confidence · <%= @review.rule_key %></span>
+      </article>
+
+      <article class="panel rate-card">
+        <p class="eyebrow">Weight-rate signal</p>
+        <strong>
+          <% if @review.output["weight_rate_pct_per_week"] %>
+            <%= number_with_precision @review.output["weight_rate_pct_per_week"], precision: 2 %>%
+          <% else %>
+            —
+          <% end %>
+        </strong>
+        <span>per week</span>
+        <small>
+          <% if band %>
+            Goal band: <%= band["minimum"] %>% to <%= band["maximum"] %>%
+          <% else %>
+            No rate band for this goal
+          <% end %>
+        </small>
+      </article>
+    </section>
+
+    <section class="evidence-grid">
+      <article class="panel evidence-card">
+        <span>Readiness</span>
+        <strong><%= evidence["average_readiness"] || "—" %></strong>
+        <small><%= evidence["readiness_days"] %> daily decisions</small>
+      </article>
+      <article class="panel evidence-card">
+        <span>Nutrition</span>
+        <strong><%= evidence["nutrition_days"] %>/7</strong>
+        <small>
+          <% if evidence["average_protein_adherence"] %>
+            <%= (evidence["average_protein_adherence"] * 100).round %>% average protein target
+          <% else %>
+            No adherence ratio yet
+          <% end %>
+        </small>
+      </article>
+      <article class="panel evidence-card">
+        <span>Weight trend</span>
+        <strong><%= evidence["weight_trend_days"] %>/7</strong>
+        <small>
+          <% if evidence["weight_start_kg"] && evidence["weight_end_kg"] %>
+            <%= evidence["weight_start_kg"] %> → <%= evidence["weight_end_kg"] %> kg
+          <% else %>
+            Keep logging daily weight
+          <% end %>
+        </small>
+      </article>
+      <article class="panel evidence-card">
+        <span>Progression</span>
+        <strong><%= evidence["progression_decisions"] %></strong>
+        <small><%= evidence["progression_statuses"].presence&.map { |status, count| "#{count} #{status}" }&.join(" · ") || "No lift decisions this week" %></small>
+      </article>
+    </section>
+
+    <% if @adjustment %>
+      <section class="panel adjustment-panel">
+        <div>
+          <p class="eyebrow">Closed-loop nutrition</p>
+          <h2><%= @adjustment.output["headline"] %></h2>
+          <p><%= @adjustment.output["guidance"] %></p>
+        </div>
+        <div class="target-shift">
+          <div>
+            <span>Current</span>
+            <strong><%= @adjustment.output["previous_target_kcal"]&.round || "—" %></strong>
+            <small>kcal</small>
+          </div>
+          <b>→</b>
+          <div>
+            <span>Next target</span>
+            <strong><%= @adjustment.output["target_kcal"]&.round || "—" %></strong>
+            <small>kcal · effective <%= Date.iso8601(@adjustment.output["effective_on"]).strftime("%b %-d") %></small>
+          </div>
+        </div>
+      </section>
+    <% end %>
+
+    <section class="weekly-detail-grid">
+      <article class="panel">
+        <p class="eyebrow">Evidence quality</p>
+        <h2>What the engine knows.</h2>
+        <div class="compact-list">
+          <div class="compact-list__item">
+            <strong>Adaptive expenditure</strong>
+            <span><%= evidence["adaptive_tdee"]&.round || "Not available" %><%= " kcal" if evidence["adaptive_tdee"] %></span>
+            <small><%= evidence["adaptive_tdee_confidence"] || "Evidence gated" %></small>
+          </div>
+          <div class="compact-list__item">
+            <strong>Calorie adherence</strong>
+            <span><%= evidence["average_calorie_adherence"] ? "#{(evidence["average_calorie_adherence"] * 100).round}%" : "Not available" %></span>
+            <small>seven-day average</small>
+          </div>
+          <div class="compact-list__item">
+            <strong>Current daily target</strong>
+            <span><%= @current_targets["kcal"]&.round || "—" %> kcal</span>
+            <small><%= @current_targets["source"].humanize.downcase %></small>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel principles">
+        <p class="eyebrow">Decision audit</p>
+        <h2>Why this changed.</h2>
+        <div class="decision-tree">
+          <% if @adjustment %>
+            <div class="decision-tree__parent">
+              <strong>Nutrition adjustment #<%= @adjustment.id %></strong>
+              <span><%= @adjustment.rule_key %></span>
+            </div>
+            <div class="decision-tree__child">
+              <strong>Weekly review #<%= @review.id %></strong>
+              <span>weekly_review · <%= @review.output["status"] %></span>
+            </div>
+          <% else %>
+            <div class="decision-tree__parent">
+              <strong>Weekly review #<%= @review.id %></strong>
+              <span><%= @review.rule_key %></span>
+            </div>
+          <% end %>
+          <% @review.child_links.includes(:child_decision).group_by(&:role).each do |role, links| %>
+            <div class="decision-tree__child">
+              <strong><%= links.size %> <%= role.humanize.downcase %> <%= "decision".pluralize(links.size) %></strong>
+              <span>immutable child evidence</span>
+              <small>IDs <%= links.map(&:child_decision_id).join(", ") %></small>
+            </div>
+          <% end %>
+        </div>
+      </article>
+    </section>
+  <% else %>
+    <section class="panel empty-review">
+      <p class="eyebrow">No review yet</p>
+      <h2>Seven days become one decision.</h2>
+      <p>Run the review now. If the evidence window is incomplete, PerformanceOS will say so instead of manufacturing certainty.</p>
+    </section>
+  <% end %>
+</main>

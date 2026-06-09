@@ -1,0 +1,27 @@
+<main class="auth-shell">
+  <section class="auth-card">
+    <a class="brand" href="/">
+      <span class="brand__mark">P</span>
+      <span>PerformanceOS</span>
+    </a>
+    <p class="eyebrow">Welcome back</p>
+    <h1>Open today’s plan.</h1>
+
+    <%= form_with url: session_path, class: "stacked-form" do |form| %>
+      <label>
+        <span>Email</span>
+        <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", value: params[:email_address] %>
+      </label>
+      <label>
+        <span>Password</span>
+        <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %>
+      </label>
+      <%= form.submit "Sign in", class: "button" %>
+    <% end %>
+
+    <div class="auth-card__footer">
+      <%= link_to "Create account", new_registration_path %>
+      <%= link_to "Forgot password?", new_password_path %>
+    </div>
+  </section>
+</main>

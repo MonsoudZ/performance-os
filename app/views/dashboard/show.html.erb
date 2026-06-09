@@ -1,0 +1,239 @@
+<% content_for :title, "Today · PerformanceOS" %>
+
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Today’s operating plan</p>
+      <h1>Train from signal,<br>not from noise.</h1>
+      <p class="lede">One daily check-in turns recovery data into a clear, auditable training decision.</p>
+    </div>
+
+    <% if @readiness_score && @decision %>
+      <article class="score-card score-card--<%= @decision.output["status"] %>">
+        <div class="score-ring" style="--score: <%= @readiness_score.score %>">
+          <div>
+            <strong><%= @readiness_score.score %></strong>
+            <span>readiness</span>
+          </div>
+        </div>
+        <div>
+          <p class="eyebrow">What should I do today?</p>
+          <h2><%= @decision.output["headline"] %></h2>
+          <p><%= @decision.output["guidance"] %></p>
+          <span class="confidence"><%= @decision.confidence %> confidence · <%= @decision.rule_key %></span>
+        </div>
+      </article>
+    <% else %>
+      <article class="score-card score-card--empty">
+        <div class="empty-orbit"></div>
+        <div>
+          <p class="eyebrow">No signal yet</p>
+          <h2>Your plan starts with sixty seconds.</h2>
+          <p>Complete today’s check-in and PerformanceOS will set the right training intensity.</p>
+        </div>
+      </article>
+    <% end %>
+  </section>
+
+  <section class="workspace">
+    <article class="panel check-in">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Daily input</p>
+          <h2>How’s the system running?</h2>
+        </div>
+        <span class="step">01 / Check-in</span>
+      </div>
+
+      <% if @today_input %>
+        <div class="completed">
+          <span class="completed__check">✓</span>
+          <h3>Today’s check-in is complete.</h3>
+          <p>Tomorrow’s snapshot stays independent, so your history never silently changes.</p>
+        </div>
+      <% else %>
+        <%= form_with model: DailyReadinessInput.new, url: readiness_check_in_path, class: "check-in__form" do |form| %>
+          <label>
+            <span>Sleep duration</span>
+            <div class="input-with-unit">
+              <%= form.number_field :sleep_minutes, value: 450, min: 0, max: 900, required: true %>
+              <span>min</span>
+            </div>
+          </label>
+
+          <%= render "rating_field", form: form, field: :sleep_quality, label: "Sleep quality", low: "Poor", high: "Excellent" %>
+          <%= render "rating_field", form: form, field: :soreness, label: "Muscle soreness", low: "Fresh", high: "Very sore" %>
+          <%= render "rating_field", form: form, field: :fatigue, label: "General fatigue", low: "Energized", high: "Drained" %>
+          <%= render "rating_field", form: form, field: :stress, label: "Life stress", low: "Calm", high: "Overloaded" %>
+
+          <%= form.submit "Generate today’s plan", class: "button" %>
+        <% end %>
+      <% end %>
+    </article>
+
+    <% if @decision %>
+      <aside class="panel principles">
+        <p class="eyebrow">Why this plan?</p>
+        <h2>One answer, traceable inputs.</h2>
+        <div class="decision-tree">
+          <div class="decision-tree__parent">
+            <span>Parent</span>
+            <strong><%= @decision.rule_key %></strong>
+            <small>Decision #<%= @decision.id %></small>
+          </div>
+          <% @decision_links.each do |link| %>
+            <div class="decision-tree__child">
+              <span><%= link.role.humanize %></span>
+              <strong><%= link.child_decision.rule_key %></strong>
+              <small>Decision #<%= link.child_decision.id %> · <%= link.child_decision.output["headline"] %></small>
+            </div>
+          <% end %>
+        </div>
+        <div class="principles__footer">
+          <span>Composed, not recomputed</span>
+          <strong><%= pluralize @decision_links.size, "child decision" %></strong>
+        </div>
+      </aside>
+    <% else %>
+      <aside class="panel principles">
+        <p class="eyebrow">How the decision works</p>
+        <h2>No black box.</h2>
+        <ol>
+          <li><span>01</span><div><strong>Read readiness</strong><p>Today’s recovery decision sets the execution constraint.</p></div></li>
+          <li><span>02</span><div><strong>Read progression</strong><p>Each lift contributes its latest immutable progression state.</p></div></li>
+          <li><span>03</span><div><strong>Compose</strong><p>The orchestrator writes one parent recommendation with explicit links.</p></div></li>
+        </ol>
+        <div class="principles__footer">
+          <span>Current engine</span>
+          <strong>daily_training_orchestrator.v1</strong>
+        </div>
+      </aside>
+    <% end %>
+  </section>
+
+  <section class="panel wearable-status">
+    <div>
+      <p class="eyebrow">Wearable readiness</p>
+      <% if @wearable_device %>
+        <h2>HealthKit is connected.</h2>
+        <p>
+          <%= @wearable_device.name %>
+          <% if @wearable_device.last_synced_at %>
+            last synced <%= time_ago_in_words(@wearable_device.last_synced_at) %> ago.
+          <% else %>
+            is waiting for its first background sync.
+          <% end %>
+        </p>
+      <% else %>
+        <h2>Connect HealthKit in the iPhone app.</h2>
+        <p>Sleep, HRV, and resting heart rate will fill the objective side of readiness. Seven prior days unlock personal HRV and heart-rate baselines.</p>
+      <% end %>
+    </div>
+    <% if @wearable_device %>
+      <%= button_to "Revoke device", wearable_device_path(@wearable_device), method: :delete, class: "nav-links__button" %>
+    <% else %>
+      <span class="confidence">Native pairing required · manual check-in remains available</span>
+    <% end %>
+  </section>
+
+  <% if @decision && @decision.output["lifts"].any? %>
+    <section class="panel daily-plan">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Today’s lift directives</p>
+          <h2>Execute the plan.</h2>
+        </div>
+        <span class="step"><%= @decision.output["goal"]&.humanize || "No active goal" %></span>
+      </div>
+      <div class="daily-plan__grid">
+        <% @decision.output["lifts"].each do |lift| %>
+          <article class="lift-directive lift-directive--<%= lift["action"] %>">
+            <div>
+              <p class="eyebrow"><%= lift["action"].humanize %></p>
+              <h3><%= lift["exercise_name"] %></h3>
+            </div>
+            <strong><%= lift["headline"] %></strong>
+            <p><%= lift["guidance"] %></p>
+            <small><%= lift["target"] %></small>
+          </article>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @decision && @decision.output["nutrition"] %>
+    <section class="panel nutrition-directive">
+      <div>
+        <p class="eyebrow">Nutrition directive</p>
+        <h2><%= @decision.output.dig("nutrition", "headline") %></h2>
+        <p><%= @decision.output.dig("nutrition", "guidance") %></p>
+      </div>
+      <% totals = @decision.output.dig("nutrition", "totals") %>
+      <% targets = @decision.output.dig("nutrition", "targets") %>
+      <% if totals && targets %>
+        <div class="nutrition-directive__numbers">
+          <div><span>Calories</span><strong><%= totals["kcal"].round %> / <%= targets["kcal"]&.round || "—" %></strong></div>
+          <div><span>Protein</span><strong><%= totals["protein_g"].round %> / <%= targets["protein_g"]&.round || "—" %> g</strong></div>
+        </div>
+      <% end %>
+      <%= link_to "Open nutrition", nutrition_path, class: "text-link" %>
+    </section>
+  <% end %>
+
+  <section class="training-overview">
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Current targets</p>
+          <h2>Prescriptions</h2>
+        </div>
+        <%= link_to "Manage", exercise_prescriptions_path, class: "text-link" %>
+      </div>
+
+      <% if @active_prescriptions.any? %>
+        <div class="compact-list">
+          <% @active_prescriptions.each do |prescription| %>
+            <div class="compact-list__item">
+              <strong><%= prescription.exercise.name %></strong>
+              <span><%= prescription.target_label %></span>
+              <small>+<%= number_with_precision prescription.increment_kg, precision: 2, strip_insignificant_zeros: true %> kg</small>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="empty-state">
+          <p>Progression needs a target before it can make a call.</p>
+          <%= link_to "Create first prescription", new_exercise_prescription_path, class: "button button--inline" %>
+        </div>
+      <% end %>
+    </article>
+
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Training history</p>
+          <h2>Recent sessions</h2>
+        </div>
+        <%= link_to "Log workout", new_workout_session_path, class: "text-link" %>
+      </div>
+
+      <% if @recent_workouts.any? %>
+        <div class="compact-list">
+          <% @recent_workouts.each do |workout| %>
+            <%= link_to workout_session_path(workout), class: "compact-list__item compact-list__item--link" do %>
+              <strong><%= workout.performed_at.strftime("%b %-d · %-I:%M %p") %></strong>
+              <span><%= pluralize workout.set_entries.size, "set" %></span>
+              <small>View decision →</small>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="empty-state">
+          <p>No sessions yet. The engine is waiting patiently, clipboard in hand.</p>
+        </div>
+      <% end %>
+    </article>
+  </section>
+</main>
