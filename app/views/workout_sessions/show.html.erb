@@ -4,11 +4,26 @@
   <section class="page-heading">
     <div>
       <p class="eyebrow">Session complete</p>
-      <h1><%= @workout_session.performed_at.strftime("%B %-d training") %></h1>
+      <h1><%= @workout_session.template_name || @workout_session.performed_at.strftime("%B %-d training") %></h1>
       <p><%= pluralize @workout_session.set_entries.size, "logged set" %></p>
     </div>
     <%= link_to "Log another", new_workout_session_path, class: "button button--inline" %>
   </section>
+
+  <% if @workout_session.template_snapshot.present? %>
+    <section class="workout-completion">
+      <article class="panel">
+        <p class="eyebrow">Workout completion</p>
+        <strong><%= @workout_session.completion_percentage %>%</strong>
+        <span><%= @workout_session.completed_working_sets %> of <%= @workout_session.planned_working_sets %> planned working sets</span>
+      </article>
+      <article class="panel">
+        <p class="eyebrow">Session volume</p>
+        <strong><%= number_with_delimiter @set_entries.reject(&:is_warmup?).sum { |set| set.weight_kg.to_f * set.reps.to_i }.round %> kg</strong>
+        <span>Working-set load × reps</span>
+      </article>
+    </section>
+  <% end %>
 
   <section class="decision-grid">
     <% @decisions.each do |decision| %>

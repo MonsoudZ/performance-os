@@ -4,13 +4,13 @@
   <section class="page-heading">
     <div>
       <p class="eyebrow">Training log</p>
-      <h1>Record what happened.</h1>
+      <h1><%= @workout_template ? @workout_template.name : "Record what happened." %></h1>
       <p>Your logged sets are compared with the training target active on this session’s date.</p>
     </div>
   </section>
 
   <section class="panel form-panel">
-    <% if @prescriptions.empty? %>
+    <% if @set_contexts.empty? %>
       <div class="empty-state">
         <p>Set a training target before logging progression work.</p>
         <%= link_to "Set training target", new_exercise_prescription_path, class: "button button--inline" %>
@@ -23,6 +23,7 @@
       <%= form_with model: @workout_session,
         class: "stacked-form stacked-form--wide",
         data: { controller: "workout-log" } do |form| %>
+        <%= hidden_field_tag "workout_session[workout_template_id]", @workout_template.id if @workout_template %>
         <div class="form-grid">
           <label><span>Performed at</span><%= form.datetime_local_field :performed_at, required: true %></label>
           <label><span>Session RPE</span><%= form.number_field :session_rpe, min: 0, max: 10, step: 0.5 %></label>

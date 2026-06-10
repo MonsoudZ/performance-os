@@ -1,0 +1,53 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Weekly training</p>
+      <h1>Workout templates.</h1>
+      <p>Build your split once, schedule each day, and start sessions already filled with targets and previous results.</p>
+    </div>
+    <%= link_to "Create workout", new_workout_template_path, class: "button button--inline" %>
+  </section>
+
+  <% if @workout_templates.any? %>
+    <section class="template-grid">
+      <% @workout_templates.each do |template| %>
+        <article class="panel template-card">
+          <div class="panel__header">
+            <div>
+              <p class="eyebrow"><%= template.schedule_label %></p>
+              <h2><%= template.name %></h2>
+            </div>
+            <%= link_to "Edit", edit_workout_template_path(template), class: "text-link" %>
+          </div>
+
+          <ol class="template-exercises">
+            <% template.workout_template_exercises.each do |item| %>
+              <li>
+                <span><%= item.position %></span>
+                <strong><%= item.exercise.name %></strong>
+              </li>
+            <% end %>
+          </ol>
+
+          <div class="template-card__actions">
+            <%= link_to "Start workout",
+              new_workout_session_path(workout_template_id: template.id),
+              class: "button button--inline" %>
+            <%= button_to "Delete",
+              workout_template_path(template),
+              method: :delete,
+              class: "text-button text-button--danger",
+              form: { data: { turbo_confirm: "Delete #{template.name}?" } } %>
+          </div>
+        </article>
+      <% end %>
+    </section>
+  <% else %>
+    <section class="panel empty-state">
+      <p>Create your first workout day—Push, Pull, Legs, Upper, Lower, or whatever you actually run.</p>
+      <%= link_to "Create workout", new_workout_template_path, class: "button button--inline" %>
+    </section>
+  <% end %>
+</main>

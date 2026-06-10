@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   resources :food_log_entries, only: %i[create destroy]
   resources :body_metrics, only: :create
   resources :exercise_prescriptions, only: %i[index new create]
+  resources :workout_templates, except: :show
   resources :workout_sessions, only: %i[new create show]
 
   namespace :api do

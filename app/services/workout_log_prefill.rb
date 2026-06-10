@@ -1,46 +1,64 @@
 class WorkoutLogPrefill
   Context = Data.define(:entry, :prescription, :last_set)
+  Plan = Data.define(:exercise, :prescription, :working_sets)
 
-  def initialize(user, workout_session:, log_date:)
+  def initialize(user, workout_session:, log_date:, workout_template: nil)
     @user = user
     @workout_session = workout_session
     @log_date = log_date
+    @workout_template = workout_template
   end
 
   def call
     return contexts_for_existing_entries if workout_session.set_entries.any?
 
-    prescriptions.flat_map do |prescription|
-      last_sets = last_working_sets_for(prescription.exercise)
-      target_weight = target_weight_for(prescription, last_sets)
+    exercise_plans.flat_map do |plan|
+      last_sets = last_working_sets_for(plan.exercise)
+      target_weight = target_weight_for(plan.prescription, last_sets)
 
-      prescription.working_sets.times.map do |index|
+      plan.working_sets.times.map do |index|
         entry = workout_session.set_entries.build(
-          exercise: prescription.exercise,
+          exercise: plan.exercise,
           set_index: index + 1,
           weight_kg: target_weight,
-          reps: prescription.rep_max,
-          rir: prescription.target_rir_min
+          reps: plan.prescription&.rep_max,
+          rir: plan.prescription&.target_rir_min
         )
-        Context.new(entry:, prescription:, last_set: last_sets[index])
+        Context.new(entry:, prescription: plan.prescription, last_set: last_sets[index])
       end
     end
   end
 
   private
 
-  attr_reader :user, :workout_session, :log_date
+  attr_reader :user, :workout_session, :log_date, :workout_template
+
+  def exercise_plans
+    @exercise_plans ||= if workout_template
+      workout_template.workout_template_exercises.includes(:exercise).map do |item|
+        prescription = prescription_for(item.exercise)
+        Plan.new(exercise: item.exercise, prescription:, working_sets: prescription&.working_sets || 1)
+      end
+    else
+      prescriptions.map do |prescription|
+        Plan.new(exercise: prescription.exercise, prescription:, working_sets: prescription.working_sets)
+      end
+    end
+  end
 
   def prescriptions
-    @prescriptions ||= user.exercise_prescriptions
-      .active_on(log_date)
-      .includes(:exercise)
-      .order("exercises.name")
+    @prescriptions ||= user.exercise_prescriptions.active_on(log_date).includes(:exercise).order("exercises.name")
+  end
+
+  def prescription_for(exercise)
+    prescriptions
+      .select { |prescription| prescription.exercise_id == exercise.id }
+      .max_by(&:started_on)
   end
 
   def contexts_for_existing_entries
     workout_session.set_entries.map do |entry|
-      prescription = prescriptions.find { |candidate| candidate.exercise_id == entry.exercise_id }
+      prescription = prescription_for(entry.exercise)
       last_set = last_working_sets_for(entry.exercise)[entry.set_index.to_i - 1]
       Context.new(entry:, prescription:, last_set:)
     end
@@ -61,6 +79,8 @@ class WorkoutLogPrefill
   end
 
   def target_weight_for(prescription, last_sets)
+    return last_sets.filter_map(&:weight_kg).max unless prescription
+
     latest_progression_weight(prescription) || last_sets.filter_map(&:weight_kg).max
   end
 

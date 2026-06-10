@@ -37,6 +37,27 @@
     <% end %>
   </section>
 
+  <section class="panel today-workout">
+    <div>
+      <p class="eyebrow">Today’s workout</p>
+      <% if @today_templates.any? %>
+        <h2><%= @today_templates.map(&:name).to_sentence %></h2>
+        <p><%= @today_templates.sum { |template| template.workout_template_exercises.size } %> planned exercises in order, with targets and previous results filled where available.</p>
+      <% else %>
+        <h2>No workout scheduled.</h2>
+        <p>Start an ad-hoc session or schedule a workout template for <%= @user.local_date.strftime("%A") %>.</p>
+      <% end %>
+    </div>
+    <div class="today-workout__actions">
+      <% @today_templates.each do |template| %>
+        <%= link_to "Start #{template.name}",
+          new_workout_session_path(workout_template_id: template.id),
+          class: "button button--inline" %>
+      <% end %>
+      <%= link_to(@today_templates.any? ? "Manage workouts" : "Create workout", workout_templates_path, class: "text-link") %>
+    </div>
+  </section>
+
   <section class="workspace">
     <article class="panel check-in">
       <div class="panel__header">

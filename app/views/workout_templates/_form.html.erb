@@ -1,0 +1,99 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Workout setup</p>
+      <h1><%= heading %></h1>
+      <p>Choose the schedule and exercise order. Training targets provide the sets, reps, RIR, and next load.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <% if @workout_template.errors.any? %>
+      <div class="form-errors"><%= @workout_template.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= form_with model: @workout_template,
+      class: "stacked-form stacked-form--wide",
+      data: { controller: "template-editor" } do |form| %>
+      <label>
+        <span>Workout name</span>
+        <%= form.text_field :name, placeholder: "Upper, Pull, Leg day…", required: true %>
+      </label>
+
+      <fieldset class="weekday-picker">
+        <legend>Scheduled days</legend>
+        <%= hidden_field_tag "workout_template[weekdays][]", "" %>
+        <% WorkoutTemplate::WEEKDAYS.each do |day_name, weekday| %>
+          <label>
+            <%= check_box_tag "workout_template[weekdays][]",
+              weekday,
+              @workout_template.weekdays.include?(weekday),
+              id: "workout_template_weekday_#{weekday}" %>
+            <span><%= day_name.first(3) %></span>
+          </label>
+        <% end %>
+      </fieldset>
+
+      <section class="template-editor">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Exercise order</p>
+            <h2>Build the session.</h2>
+          </div>
+          <button type="button" class="button button--compact" data-action="template-editor#add">Add exercise</button>
+        </div>
+
+        <div class="template-editor__rows" data-template-editor-target="rows">
+          <%= form.fields_for :workout_template_exercises do |item_form| %>
+            <div class="template-editor__row" data-template-editor-target="row">
+              <%= item_form.hidden_field :id if item_form.object.persisted? %>
+              <%= item_form.hidden_field :position, data: { template_editor_target: "position" } %>
+              <label>
+                <span>Exercise</span>
+                <%= item_form.collection_select :exercise_id,
+                  @exercises,
+                  :id,
+                  :name,
+                  { prompt: "Choose an exercise" },
+                  required: true %>
+              </label>
+              <div class="template-editor__actions">
+                <button type="button" class="icon-button" data-action="template-editor#moveUp" aria-label="Move exercise up">↑</button>
+                <button type="button" class="icon-button" data-action="template-editor#moveDown" aria-label="Move exercise down">↓</button>
+                <button type="button" class="icon-button icon-button--danger" data-action="template-editor#remove" aria-label="Remove exercise">×</button>
+              </div>
+              <% if item_form.object.persisted? %>
+                <%= item_form.hidden_field :_destroy, value: "0", data: { template_editor_target: "destroy" } %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <template data-template-editor-target="template">
+          <div class="template-editor__row" data-template-editor-target="row">
+            <input type="hidden" name="workout_template[workout_template_exercises_attributes][NEW_RECORD][position]" data-template-editor-target="position">
+            <label>
+              <span>Exercise</span>
+              <select name="workout_template[workout_template_exercises_attributes][NEW_RECORD][exercise_id]" required>
+                <option value="">Choose an exercise</option>
+                <% @exercises.each do |exercise| %>
+                  <option value="<%= exercise.id %>"><%= exercise.name %></option>
+                <% end %>
+              </select>
+            </label>
+            <div class="template-editor__actions">
+              <button type="button" class="icon-button" data-action="template-editor#moveUp" aria-label="Move exercise up">↑</button>
+              <button type="button" class="icon-button" data-action="template-editor#moveDown" aria-label="Move exercise down">↓</button>
+              <button type="button" class="icon-button icon-button--danger" data-action="template-editor#remove" aria-label="Remove exercise">×</button>
+            </div>
+          </div>
+        </template>
+      </section>
+
+      <p class="evidence-note">Exercises without a training target start with one blank set. You can still add ad-hoc movements while logging.</p>
+      <%= form.submit submit_label, class: "button" %>
+    <% end %>
+  </section>
+</main>

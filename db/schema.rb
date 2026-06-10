@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_09_202000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -307,11 +307,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_202000) do
     t.text "notes"
     t.datetime "performed_at", null: false
     t.decimal "session_rpe", precision: 3, scale: 1
+    t.jsonb "template_snapshot", default: {}, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "workout_template_id"
     t.index ["user_id", "performed_at"], name: "index_workout_sessions_on_user_id_and_performed_at"
     t.index ["user_id"], name: "index_workout_sessions_on_user_id"
+    t.index ["workout_template_id"], name: "index_workout_sessions_on_workout_template_id"
     t.check_constraint "session_rpe IS NULL OR session_rpe >= 0::numeric AND session_rpe <= 10::numeric", name: "workout_sessions_rpe_check"
+  end
+
+  create_table "workout_template_exercises", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "exercise_id", null: false
+    t.integer "position", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workout_template_id", null: false
+    t.index ["exercise_id"], name: "index_workout_template_exercises_on_exercise_id"
+    t.index ["workout_template_id", "exercise_id"], name: "index_template_exercises_unique", unique: true
+    t.index ["workout_template_id", "position"], name: "index_template_exercises_position"
+    t.index ["workout_template_id"], name: "index_workout_template_exercises_on_workout_template_id"
+    t.check_constraint "\"position\" > 0", name: "workout_template_exercises_position_check"
+  end
+
+  create_table "workout_templates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "weekdays", default: [], null: false, array: true
+    t.index ["user_id", "name"], name: "index_workout_templates_on_user_id_and_name", unique: true
+    t.index ["user_id"], name: "index_workout_templates_on_user_id"
   end
 
   add_foreign_key "body_metrics", "users"
@@ -338,4 +364,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_202000) do
   add_foreign_key "wearable_samples", "wearable_devices"
   add_foreign_key "weight_trends", "users"
   add_foreign_key "workout_sessions", "users"
+  add_foreign_key "workout_sessions", "workout_templates"
+  add_foreign_key "workout_template_exercises", "exercises"
+  add_foreign_key "workout_template_exercises", "workout_templates"
+  add_foreign_key "workout_templates", "users"
 end

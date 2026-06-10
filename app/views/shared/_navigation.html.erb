@@ -7,6 +7,7 @@
   <% if authenticated? %>
     <nav class="nav-links" aria-label="Primary">
       <%= link_to "Today", root_path %>
+      <%= link_to "Workouts", workout_templates_path %>
       <%= link_to "Training targets", exercise_prescriptions_path %>
       <%= link_to "Nutrition", nutrition_path %>
       <%= link_to "Weekly review", weekly_review_path %>

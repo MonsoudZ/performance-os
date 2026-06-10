@@ -7,6 +7,7 @@ class User < ApplicationRecord
   has_many :coaching_decisions, dependent: :destroy
   has_many :exercises, dependent: :destroy
   has_many :exercise_prescriptions, dependent: :destroy
+  has_many :workout_templates, dependent: :destroy
   has_many :workout_sessions, dependent: :destroy
   has_many :foods, dependent: :destroy
   has_many :food_log_entries, dependent: :destroy
