@@ -129,7 +129,7 @@ class DoubleProgressionEvaluator
     prior_decisions.size == STALL_SESSION_COUNT - 1 &&
       prior_decisions.all? do |decision|
         decision.output["status"] == "hold" &&
-          decision.output["current_weight_kg"].to_f == current_weight.to_f
+          decision.output["current_weight_kg"].to_f.round(2) == current_weight.to_f.round(2)
       end
   end
 
