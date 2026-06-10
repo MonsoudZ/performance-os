@@ -1,0 +1,16 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Food catalog</p>
+      <h1>Edit <%= @food.display_name %>.</h1>
+      <p>Fix the serving size or macros. Already-logged entries keep the values they were saved with.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <%= render "foods/form", food: @food, submit_label: "Save changes" %>
+    <%= link_to "Back to nutrition", nutrition_path, class: "text-link" %>
+  </section>
+</main>

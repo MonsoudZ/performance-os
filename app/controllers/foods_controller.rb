@@ -1,4 +1,6 @@
 class FoodsController < ApplicationController
+  before_action :set_food, only: %i[edit update destroy]
+
   def create
     food = Current.user.foods.new(food_params)
 
@@ -9,7 +11,30 @@ class FoodsController < ApplicationController
     end
   end
 
+  def edit
+  end
+
+  def update
+    if @food.update(food_params)
+      # Logged entries snapshot their macros, so editing only affects future logs.
+      redirect_to nutrition_path, notice: "#{@food.display_name} updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @food.destroy!
+    redirect_to nutrition_path, notice: "#{@food.display_name} removed from your catalog."
+  end
+
   private
+
+  # Scoped to the user's own catalog rows; the shared catalog (user_id IS NULL)
+  # is not editable.
+  def set_food
+    @food = Current.user.foods.find(params[:id])
+  end
 
   def food_params
     params.require(:food).permit(

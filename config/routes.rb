@@ -11,7 +11,7 @@ Rails.application.routes.draw do
   resource :nutrition, only: :show, controller: "nutrition"
   resource :weekly_review, only: %i[show create]
   resources :wearable_devices, only: %i[create destroy]
-  resources :foods, only: :create
+  resources :foods, only: %i[create edit update destroy]
   resources :food_log_entries, only: %i[create update destroy] do
     post :copy_yesterday, on: :collection
   end

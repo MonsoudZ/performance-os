@@ -56,17 +56,23 @@
           <h2>Add a staple.</h2>
         </div>
       </div>
-      <%= form_with model: @food, class: "stacked-form" do |form| %>
-        <div class="form-grid">
-          <label><span>Name</span><%= form.text_field :name, required: true %></label>
-          <label><span>Brand</span><%= form.text_field :brand %></label>
-          <label><span>Serving grams</span><%= form.number_field :serving_grams, min: 1, step: 0.1, required: true %></label>
-          <label><span>Calories</span><%= form.number_field :kcal, min: 0, step: 0.1, required: true %></label>
-          <label><span>Protein (g)</span><%= form.number_field :protein_g, min: 0, step: 0.1, required: true %></label>
-          <label><span>Carbs (g)</span><%= form.number_field :carb_g, min: 0, step: 0.1, required: true %></label>
-          <label><span>Fat (g)</span><%= form.number_field :fat_g, min: 0, step: 0.1, required: true %></label>
+      <%= render "foods/form", food: @food, submit_label: "Add food" %>
+
+      <% if @custom_foods.any? %>
+        <div class="compact-list">
+          <% @custom_foods.each do |food| %>
+            <div class="compact-list__item">
+              <strong><%= food.display_name %></strong>
+              <span><%= food.kcal.round %> kcal · <%= food.protein_g.round %> g protein / <%= number_with_precision food.serving_grams, precision: 1, strip_insignificant_zeros: true %> g</span>
+              <small>
+                <%= link_to "Edit", edit_food_path(food), class: "text-link" %>
+                <%= button_to "Delete", food_path(food), method: :delete,
+                  form: { data: { turbo_confirm: "Remove #{food.display_name} from your catalog?" } },
+                  class: "text-button text-button--danger" %>
+              </small>
+            </div>
+          <% end %>
         </div>
-        <%= form.submit "Add food", class: "button" %>
       <% end %>
     </article>
   </section>

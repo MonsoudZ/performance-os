@@ -1,0 +1,15 @@
+<%= form_with model: food, class: "stacked-form" do |form| %>
+  <% if food.errors.any? %>
+    <div class="form-errors"><%= food.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div class="form-grid">
+    <label><span>Name</span><%= form.text_field :name, required: true %></label>
+    <label><span>Brand</span><%= form.text_field :brand %></label>
+    <label><span>Serving grams</span><%= form.number_field :serving_grams, min: 1, step: 0.1, required: true %></label>
+    <label><span>Calories</span><%= form.number_field :kcal, min: 0, step: 0.1, required: true %></label>
+    <label><span>Protein (g)</span><%= form.number_field :protein_g, min: 0, step: 0.1, required: true %></label>
+    <label><span>Carbs (g)</span><%= form.number_field :carb_g, min: 0, step: 0.1, required: true %></label>
+    <label><span>Fat (g)</span><%= form.number_field :fat_g, min: 0, step: 0.1, required: true %></label>
+  </div>
+  <%= form.submit submit_label, class: "button" %>
+<% end %>
