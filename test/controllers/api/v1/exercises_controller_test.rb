@@ -18,6 +18,8 @@ class Api::V1::ExercisesControllerTest < ActionDispatch::IntegrationTest
       { "returned" => 32, "total" => 32, "limit" => 50 },
       response.parsed_body.fetch("meta")
     )
+    assert_equal "60", response.headers["X-RateLimit-Limit"]
+    assert_equal "59", response.headers["X-RateLimit-Remaining"]
     bench = response.parsed_body.fetch("data").find { |exercise| exercise.fetch("name") == "Barbell Bench Press" }
     assert_equal "barbell", bench.fetch("modality")
     assert_equal "chest", bench.fetch("muscles").first.fetch("name")
@@ -82,5 +84,7 @@ class Api::V1::ExercisesControllerTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
     assert_equal "Rate limit exceeded", response.parsed_body.fetch("error")
     assert response.headers["Retry-After"].present?
+    assert_equal "60", response.headers["X-RateLimit-Limit"]
+    assert_equal "0", response.headers["X-RateLimit-Remaining"]
   end
 end

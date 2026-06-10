@@ -4,6 +4,8 @@ module Api
       MAX_LIMIT = 100
       DEFAULT_LIMIT = 50
 
+      after_action :set_rate_limit_headers
+
       def index
         exercises = Exercise.where(user_id: nil)
           .includes(exercise_muscle_contributions: :muscle_group)
@@ -24,6 +26,17 @@ module Api
       end
 
       private
+
+      def set_rate_limit_headers
+        throttle = request.env.dig("rack.attack.throttle_data", "api/v1/exercises/ip")
+        return unless throttle
+
+        response.set_header("X-RateLimit-Limit", throttle.fetch(:limit).to_s)
+        response.set_header(
+          "X-RateLimit-Remaining",
+          [ throttle.fetch(:limit) - throttle.fetch(:count), 0 ].max.to_s
+        )
+      end
 
       def search(exercises)
         query = ActiveRecord::Base.sanitize_sql_like(params[:query].strip)
