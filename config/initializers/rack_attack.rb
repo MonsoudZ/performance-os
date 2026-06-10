@@ -10,7 +10,9 @@ class Rack::Attack
     limit: EXERCISE_CATALOG_LIMIT,
     period: EXERCISE_CATALOG_PERIOD
   ) do |request|
-    request.ip if request.get? && request.path.match?(EXERCISE_CATALOG_PATH)
+    if request.get? && request.path.match?(EXERCISE_CATALOG_PATH)
+      ActionDispatch::Request.new(request.env).remote_ip
+    end
   end
 
   self.throttled_response_retry_after_header = true
