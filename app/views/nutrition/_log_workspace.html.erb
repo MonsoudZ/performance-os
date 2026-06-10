@@ -44,6 +44,12 @@
           <p class="eyebrow">Rapid log</p>
           <h2>Repeat what works.</h2>
         </div>
+        <%= button_to copy_yesterday_food_log_entries_path,
+          method: :post,
+          class: "button button--secondary",
+          form: { data: { turbo_stream: true } } do %>
+          Copy yesterday<% if @yesterday_entry_count.positive? %> · <%= @yesterday_entry_count %><% end %>
+        <% end %>
       </div>
 
       <% if @recent_foods.any? %>
@@ -53,9 +59,10 @@
               <%= form.hidden_field :food_id, value: recent.food_id %>
               <%= form.hidden_field :quantity_grams, value: recent.quantity_grams %>
               <%= form.hidden_field :logged_at, value: Time.current %>
+              <%= form.hidden_field :meal_type, value: recent.meal_type %>
               <%= form.button class: "recent-food" do %>
                 <strong><%= recent.food.display_name %></strong>
-                <span><%= recent.quantity_grams %> g</span>
+                <span><%= recent.quantity_grams %> g · <%= recent.meal_label %></span>
                 <small><%= recent.kcal.round %> kcal · <%= recent.protein_g.round %> g protein</small>
               <% end %>
             <% end %>
@@ -82,6 +89,7 @@
           </label>
           <div class="form-grid">
             <label><span>Quantity (g)</span><%= form.number_field :quantity_grams, min: 1, step: 0.1, required: true %></label>
+            <label><span>Meal</span><%= form.select :meal_type, FoodLogEntry::MEAL_TYPES.map { |meal| [meal.humanize, meal] } %></label>
             <label><span>Logged at</span><%= form.datetime_local_field :logged_at, required: true %></label>
           </div>
           <%= form.submit "Log food", class: "button" %>
@@ -100,22 +108,63 @@
       </div>
     </div>
     <% if @entries.any? %>
-      <div class="compact-list">
-        <% @entries.each do |entry| %>
-          <div class="compact-list__item">
-            <strong><%= entry.food&.display_name || "Quick entry" %></strong>
-            <span><%= entry.quantity_grams %> g · <%= entry.protein_g %> g protein</span>
-            <small><%= entry.kcal %> kcal</small>
-            <%= button_to "Remove",
-              food_log_entry_path(entry),
-              method: :delete,
-              class: "text-button text-button--danger",
-              form: { data: { turbo_stream: true } } %>
-          </div>
+      <div class="meal-groups">
+        <% @entries_by_meal.each do |meal_type, entries| %>
+          <% next if entries.empty? %>
+
+          <section class="meal-group">
+            <div class="meal-group__header">
+              <h3><%= meal_type.humanize %></h3>
+              <span><%= entries.sum(&:kcal).round %> kcal · <%= entries.sum(&:protein_g).round %> g protein</span>
+            </div>
+
+            <div class="nutrition-entry-list">
+              <% entries.each do |entry| %>
+                <div class="nutrition-entry">
+                  <div class="nutrition-entry__identity">
+                    <strong><%= entry.food&.display_name || "Quick entry" %></strong>
+                    <small><%= entry.kcal.round %> kcal · <%= entry.protein_g.round %> g protein</small>
+                  </div>
+
+                  <%= form_with model: entry, class: "nutrition-entry__form" do |form| %>
+                    <label>
+                      <span class="sr-only">Quantity in grams</span>
+                      <%= form.number_field :quantity_grams,
+                        min: 1,
+                        step: 0.1,
+                        required: true,
+                        aria: { label: "#{entry.food&.display_name || 'Food'} quantity in grams" } %>
+                      <small>g</small>
+                    </label>
+                    <%= form.select :meal_type,
+                      FoodLogEntry::MEAL_TYPES.map { |meal| [meal.humanize, meal] },
+                      {},
+                      aria: { label: "#{entry.food&.display_name || 'Food'} meal" } %>
+                    <%= form.submit "Save", class: "text-button" %>
+                  <% end %>
+
+                  <%= button_to "Remove",
+                    food_log_entry_path(entry),
+                    method: :delete,
+                    class: "text-button text-button--danger",
+                    form: { data: { turbo_stream: true }, class: "nutrition-entry__remove" } %>
+                </div>
+              <% end %>
+            </div>
+          </section>
         <% end %>
       </div>
     <% else %>
-      <div class="empty-state"><p>No food logged today.</p></div>
+      <div class="empty-state">
+        <p>No food logged today.</p>
+        <% if @yesterday_entry_count.positive? %>
+          <%= button_to "Copy yesterday’s #{@yesterday_entry_count} entries",
+            copy_yesterday_food_log_entries_path,
+            method: :post,
+            class: "button",
+            form: { data: { turbo_stream: true } } %>
+        <% end %>
+      </div>
     <% end %>
   </section>
 <% end %>

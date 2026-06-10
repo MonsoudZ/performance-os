@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -140,19 +140,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100000) do
 
   create_table "food_log_entries", force: :cascade do |t|
     t.decimal "carb_g", precision: 6, scale: 1, null: false
+    t.bigint "copied_from_entry_id"
     t.datetime "created_at", null: false
     t.decimal "fat_g", precision: 6, scale: 1, null: false
     t.bigint "food_id"
     t.decimal "kcal", precision: 7, scale: 1, null: false
     t.datetime "logged_at", null: false
+    t.string "meal_type", default: "snack", null: false
     t.decimal "protein_g", precision: 6, scale: 1, null: false
     t.decimal "quantity_grams", precision: 7, scale: 1, null: false
     t.string "source", default: "manual", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["copied_from_entry_id"], name: "index_food_log_entries_on_copied_from_entry_id", unique: true
     t.index ["food_id"], name: "index_food_log_entries_on_food_id"
     t.index ["user_id", "logged_at"], name: "index_food_log_entries_on_user_id_and_logged_at"
     t.index ["user_id"], name: "index_food_log_entries_on_user_id"
+    t.check_constraint "meal_type::text = ANY (ARRAY['breakfast'::character varying, 'lunch'::character varying, 'dinner'::character varying, 'snack'::character varying]::text[])", name: "food_log_entries_meal_type_check"
     t.check_constraint "quantity_grams > 0::numeric AND kcal >= 0::numeric AND protein_g >= 0::numeric AND carb_g >= 0::numeric AND fat_g >= 0::numeric", name: "food_log_entries_values_check"
   end
 
@@ -351,6 +355,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100000) do
   add_foreign_key "exercise_prescriptions", "users"
   add_foreign_key "exercises", "users"
   add_foreign_key "expenditure_estimates", "users"
+  add_foreign_key "food_log_entries", "food_log_entries", column: "copied_from_entry_id"
   add_foreign_key "food_log_entries", "foods"
   add_foreign_key "food_log_entries", "users"
   add_foreign_key "foods", "users"

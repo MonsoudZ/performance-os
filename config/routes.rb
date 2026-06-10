@@ -9,7 +9,9 @@ Rails.application.routes.draw do
   resource :weekly_review, only: %i[show create]
   resources :wearable_devices, only: %i[create destroy]
   resources :foods, only: :create
-  resources :food_log_entries, only: %i[create destroy]
+  resources :food_log_entries, only: %i[create update destroy] do
+    post :copy_yesterday, on: :collection
+  end
   resources :body_metrics, only: :create
   resources :exercise_prescriptions, only: %i[index new create]
   resources :workout_templates, except: :show
