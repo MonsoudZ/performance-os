@@ -26,4 +26,27 @@ class ExercisePrescriptionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
   end
+
+  test "creates a prescription with a chosen progression model" do
+    exercise = Exercise.create!(user: @user, name: "Front Squat", modality: "barbell")
+
+    assert_difference "ExercisePrescription.count", 1 do
+      post exercise_prescriptions_path, params: {
+        exercise_prescription: {
+          exercise_id: exercise.id,
+          rep_min: 4,
+          rep_max: 6,
+          target_rir_min: 1,
+          target_rir_max: 2,
+          increment_kg: 2.5,
+          working_sets: 4,
+          progression_model: "top_set",
+          started_on: Date.current
+        }
+      }
+    end
+
+    assert_redirected_to exercise_prescriptions_path
+    assert_equal "top_set", ExercisePrescription.last.progression_model
+  end
 end

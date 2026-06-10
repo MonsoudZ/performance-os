@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -95,6 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_150000) do
     t.date "ended_on"
     t.bigint "exercise_id", null: false
     t.decimal "increment_kg", precision: 5, scale: 2, null: false
+    t.string "progression_model", default: "double_progression", null: false
     t.integer "rep_max", null: false
     t.integer "rep_min", null: false
     t.date "started_on", null: false
@@ -108,6 +109,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_150000) do
     t.index ["user_id"], name: "index_exercise_prescriptions_on_user_id"
     t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "exercise_prescriptions_dates_check"
     t.check_constraint "increment_kg > 0::numeric AND working_sets > 0", name: "exercise_prescriptions_progression_check"
+    t.check_constraint "progression_model::text = ANY (ARRAY['double_progression'::character varying, 'top_set'::character varying]::text[])", name: "exercise_prescriptions_progression_model_check"
     t.check_constraint "rep_min > 0 AND rep_max >= rep_min", name: "exercise_prescriptions_rep_range_check"
     t.check_constraint "target_rir_min >= 0::numeric AND target_rir_max >= target_rir_min", name: "exercise_prescriptions_rir_range_check"
   end

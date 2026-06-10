@@ -87,6 +87,43 @@ class DoubleProgressionEvaluatorTest < ActiveSupport::TestCase
     assert_equal "hold", decision.output["status"]
   end
 
+  test "top-set model progresses on the heaviest set even with lighter back-offs" do
+    @prescription.update!(progression_model: "top_set")
+    # A ramp to a top set of 105 with back-off sets — the straight-set model
+    # would hold on the inconsistent load, the top-set model progresses.
+    workout = create_workout([ [ 105, 8, 1 ], [ 95, 8, 2 ], [ 95, 8, 2 ] ])
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    assert_equal "increase", decision.output["status"]
+    assert_equal 105.0, decision.output["current_weight_kg"]
+    assert_equal 107.5, decision.output["next_weight_kg"]
+    assert_equal "top_set", decision.inputs.dig("prescription", "progression_model")
+    assert_equal "double_progression.v1", decision.rule_key
+  end
+
+  test "top-set model holds when the top set misses the rep ceiling" do
+    @prescription.update!(progression_model: "top_set")
+    workout = create_workout([ [ 105, 7, 2 ], [ 95, 8, 2 ], [ 95, 8, 2 ] ])
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    assert_equal "hold", decision.output["status"]
+    assert_equal 105.0, decision.output["next_weight_kg"]
+    assert_match(/top set/i, decision.output["guidance"])
+  end
+
+  test "straight-set model still holds on a ramp to the top weight" do
+    # Same sets as the top-set increase case, but the default straight-set model
+    # refuses to progress because the working load was not consistent.
+    workout = create_workout([ [ 105, 8, 1 ], [ 95, 8, 2 ], [ 95, 8, 2 ] ])
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    assert_equal "hold", decision.output["status"]
+    assert_match(/consistent/i, decision.output["guidance"])
+  end
+
   private
 
   def create_workout(set_values)

@@ -20,6 +20,7 @@
             <strong><%= prescription.target_label %></strong>
             <dl>
               <div><dt>Increment</dt><dd><%= number_with_precision prescription.increment_kg, precision: 2, strip_insignificant_zeros: true %> kg</dd></div>
+              <div><dt>Progression</dt><dd><%= prescription.progression_model_label %></dd></div>
               <div><dt>Effective</dt><dd><%= prescription.started_on.strftime("%b %-d, %Y") %></dd></div>
             </dl>
           </article>

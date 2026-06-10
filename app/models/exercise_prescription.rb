@@ -1,4 +1,11 @@
 class ExercisePrescription < ApplicationRecord
+  # Loading style the progression engine applies. Both are double progression
+  # (advance reps, then load); they differ only in which sets gate the increase.
+  PROGRESSION_MODELS = {
+    "double_progression" => "Straight sets (same load every set)",
+    "top_set" => "Top set (heaviest set drives progression)"
+  }.freeze
+
   belongs_to :user
   belongs_to :exercise
 
@@ -6,6 +13,7 @@ class ExercisePrescription < ApplicationRecord
   validates :increment_kg, numericality: { greater_than: 0 }
   validates :target_rir_min, numericality: { greater_than_or_equal_to: 0 }
   validates :target_rir_max, numericality: { greater_than_or_equal_to: 0 }
+  validates :progression_model, inclusion: { in: PROGRESSION_MODELS.keys }
   validates :started_on, presence: true
   validate :valid_ranges
   validate :ends_after_start
@@ -18,6 +26,14 @@ class ExercisePrescription < ApplicationRecord
 
   def target_label
     "#{working_sets} × #{rep_min}–#{rep_max} @ #{target_rir_min.to_f.round(1)}–#{target_rir_max.to_f.round(1)} RIR"
+  end
+
+  def top_set?
+    progression_model == "top_set"
+  end
+
+  def progression_model_label
+    PROGRESSION_MODELS.fetch(progression_model, progression_model)
   end
 
   private

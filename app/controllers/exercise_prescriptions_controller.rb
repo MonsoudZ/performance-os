@@ -11,6 +11,7 @@ class ExercisePrescriptionsController < ApplicationController
       target_rir_max: 2,
       increment_kg: 2.5,
       working_sets: 3,
+      progression_model: "double_progression",
       started_on: Current.user.local_date
     )
     @exercises = Exercise.available_to(Current.user)
@@ -39,6 +40,7 @@ class ExercisePrescriptionsController < ApplicationController
       :target_rir_max,
       :increment_kg,
       :working_sets,
+      :progression_model,
       :started_on
     )
   end

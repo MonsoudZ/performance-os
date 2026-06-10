@@ -61,18 +61,14 @@ class DoubleProgressionEvaluator
   def outcome_for(exercise, prescription, sets)
     return insufficient_outcome(prescription, sets) if sets.size < prescription.working_sets
 
-    top_range_hit = sets.all? { |set| set.reps >= prescription.rep_max }
-    rir_on_target = sets.all? do |set|
-      set.rir.between?(prescription.target_rir_min, prescription.target_rir_max)
-    end
+    current_weight = progression_load(prescription, sets)
 
-    if top_range_hit && rir_on_target && consistent_load?(sets)
-      current_weight = sets.map(&:weight_kg).max
+    if qualifies_for_increase?(prescription, sets)
       next_weight = current_weight + prescription.increment_kg
       {
         "status" => "increase",
         "headline" => "Add #{format_weight(prescription.increment_kg)} kg next time",
-        "guidance" => "Every prescribed set reached the top of the rep range at the target RIR.",
+        "guidance" => increase_guidance(prescription),
         "current_weight_kg" => current_weight.to_f,
         "next_weight_kg" => next_weight.to_f
       }
@@ -81,12 +77,47 @@ class DoubleProgressionEvaluator
         "status" => "hold",
         "headline" => "Keep the load",
         "guidance" => hold_reason(prescription, sets),
-        "current_weight_kg" => sets.map(&:weight_kg).max.to_f,
-        "next_weight_kg" => sets.map(&:weight_kg).max.to_f
+        "current_weight_kg" => current_weight.to_f,
+        "next_weight_kg" => current_weight.to_f
       }
       stalled?(exercise, prescription, hold["current_weight_kg"]) ?
         deload_outcome(prescription, hold["current_weight_kg"]) :
         hold
+    end
+  end
+
+  # Sets that gate the increase: every working set for straight-set double
+  # progression, only the heaviest (top) set for top-set progression.
+  def decisive_sets(prescription, sets)
+    prescription.top_set? ? [ top_set(sets) ] : sets
+  end
+
+  def top_set(sets)
+    sets.max_by { |set| set.weight_kg.to_f }
+  end
+
+  def progression_load(prescription, sets)
+    decisive_sets(prescription, sets).map(&:weight_kg).max
+  end
+
+  def qualifies_for_increase?(prescription, sets)
+    decisive = decisive_sets(prescription, sets)
+    top_range_hit = decisive.all? { |set| set.reps >= prescription.rep_max }
+    rir_on_target = decisive.all? do |set|
+      set.rir.between?(prescription.target_rir_min, prescription.target_rir_max)
+    end
+    # Straight sets must also be run at one consistent load; top-set ramps are
+    # judged on the top set alone, so a ramp up to it is fine.
+    load_qualifies = prescription.top_set? || consistent_load?(sets)
+
+    top_range_hit && rir_on_target && load_qualifies
+  end
+
+  def increase_guidance(prescription)
+    if prescription.top_set?
+      "The top set reached the top of the rep range at the target RIR."
+    else
+      "Every prescribed set reached the top of the rep range at the target RIR."
     end
   end
 
@@ -99,14 +130,19 @@ class DoubleProgressionEvaluator
   end
 
   def hold_reason(prescription, sets)
-    if sets.any? { |set| set.reps < prescription.rep_min }
+    decisive = decisive_sets(prescription, sets)
+    if decisive.any? { |set| set.reps < prescription.rep_min }
       "At least one set fell below the target rep range. Repeat the load and rebuild reps."
-    elsif sets.any? { |set| set.reps < prescription.rep_max }
-      "The top of the rep range is not complete across every working set yet."
-    elsif sets.any? { |set| set.rir < prescription.target_rir_min }
+    elsif decisive.any? { |set| set.reps < prescription.rep_max }
+      prescription.top_set? ?
+        "The top set has not reached the top of the rep range yet." :
+        "The top of the rep range is not complete across every working set yet."
+    elsif decisive.any? { |set| set.rir < prescription.target_rir_min }
       "The reps were achieved with less reserve than prescribed. Repeat the load before increasing."
-    elsif sets.any? { |set| set.rir > prescription.target_rir_max }
-      "The load was easier than the target RIR, but the set pattern was not consistent enough to progress."
+    elsif decisive.any? { |set| set.rir > prescription.target_rir_max }
+      prescription.top_set? ?
+        "The top set left more in reserve than the target RIR. Keep the load until the effort lands in range." :
+        "The load was easier than the target RIR, but the set pattern was not consistent enough to progress."
     else
       "Use one consistent working weight before increasing the prescription."
     end
@@ -164,7 +200,8 @@ class DoubleProgressionEvaluator
       "target_rir_max",
       "increment_kg",
       "working_sets",
-      "started_on"
+      "started_on",
+      "progression_model"
     )
   end
 
