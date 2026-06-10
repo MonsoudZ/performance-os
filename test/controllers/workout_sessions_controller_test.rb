@@ -147,6 +147,65 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "edits a logged set and re-evaluates progression" do
+    workout = create_logged_workout
+
+    assert_enqueued_with(job: WorkoutProgressionRecomputeJob) do
+      patch workout_session_path(workout), params: {
+        workout_session: {
+          performed_at: workout.performed_at,
+          set_entries_attributes: existing_set_params(workout, 1 => { reps: 6 })
+        }
+      }
+    end
+
+    assert_equal 6, workout.set_entries.order(:set_index).first.reload.reps
+    assert_redirected_to workout_session_path(workout)
+  end
+
+  test "removes a set on edit" do
+    workout = create_logged_workout
+
+    assert_difference "SetEntry.count", -1 do
+      patch workout_session_path(workout), params: {
+        workout_session: {
+          performed_at: workout.performed_at,
+          set_entries_attributes: existing_set_params(workout, 3 => { _destroy: "1" })
+        }
+      }
+    end
+  end
+
+  test "deletes a workout and recomputes the plan" do
+    workout = create_logged_workout
+
+    assert_enqueued_with(job: TrainingPlanRecomputeJob) do
+      assert_difference "WorkoutSession.count", -1 do
+        delete workout_session_path(workout)
+      end
+    end
+
+    assert_equal 0, SetEntry.where(workout_session_id: workout.id).count
+    assert_redirected_to root_path
+  end
+
+  test "cannot edit another user's workout" do
+    other = users(:two).workout_sessions.create!(performed_at: Time.current)
+
+    get edit_workout_session_path(other)
+
+    assert_response :not_found
+  end
+
+  test "cannot delete another user's workout" do
+    other = users(:two).workout_sessions.create!(performed_at: Time.current)
+
+    delete workout_session_path(other)
+
+    assert_response :not_found
+    assert WorkoutSession.exists?(other.id)
+  end
+
   private
 
   def set_params(index)
@@ -157,5 +216,28 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
       reps: 8,
       rir: 1
     }
+  end
+
+  def create_logged_workout
+    workout = @user.workout_sessions.create!(performed_at: Time.current)
+    3.times do |i|
+      workout.set_entries.create!(exercise: @exercise, set_index: i + 1, weight_kg: 100, reps: 8, rir: 1)
+    end
+    workout
+  end
+
+  def existing_set_params(workout, changes = {})
+    workout.set_entries.order(:set_index).each_with_index.to_h do |set, i|
+      attributes = {
+        id: set.id,
+        exercise_id: set.exercise_id,
+        set_index: set.set_index,
+        weight_kg: set.weight_kg,
+        reps: set.reps,
+        rir: set.rir,
+        is_warmup: set.is_warmup
+      }.merge(changes[set.set_index] || {})
+      [ i.to_s, attributes ]
+    end
   end
 end

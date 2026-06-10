@@ -3,7 +3,7 @@ class WorkoutSession < ApplicationRecord
   belongs_to :workout_template, optional: true
   has_many :set_entries, dependent: :destroy
 
-  accepts_nested_attributes_for :set_entries, reject_if: :blank_working_set?
+  accepts_nested_attributes_for :set_entries, reject_if: :blank_working_set?, allow_destroy: true
 
   validates :performed_at, presence: true
   validates :session_rpe, numericality: { in: 0..10 }, allow_nil: true

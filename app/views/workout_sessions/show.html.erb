@@ -8,7 +8,13 @@
       <h1><%= @workout_session.template_name || @workout_session.performed_at.strftime("%B %-d training") %></h1>
       <p><%= pluralize @workout_session.set_entries.size, "logged set" %></p>
     </div>
-    <%= link_to "Log another", new_workout_session_path, class: "button button--inline" %>
+    <div class="page-heading__actions">
+      <%= link_to "Edit", edit_workout_session_path(@workout_session), class: "button button--inline" %>
+      <%= button_to "Delete", workout_session_path(@workout_session), method: :delete,
+        form: { data: { turbo_confirm: "Delete this workout and its logged sets?" } },
+        class: "nav-links__button" %>
+      <%= link_to "Log another", new_workout_session_path, class: "button button--inline" %>
+    </div>
   </section>
 
   <% if @workout_session.template_snapshot.present? %>

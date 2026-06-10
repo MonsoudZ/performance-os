@@ -22,10 +22,38 @@ class WorkoutSessionsController < ApplicationController
   def show
     @workout_session = Current.user.workout_sessions.includes(set_entries: :exercise).find(params[:id])
     @set_entries = @workout_session.set_entries.sort_by(&:set_index)
+    # Editing re-evaluates progression and writes a fresh decision, so show only
+    # the latest decision per exercise.
     @decisions = Current.user.coaching_decisions
       .where(decision_type: "double_progression")
       .where("inputs ->> 'workout_session_id' = ?", @workout_session.id.to_s)
-      .order(:created_at)
+      .order(created_at: :desc)
+      .to_a
+      .uniq { |decision| decision.inputs["exercise_id"] }
+  end
+
+  def edit
+    @workout_session = Current.user.workout_sessions.includes(set_entries: :exercise).find(params[:id])
+    @set_entries = @workout_session.set_entries.sort_by(&:set_index)
+  end
+
+  def update
+    @workout_session = Current.user.workout_sessions.find(params[:id])
+
+    if @workout_session.update(workout_session_params)
+      WorkoutProgressionRecomputeJob.perform_later(@workout_session)
+      redirect_to workout_session_path(@workout_session), notice: "Workout updated. Re-evaluating progression…"
+    else
+      @set_entries = @workout_session.set_entries.sort_by(&:set_index)
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    workout_session = Current.user.workout_sessions.find(params[:id])
+    workout_session.destroy!
+    TrainingPlanRecomputeJob.perform_later(Current.user, Current.user.local_date)
+    redirect_to root_path, notice: "Workout deleted."
   end
 
   private
@@ -59,7 +87,7 @@ class WorkoutSessionsController < ApplicationController
       :performed_at,
       :session_rpe,
       :notes,
-      set_entries_attributes: [ :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup ]
+      set_entries_attributes: [ :id, :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup, :_destroy ]
     )
   end
 end

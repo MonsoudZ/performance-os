@@ -1,0 +1,44 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Training log</p>
+      <h1>Fix this session.</h1>
+      <p>Correct what was logged. Saving re-evaluates progression from the updated sets.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <% if @workout_session.errors.any? %>
+      <div class="form-errors"><%= @workout_session.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= form_with model: @workout_session, class: "stacked-form stacked-form--wide" do |form| %>
+      <div class="form-grid">
+        <label><span>Performed at</span><%= form.datetime_local_field :performed_at, required: true %></label>
+        <label><span>Session RPE</span><%= form.number_field :session_rpe, min: 0, max: 10, step: 0.5 %></label>
+      </div>
+
+      <div class="set-table">
+        <div class="set-table__header">
+          <span>Set</span><span>Exercise</span><span>kg</span><span>Reps</span><span>RIR</span><span>Warm-up</span><span>Remove</span>
+        </div>
+        <%= form.fields_for :set_entries, @set_entries do |set_form| %>
+          <div class="set-table__row">
+            <%= set_form.number_field :set_index, min: 1, aria: { label: "Set number" } %>
+            <div class="set-exercise"><strong><%= set_form.object.exercise.name %></strong></div>
+            <label class="set-field"><span>kg</span><%= set_form.number_field :weight_kg, min: 0, step: 0.25 %></label>
+            <label class="set-field"><span>Reps</span><%= set_form.number_field :reps, min: 1 %></label>
+            <label class="set-field"><span>RIR</span><%= set_form.number_field :rir, min: 0, step: 0.5 %></label>
+            <label class="set-field set-field--checkbox"><span>Warm-up</span><%= set_form.check_box :is_warmup %></label>
+            <label class="set-field set-field--checkbox"><span>Remove</span><%= set_form.check_box :_destroy %></label>
+          </div>
+        <% end %>
+      </div>
+
+      <label><span>Notes</span><%= form.text_area :notes, rows: 3 %></label>
+      <%= form.submit "Save changes", class: "button" %>
+    <% end %>
+  </section>
+</main>

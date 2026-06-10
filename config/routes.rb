@@ -17,9 +17,11 @@ Rails.application.routes.draw do
   end
   resources :body_metrics, only: :create
   resources :exercises, only: %i[new create]
-  resources :exercise_prescriptions, only: %i[index new create]
+  resources :exercise_prescriptions, only: %i[index new create edit update] do
+    patch :finish, on: :member
+  end
   resources :workout_templates, except: :show
-  resources :workout_sessions, only: %i[new create show]
+  resources :workout_sessions, only: %i[new create show edit update destroy]
 
   namespace :api do
     namespace :v1 do

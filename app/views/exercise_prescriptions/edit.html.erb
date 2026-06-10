@@ -1,0 +1,15 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Workout setup</p>
+      <h1>Adjust this target.</h1>
+      <p>Update the rep range, effort, increment, or progression style for <%= @prescription.exercise.name %>.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <%= render "form", prescription: @prescription, exercises: nil, submit_label: "Save changes" %>
+  </section>
+</main>

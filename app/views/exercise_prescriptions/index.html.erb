@@ -23,6 +23,10 @@
               <div><dt>Progression</dt><dd><%= prescription.progression_model_label %></dd></div>
               <div><dt>Effective</dt><dd><%= prescription.started_on.strftime("%b %-d, %Y") %></dd></div>
             </dl>
+            <div class="prescription-card__actions">
+              <%= link_to "Edit", edit_exercise_prescription_path(prescription), class: "text-link" %>
+              <%= button_to "End", finish_exercise_prescription_path(prescription), method: :patch, class: "text-button text-button--danger" %>
+            </div>
           </article>
         <% end %>
       </div>

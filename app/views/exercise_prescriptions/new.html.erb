@@ -10,31 +10,6 @@
   </section>
 
   <section class="panel form-panel">
-    <% if @prescription.errors.any? %>
-      <div class="form-errors"><%= @prescription.errors.full_messages.to_sentence %></div>
-    <% end %>
-
-    <%= form_with model: @prescription, class: "stacked-form stacked-form--wide" do |form| %>
-      <label>
-        <span>Exercise</span>
-        <%= form.collection_select :exercise_id, @exercises, :id, :name, prompt: "Choose an exercise" %>
-        <small>Missing one? <%= link_to "Add a custom exercise", new_exercise_path %>.</small>
-      </label>
-      <div class="form-grid">
-        <label><span>Working sets</span><%= form.number_field :working_sets, min: 1, required: true %></label>
-        <label><span>Rep minimum</span><%= form.number_field :rep_min, min: 1, required: true %></label>
-        <label><span>Rep maximum</span><%= form.number_field :rep_max, min: 1, required: true %></label>
-        <label><span>Target RIR minimum</span><%= form.number_field :target_rir_min, min: 0, step: 0.5, required: true %></label>
-        <label><span>Target RIR maximum</span><%= form.number_field :target_rir_max, min: 0, step: 0.5, required: true %></label>
-        <label><span>Load increment (kg)</span><%= form.number_field :increment_kg, min: 0.25, step: 0.25, required: true %></label>
-      </div>
-      <label>
-        <span>Progression style</span>
-        <%= form.select :progression_model,
-          ExercisePrescription::PROGRESSION_MODELS.map { |value, label| [label, value] } %>
-      </label>
-      <label><span>Effective date</span><%= form.date_field :started_on, required: true %></label>
-      <%= form.submit "Save training target", class: "button" %>
-    <% end %>
+    <%= render "form", prescription: @prescription, exercises: @exercises, submit_label: "Save training target" %>
   </section>
 </main>
