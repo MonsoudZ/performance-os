@@ -1,8 +1,7 @@
 class WorkoutSessionsController < ApplicationController
   def new
-    @prescriptions = Current.user.exercise_prescriptions.active_on(Current.user.local_date).includes(:exercise).order("exercises.name")
     @workout_session = Current.user.workout_sessions.new(performed_at: Time.current)
-    5.times { @workout_session.set_entries.build }
+    prepare_workout_log
   end
 
   def create
@@ -16,7 +15,7 @@ class WorkoutSessionsController < ApplicationController
       notice = decisions.any? ? "Workout saved and progression evaluated." : "Workout saved."
       redirect_to workout_session_path(@workout_session), notice: notice
     else
-      @prescriptions = Current.user.exercise_prescriptions.active_on(Current.user.local_date).includes(:exercise).order("exercises.name")
+      prepare_workout_log
       render :new, status: :unprocessable_entity
     end
   end
@@ -31,6 +30,16 @@ class WorkoutSessionsController < ApplicationController
   end
 
   private
+
+  def prepare_workout_log
+    log_date = Current.user.local_date_at(@workout_session.performed_at || Time.current)
+    @prescriptions = Current.user.exercise_prescriptions.active_on(log_date).includes(:exercise).order("exercises.name")
+    @set_contexts = WorkoutLogPrefill.new(
+      Current.user,
+      workout_session: @workout_session,
+      log_date:
+    ).call
+  end
 
   def workout_session_params
     params.require(:workout_session).permit(

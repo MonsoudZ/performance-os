@@ -20,27 +20,68 @@
         <div class="form-errors"><%= @workout_session.errors.full_messages.to_sentence %></div>
       <% end %>
 
-      <%= form_with model: @workout_session, class: "stacked-form stacked-form--wide" do |form| %>
+      <%= form_with model: @workout_session,
+        class: "stacked-form stacked-form--wide",
+        data: { controller: "workout-log" } do |form| %>
         <div class="form-grid">
           <label><span>Performed at</span><%= form.datetime_local_field :performed_at, required: true %></label>
           <label><span>Session RPE</span><%= form.number_field :session_rpe, min: 0, max: 10, step: 0.5 %></label>
         </div>
 
+        <div class="workout-summary">
+          <div>
+            <span>Planned working sets</span>
+            <strong><%= @set_contexts.size %></strong>
+          </div>
+          <div>
+            <span>Live volume</span>
+            <strong data-workout-log-target="volume">0 kg</strong>
+          </div>
+        </div>
+
         <div class="set-table">
           <div class="set-table__header">
-            <span>Set</span><span>Exercise</span><span>kg</span><span>Reps</span><span>RIR</span><span>Warm-up</span>
+            <span>Set</span><span>Exercise</span><span>kg</span><span>Reps</span><span>RIR</span><span>Warm-up</span><span></span>
           </div>
+          <div data-workout-log-target="rows">
           <%= form.fields_for :set_entries do |set_form| %>
-            <div class="set-table__row">
-              <%= set_form.number_field :set_index, value: set_form.index + 1, min: 1, aria: { label: "Set number" } %>
-              <%= set_form.collection_select :exercise_id, @prescriptions.map(&:exercise), :id, :name %>
-              <%= set_form.number_field :weight_kg, min: 0, step: 0.25, aria: { label: "Weight kg" } %>
-              <%= set_form.number_field :reps, min: 1, aria: { label: "Reps" } %>
-              <%= set_form.number_field :rir, min: 0, step: 0.5, aria: { label: "RIR" } %>
-              <%= set_form.check_box :is_warmup, aria: { label: "Warm-up set" } %>
-            </div>
+            <%= render "set_row", set_form:, context: @set_contexts.fetch(set_form.index) %>
           <% end %>
+          </div>
         </div>
+
+        <section class="exercise-picker">
+          <div>
+            <p class="eyebrow">Add movement</p>
+            <h2>Search the exercise catalog.</h2>
+          </div>
+          <input type="search"
+                 placeholder="Try bench, row, curl…"
+                 autocomplete="off"
+                 data-workout-log-target="search"
+                 data-action="input->workout-log#searchExercises"
+                 aria-label="Search exercise catalog">
+          <div class="exercise-picker__results" data-workout-log-target="results"></div>
+        </section>
+
+        <template data-workout-log-target="template">
+          <div class="set-table__row"
+               data-workout-log-target="row"
+               data-exercise-id="EXERCISE_ID"
+               data-exercise-name="EXERCISE_NAME">
+            <input type="hidden" name="workout_session[set_entries_attributes][NEW_RECORD][exercise_id]" value="EXERCISE_ID">
+            <input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][set_index]" min="1" aria-label="Set number" data-workout-log-target="setIndex">
+            <div class="set-exercise"><strong>EXERCISE_NAME</strong><small>Added from catalog</small></div>
+            <label class="set-field"><span>kg</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][weight_kg]" min="0" step="0.25" aria-label="Weight kg" data-action="input->workout-log#updateVolume" data-workout-log-target="weight"></label>
+            <label class="set-field"><span>Reps</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][reps]" min="1" aria-label="Reps" data-action="input->workout-log#updateVolume" data-workout-log-target="reps"></label>
+            <label class="set-field"><span>RIR</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][rir]" min="0" step="0.5" aria-label="RIR"></label>
+            <label class="set-field set-field--checkbox"><span>Warm-up</span><input type="hidden" name="workout_session[set_entries_attributes][NEW_RECORD][is_warmup]" value="0"><input type="checkbox" name="workout_session[set_entries_attributes][NEW_RECORD][is_warmup]" value="1" aria-label="Warm-up set" data-action="change->workout-log#updateVolume" data-workout-log-target="warmup"></label>
+            <div class="set-actions">
+              <button type="button" class="icon-button" data-action="workout-log#duplicateSet" aria-label="Add matching set">+</button>
+              <button type="button" class="icon-button icon-button--danger" data-action="workout-log#removeSet" aria-label="Remove set">×</button>
+            </div>
+          </div>
+        </template>
 
         <label><span>Notes</span><%= form.text_area :notes, rows: 3, placeholder: "Optional session context" %></label>
         <%= form.submit "Save and evaluate", class: "button" %>

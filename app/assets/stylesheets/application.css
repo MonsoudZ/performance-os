@@ -775,10 +775,10 @@ h1 {
 .set-table__header,
 .set-table__row {
   display: grid;
-  grid-template-columns: 64px minmax(180px, 1.5fr) repeat(3, minmax(90px, 0.7fr)) 74px;
-  gap: 10px;
+  grid-template-columns: 52px minmax(180px, 1.5fr) repeat(3, minmax(72px, 0.65fr)) 64px 72px;
+  gap: 8px;
   align-items: center;
-  min-width: 720px;
+  min-width: 760px;
   padding: 10px 0;
 }
 
@@ -802,6 +802,142 @@ h1 {
   background: white;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.set-field > span {
+  display: none;
+}
+
+.set-field input {
+  width: 100%;
+}
+
+.set-field--checkbox {
+  display: grid;
+  place-items: center;
+}
+
+.set-exercise {
+  display: grid;
+  gap: 4px;
+}
+
+.set-exercise small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.set-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-button,
+.text-button {
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.icon-button {
+  width: 32px;
+  height: 32px;
+  color: var(--green);
+  background: var(--paper);
+  border-radius: 8px;
+}
+
+.icon-button--danger,
+.text-button--danger {
+  color: #9e3428;
+}
+
+.workout-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.workout-summary div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: var(--paper);
+  border-radius: 12px;
+}
+
+.workout-summary span {
+  color: var(--muted);
+}
+
+.exercise-picker {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  background: var(--paper);
+  border-radius: 16px;
+}
+
+.exercise-picker h2 {
+  margin: 4px 0 0;
+}
+
+.exercise-picker > input {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.exercise-picker__results,
+.recent-foods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.exercise-result,
+.recent-food {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 14px;
+  color: var(--ink);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.exercise-result span,
+.recent-food span,
+.recent-food small {
+  color: var(--muted);
+}
+
+.nutrition-entries {
+  margin-bottom: 24px;
+}
+
+.nutrition-entries .compact-list__item {
+  grid-template-columns: 1.2fr 1fr auto auto;
+}
+
+.text-button {
+  padding: 8px 0;
+  background: transparent;
+}
+
+.inline-flash {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  color: var(--green);
+  background: rgba(164, 214, 94, 0.18);
+  border-radius: 10px;
+  font-weight: 700;
 }
 
 .decision-card h2 {
@@ -1112,6 +1248,49 @@ h1 {
   .compact-list__item {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .workout-summary,
+  .exercise-picker__results,
+  .recent-foods {
+    grid-template-columns: 1fr;
+  }
+
+  .set-table {
+    overflow: visible;
+  }
+
+  .set-table__header {
+    display: none;
+  }
+
+  .set-table__row {
+    grid-template-columns: 52px repeat(3, minmax(0, 1fr));
+    min-width: 0;
+    padding: 18px 0;
+  }
+
+  .set-exercise {
+    grid-column: 2 / -1;
+  }
+
+  .set-field > span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .set-field--checkbox {
+    align-self: end;
+  }
+
+  .set-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
   }
 
   .logged-sets > div {

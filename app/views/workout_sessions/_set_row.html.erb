@@ -1,0 +1,50 @@
+<div class="set-table__row"
+     data-workout-log-target="row"
+     data-exercise-id="<%= context.entry.exercise_id %>"
+     data-exercise-name="<%= context.entry.exercise&.name %>">
+  <%= set_form.hidden_field :exercise_id %>
+  <%= set_form.number_field :set_index,
+    min: 1,
+    aria: { label: "Set number" },
+    data: { workout_log_target: "setIndex" } %>
+  <div class="set-exercise">
+    <strong><%= context.entry.exercise&.name %></strong>
+    <% if context.prescription %>
+      <small>Target: <%= context.prescription.rep_min %>–<%= context.prescription.rep_max %> reps · <%= context.prescription.target_rir_min.to_f.round(1) %>–<%= context.prescription.target_rir_max.to_f.round(1) %> RIR</small>
+    <% end %>
+    <% if context.last_set %>
+      <small>Last: <%= context.last_set.weight_kg %> kg × <%= context.last_set.reps %> @ <%= context.last_set.rir %> RIR</small>
+    <% else %>
+      <small>No prior set</small>
+    <% end %>
+  </div>
+  <label class="set-field">
+    <span>kg</span>
+    <%= set_form.number_field :weight_kg,
+      min: 0,
+      step: 0.25,
+      aria: { label: "Weight kg" },
+      data: { action: "input->workout-log#updateVolume", workout_log_target: "weight" } %>
+  </label>
+  <label class="set-field">
+    <span>Reps</span>
+    <%= set_form.number_field :reps,
+      min: 1,
+      aria: { label: "Reps" },
+      data: { action: "input->workout-log#updateVolume", workout_log_target: "reps" } %>
+  </label>
+  <label class="set-field">
+    <span>RIR</span>
+    <%= set_form.number_field :rir, min: 0, step: 0.5, aria: { label: "RIR" } %>
+  </label>
+  <label class="set-field set-field--checkbox">
+    <span>Warm-up</span>
+    <%= set_form.check_box :is_warmup,
+      aria: { label: "Warm-up set" },
+      data: { action: "change->workout-log#updateVolume", workout_log_target: "warmup" } %>
+  </label>
+  <div class="set-actions">
+    <button type="button" class="icon-button" data-action="workout-log#duplicateSet" aria-label="Add matching set">+</button>
+    <button type="button" class="icon-button icon-button--danger" data-action="workout-log#removeSet" aria-label="Remove set">×</button>
+  </div>
+</div>

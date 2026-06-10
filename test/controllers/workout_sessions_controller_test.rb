@@ -40,6 +40,15 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "increase", CoachingDecision.last.output["status"]
   end
 
+  test "new workout renders prescribed set count instead of fixed blank rows" do
+    get new_workout_session_path
+
+    assert_response :success
+    assert_select "[data-workout-log-target='rows'] > [data-workout-log-target='row']", count: 3
+    assert_select "input[value='8']", minimum: 3
+    assert_select "[data-workout-log-target='volume']", text: "0 kg"
+  end
+
   test "does not expose another user's workout" do
     other_workout = users(:two).workout_sessions.create!(performed_at: Time.current)
 
