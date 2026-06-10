@@ -3,11 +3,11 @@
 
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Programming layer</p>
-      <h1>Your prescriptions.</h1>
-      <p>Targets are effective-dated, personal, and separate from the exercise catalog.</p>
+      <p class="eyebrow">Workout setup</p>
+      <h1>Training targets.</h1>
+      <p>Set the working sets, rep range, effort, and load increase for each exercise.</p>
     </div>
-    <%= link_to "New prescription", new_exercise_prescription_path, class: "button button--inline" %>
+    <%= link_to "Add training target", new_exercise_prescription_path, class: "button button--inline" %>
   </section>
 
   <section class="panel">
@@ -27,7 +27,7 @@
       </div>
     <% else %>
       <div class="empty-state">
-        <p>No active prescriptions yet.</p>
+        <p>No training targets yet.</p>
       </div>
     <% end %>
   </section>

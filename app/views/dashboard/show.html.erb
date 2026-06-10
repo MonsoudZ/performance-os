@@ -187,7 +187,7 @@
       <div class="panel__header">
         <div>
           <p class="eyebrow">Current targets</p>
-          <h2>Prescriptions</h2>
+          <h2>Training targets</h2>
         </div>
         <%= link_to "Manage", exercise_prescriptions_path, class: "text-link" %>
       </div>
@@ -205,7 +205,7 @@
       <% else %>
         <div class="empty-state">
           <p>Progression needs a target before it can make a call.</p>
-          <%= link_to "Create first prescription", new_exercise_prescription_path, class: "button button--inline" %>
+          <%= link_to "Set first training target", new_exercise_prescription_path, class: "button button--inline" %>
         </div>
       <% end %>
     </article>

@@ -3,9 +3,9 @@
 
   <section class="page-heading">
     <div>
-      <p class="eyebrow">New target</p>
-      <h1>Prescribe the work.</h1>
-      <p>Define what success means before the progression engine evaluates it.</p>
+      <p class="eyebrow">Workout setup</p>
+      <h1>Set an exercise target.</h1>
+      <p>Choose the sets, rep range, effort, and weight increase you want to follow.</p>
     </div>
   </section>
 
@@ -28,7 +28,7 @@
         <label><span>Load increment (kg)</span><%= form.number_field :increment_kg, min: 0.25, step: 0.25, required: true %></label>
       </div>
       <label><span>Effective date</span><%= form.date_field :started_on, required: true %></label>
-      <%= form.submit "Create prescription", class: "button" %>
+      <%= form.submit "Save training target", class: "button" %>
     <% end %>
   </section>
 </main>

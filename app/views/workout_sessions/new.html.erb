@@ -5,15 +5,15 @@
     <div>
       <p class="eyebrow">Training log</p>
       <h1>Record what happened.</h1>
-      <p>The evaluator compares completed working sets against the prescription active at this session’s date.</p>
+      <p>Your logged sets are compared with the training target active on this session’s date.</p>
     </div>
   </section>
 
   <section class="panel form-panel">
     <% if @prescriptions.empty? %>
       <div class="empty-state">
-        <p>You need an active prescription before logging progression work.</p>
-        <%= link_to "Create prescription", new_exercise_prescription_path, class: "button button--inline" %>
+        <p>Set a training target before logging progression work.</p>
+        <%= link_to "Set training target", new_exercise_prescription_path, class: "button button--inline" %>
       </div>
     <% else %>
       <% if @workout_session.errors.any? %>
