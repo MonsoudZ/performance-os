@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   root "dashboard#show"
 
   resource :readiness_check_in, only: :create
+  resources :goal_periods, only: %i[index create] do
+    patch :finish, on: :member
+  end
   resource :nutrition, only: :show, controller: "nutrition"
   resource :weekly_review, only: %i[show create]
   resources :wearable_devices, only: %i[create destroy]
@@ -13,6 +16,7 @@ Rails.application.routes.draw do
     post :copy_yesterday, on: :collection
   end
   resources :body_metrics, only: :create
+  resources :exercises, only: %i[new create]
   resources :exercise_prescriptions, only: %i[index new create]
   resources :workout_templates, except: :show
   resources :workout_sessions, only: %i[new create show]

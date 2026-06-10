@@ -1,0 +1,36 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Workout setup</p>
+      <h1>Add a custom exercise.</h1>
+      <p>Create a movement that isn’t in the shared catalog so you can prescribe and log it.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <% if @exercise.errors.any? %>
+      <div class="form-errors"><%= @exercise.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= form_with model: @exercise, class: "stacked-form stacked-form--wide" do |form| %>
+      <label><span>Name</span><%= form.text_field :name, required: true %></label>
+      <div class="form-grid">
+        <label>
+          <span>Modality</span>
+          <%= form.select :modality, Exercise::MODALITIES.map { |modality| [ modality.humanize, modality ] } %>
+        </label>
+        <label>
+          <span>Tracked in</span>
+          <%= form.select :default_unit, %w[kg reps seconds meters].map { |unit| [ unit, unit ] } %>
+        </label>
+      </div>
+      <label class="checkbox-field">
+        <%= form.check_box :is_compound %>
+        <span>Compound movement (trains multiple major muscle groups)</span>
+      </label>
+      <%= form.submit "Add exercise", class: "button" %>
+    <% end %>
+  </section>
+</main>

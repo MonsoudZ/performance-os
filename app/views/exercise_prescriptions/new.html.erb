@@ -18,6 +18,7 @@
       <label>
         <span>Exercise</span>
         <%= form.collection_select :exercise_id, @exercises, :id, :name, prompt: "Choose an exercise" %>
+        <small>Missing one? <%= link_to "Add a custom exercise", new_exercise_path %>.</small>
       </label>
       <div class="form-grid">
         <label><span>Working sets</span><%= form.number_field :working_sets, min: 1, required: true %></label>

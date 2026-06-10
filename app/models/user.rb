@@ -24,7 +24,7 @@ class User < ApplicationRecord
   validate :recognized_time_zone
 
   def active_goal
-    goal_periods.find_by(ended_on: nil)
+    goal_periods.active_on(local_date).order(started_on: :desc).first
   end
 
   def local_date

@@ -16,6 +16,9 @@ class GoalPeriod < ApplicationRecord
   validate :ends_after_start
 
   scope :active, -> { where(ended_on: nil) }
+  scope :active_on, ->(date) {
+    where("started_on <= ? AND (ended_on IS NULL OR ended_on >= ?)", date, date)
+  }
 
   private
 

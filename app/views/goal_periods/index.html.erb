@@ -1,0 +1,90 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Direction</p>
+      <h1>Training goal.</h1>
+      <p>Your goal sets the calorie and protein targets and the context the daily engine trains from.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Active goal</p>
+        <h2>What you’re training for.</h2>
+      </div>
+    </div>
+
+    <% if @active_goal %>
+      <div class="compact-list">
+        <div class="compact-list__item">
+          <strong><%= @active_goal.goal_type.humanize %></strong>
+          <span>
+            Since <%= @active_goal.started_on.strftime("%b %-d, %Y") %>
+            <% if @active_goal.params["target_kcal"] %> · <%= @active_goal.params["target_kcal"] %> kcal target<% end %>
+            <% if @active_goal.params["target_protein_g"] %> · <%= @active_goal.params["target_protein_g"] %> g protein<% end %>
+          </span>
+        </div>
+      </div>
+      <%= button_to "End this goal", finish_goal_period_path(@active_goal), method: :patch, class: "button button--secondary" %>
+    <% else %>
+      <div class="empty-state">
+        <p>No active goal yet. Set one below so nutrition targets and training context have direction.</p>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="panel form-panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow"><%= @active_goal ? "Switch goal" : "Set goal" %></p>
+        <h2>Choose your objective.</h2>
+      </div>
+    </div>
+
+    <% if @goal_period.errors.any? %>
+      <div class="form-errors"><%= @goal_period.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= form_with model: @goal_period, url: goal_periods_path, class: "stacked-form stacked-form--wide" do |form| %>
+      <label>
+        <span>Goal</span>
+        <%= form.select :goal_type, GoalPeriod::GOAL_TYPES.map { |type| [ type.humanize, type ] } %>
+      </label>
+      <div class="form-grid">
+        <label><span>Effective date</span><%= form.date_field :started_on, required: true %></label>
+        <label>
+          <span>Target calories (optional)</span>
+          <%= number_field_tag "goal_period[target_kcal]", @goal_period.params["target_kcal"], min: 0, step: 10, placeholder: "Adaptive" %>
+        </label>
+        <label>
+          <span>Target protein g (optional)</span>
+          <%= number_field_tag "goal_period[target_protein_g]", @goal_period.params["target_protein_g"], min: 0, step: 1, placeholder: "From body weight" %>
+        </label>
+      </div>
+      <p class="evidence-note">Leave the targets blank to let adaptive expenditure and body weight drive them.</p>
+      <%= form.submit(@active_goal ? "Switch goal" : "Set goal", class: "button") %>
+    <% end %>
+  </section>
+
+  <% if @goal_periods.any? %>
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">History</p>
+          <h2>Past goals.</h2>
+        </div>
+      </div>
+      <div class="compact-list">
+        <% @goal_periods.each do |goal| %>
+          <div class="compact-list__item">
+            <strong><%= goal.goal_type.humanize %></strong>
+            <span><%= goal.started_on.strftime("%b %-d, %Y") %> → <%= goal.ended_on ? goal.ended_on.strftime("%b %-d, %Y") : "active" %></span>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</main>
