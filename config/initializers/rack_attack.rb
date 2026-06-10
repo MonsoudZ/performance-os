@@ -3,6 +3,8 @@ class Rack::Attack
   EXERCISE_CATALOG_PERIOD = 1.minute
   EXERCISE_CATALOG_PATH = %r{\A/api/v1/exercises(?:\.[a-z0-9]+)?/?\z}
 
+  Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
+
   throttle(
     "api/v1/exercises/ip",
     limit: EXERCISE_CATALOG_LIMIT,

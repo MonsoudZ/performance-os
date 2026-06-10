@@ -65,19 +65,22 @@ class Api::V1::ExercisesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "rate limits the public catalog by IP" do
-    Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
-
-    Rack::Attack::EXERCISE_CATALOG_LIMIT.times do
-      get api_v1_exercises_path(format: :json), headers: { "REMOTE_ADDR" => "203.0.113.10" }
+    Rack::Attack::EXERCISE_CATALOG_LIMIT.times do |request_number|
+      proxy_ip = "10.0.0.#{request_number % 2 + 1}"
+      get api_v1_exercises_path(format: :json), headers: {
+        "X-Forwarded-For" => "203.0.113.10, #{proxy_ip}",
+        "REMOTE_ADDR" => proxy_ip
+      }
       assert_response :success
     end
 
-    get api_v1_exercises_path(format: :json), headers: { "REMOTE_ADDR" => "203.0.113.10" }
+    get api_v1_exercises_path(format: :json), headers: {
+      "X-Forwarded-For" => "203.0.113.10, 10.0.0.3",
+      "REMOTE_ADDR" => "10.0.0.3"
+    }
 
     assert_response :too_many_requests
     assert_equal "Rate limit exceeded", response.parsed_body.fetch("error")
     assert response.headers["Retry-After"].present?
-  ensure
-    Rack::Attack.cache.store = Rails.cache
   end
 end
