@@ -17,6 +17,13 @@ gem "turbo-rails"
 # Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
 gem "stimulus-rails"
 
+# Database-backed Active Job backend so evaluator pipelines run off the web thread [https://github.com/rails/solid_queue]
+gem "solid_queue", "~> 1.1"
+# Database-backed Action Cable backend so worker-issued Turbo broadcasts reach web clients [https://github.com/rails/solid_cable]
+gem "solid_cable", "~> 3.0"
+# Database-backed durable cache shared across processes (rate-limit counters, fragments) [https://github.com/rails/solid_cache]
+gem "solid_cache", "~> 1.0"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 

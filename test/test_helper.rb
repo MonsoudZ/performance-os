@@ -11,6 +11,10 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
+    # Evaluator pipelines now run in background jobs; tests drive them explicitly
+    # with perform_enqueued_jobs / assert_enqueued_with.
+    include ActiveJob::TestHelper
+
     # Add more helper methods to be used by all tests here...
   end
 end

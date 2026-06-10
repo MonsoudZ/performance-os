@@ -22,13 +22,16 @@ class FoodLogEntriesControllerTest < ActionDispatch::IntegrationTest
   test "snapshots scaled macros and creates a nutrition decision" do
     assert_difference "FoodLogEntry.count", 1 do
       assert_difference "CoachingDecision.count", 1 do
-        post food_log_entries_path, params: {
-          food_log_entry: {
-            food_id: @food.id,
-            quantity_grams: 250,
-            logged_at: Time.current
+        # Entry persists synchronously; NutritionRecomputeJob produces the decision.
+        perform_enqueued_jobs do
+          post food_log_entries_path, params: {
+            food_log_entry: {
+              food_id: @food.id,
+              quantity_grams: 250,
+              logged_at: Time.current
+            }
           }
-        }
+        end
       end
     end
 

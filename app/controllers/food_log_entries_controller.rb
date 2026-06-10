@@ -67,9 +67,7 @@ class FoodLogEntriesController < ApplicationController
   end
 
   def refresh_nutrition(date)
-    ExpenditureEstimator.new(Current.user, estimate_date: date).call
-    NutritionEvaluator.new(Current.user, nutrition_date: date).call
-    DailyTrainingOrchestrator.new(Current.user, plan_date: date).call if date == Current.user.local_date
+    NutritionRecomputeJob.perform_later(Current.user, date)
   end
 
   def respond_after_mutation(date, notice:)

@@ -11,12 +11,8 @@ class WorkoutSessionsController < ApplicationController
     assign_template_snapshot
 
     if @workout_session.save
-      decisions = DoubleProgressionEvaluator.new(@workout_session).call
-      if Current.user.local_date_at(@workout_session.performed_at) == Current.user.local_date
-        DailyTrainingOrchestrator.new(Current.user).call
-      end
-      notice = decisions.any? ? "Workout saved and progression evaluated." : "Workout saved."
-      redirect_to workout_session_path(@workout_session), notice: notice
+      WorkoutProgressionRecomputeJob.perform_later(@workout_session)
+      redirect_to workout_session_path(@workout_session), notice: "Workout saved. Evaluating progression…"
     else
       prepare_workout_log
       render :new, status: :unprocessable_entity

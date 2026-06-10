@@ -1,6 +1,7 @@
 <% content_for :title, "Today · PerformanceOS" %>
 
 <main class="shell">
+  <%= turbo_stream_from Current.user %>
   <%= render "shared/navigation" %>
 
   <section class="hero">
@@ -23,6 +24,15 @@
           <h2><%= @decision.output["headline"] %></h2>
           <p><%= @decision.output["guidance"] %></p>
           <span class="confidence"><%= @decision.confidence %> confidence · <%= @decision.rule_key %></span>
+        </div>
+      </article>
+    <% elsif @today_input %>
+      <article class="score-card score-card--empty" aria-busy="true">
+        <div class="empty-orbit"></div>
+        <div>
+          <p class="eyebrow">Calculating…</p>
+          <h2>Generating today’s plan.</h2>
+          <p>Your check-in is in. This panel updates on its own the moment the engine finishes.</p>
         </div>
       </article>
     <% else %>

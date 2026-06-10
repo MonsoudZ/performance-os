@@ -30,4 +30,25 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
     assert_empty cookies[:session_id]
   end
+
+  test "throttles repeated login attempts for one email even across IPs" do
+    Rack::Attack.reset!
+
+    Rack::Attack::LOGIN_LIMIT.times do |i|
+      post session_path,
+        params: { email_address: @user.email_address, password: "wrong" },
+        headers: { "REMOTE_ADDR" => "10.1.0.#{i + 1}" }
+      assert_response :redirect
+    end
+
+    # Same account, fresh IP: the per-email throttle still trips where a per-IP
+    # limit would not.
+    post session_path,
+      params: { email_address: @user.email_address, password: "wrong" },
+      headers: { "REMOTE_ADDR" => "10.1.0.250" }
+
+    assert_response :too_many_requests
+  ensure
+    Rack::Attack.reset!
+  end
 end

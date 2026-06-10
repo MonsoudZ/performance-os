@@ -1,4 +1,5 @@
 <main class="shell">
+  <%= turbo_stream_from Current.user %>
   <%= render "shared/navigation" %>
 
   <section class="page-heading">
@@ -26,6 +27,13 @@
   <% end %>
 
   <section class="decision-grid">
+    <% if @decisions.empty? %>
+      <article class="panel decision-card" aria-busy="true">
+        <p class="eyebrow">Progression</p>
+        <h2>Evaluating progression…</h2>
+        <p>Your sets are saved. This updates automatically the moment the engine finishes.</p>
+      </article>
+    <% end %>
     <% @decisions.each do |decision| %>
       <article class="panel decision-card decision-card--<%= decision.output["status"] %>">
         <p class="eyebrow"><%= decision.inputs["exercise_name"] %></p>

@@ -11,7 +11,7 @@ class ExpenditureEstimator
   def call
     return unless evidence_sufficient?
 
-    average_intake = daily_intakes.sum / daily_intakes.size
+    average_intake = daily_intakes.sum / daily_intakes.size.to_f
     weight_change_per_day = (latest_trend.ewma_kg - earliest_trend.ewma_kg) / trend_span_days
     estimated_tdee = average_intake - (weight_change_per_day * KCAL_PER_KG)
 
@@ -31,14 +31,22 @@ class ExpenditureEstimator
 
   attr_reader :user, :estimate_date
 
+  # Intake and the weight delta must describe the SAME period; otherwise the
+  # energy-balance identity (TDEE = average intake - stored energy) does not
+  # hold. We anchor the intake window to the span actually covered by weight
+  # trends, using the user's local day boundaries rather than the server zone.
   def daily_intakes
     @daily_intakes ||= user.food_log_entries
-      .where(logged_at: evidence_start.beginning_of_day..estimate_date.end_of_day)
+      .where(logged_at: intake_window)
       .order(:logged_at)
       .to_a
       .group_by { |entry| user.local_date_at(entry.logged_at) }
       .values
       .map { |entries| entries.sum(&:kcal) }
+  end
+
+  def intake_window
+    user.local_day_range(earliest_trend.trend_date).begin..user.local_day_range(latest_trend.trend_date).end
   end
 
   def trends
@@ -64,10 +72,12 @@ class ExpenditureEstimator
     estimate_date - 27.days
   end
 
+  # Order matters: daily_intakes derives its window from the trend span, so the
+  # trend checks must short-circuit before daily_intakes is evaluated.
   def evidence_sufficient?
-    daily_intakes.size >= MINIMUM_INTAKE_DAYS &&
-      trends.size >= 2 &&
-      trend_span_days >= MINIMUM_TREND_SPAN_DAYS
+    trends.size >= 2 &&
+      trend_span_days >= MINIMUM_TREND_SPAN_DAYS &&
+      daily_intakes.size >= MINIMUM_INTAKE_DAYS
   end
 
   def confidence

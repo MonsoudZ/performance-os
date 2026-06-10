@@ -18,11 +18,9 @@ class WeeklyReviewsController < ApplicationController
   end
 
   def create
-    review = WeeklyEvidenceReview.new(Current.user).call
-    adjustment = NutritionAdjustmentEvaluator.new(review).call
+    WeeklyReviewRecomputeJob.perform_later(Current.user)
 
-    redirect_to weekly_review_path,
-      notice: "#{review.output["headline"]}. #{adjustment.output["headline"]}."
+    redirect_to weekly_review_path, notice: "Running this week’s evidence review…"
   end
 
   private

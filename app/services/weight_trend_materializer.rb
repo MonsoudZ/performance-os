@@ -7,23 +7,18 @@ class WeightTrendMaterializer
   end
 
   def call
-    return existing_trend if existing_trend
-
     raw_kg = daily_weight
-    return unless raw_kg
+    return existing_trend unless raw_kg
 
-    previous_ewma = user.weight_trends
-      .where("trend_date < ?", trend_date)
-      .order(trend_date: :desc)
-      .pick(:ewma_kg)
+    user.weight_trends.transaction do
+      upsert_raw(trend_date, raw_kg)
+      # Recompute this date and every later date so corrections and out-of-order
+      # backfills propagate through the whole EWMA chain instead of leaving stale
+      # downstream rows.
+      recompute_ewma_from(trend_date)
+    end
 
-    ewma_kg = previous_ewma ? (ALPHA * raw_kg + (1 - ALPHA) * previous_ewma) : raw_kg
-
-    user.weight_trends.create!(
-      trend_date: trend_date,
-      raw_kg: raw_kg,
-      ewma_kg: ewma_kg.round(2)
-    )
+    existing_trend
   end
 
   private
@@ -31,7 +26,34 @@ class WeightTrendMaterializer
   attr_reader :user, :trend_date
 
   def existing_trend
-    @existing_trend ||= user.weight_trends.find_by(trend_date: trend_date)
+    user.weight_trends.find_by(trend_date: trend_date)
+  end
+
+  # weight_trends has no primary key (id: false), so rows are written through
+  # the (user_id, trend_date) unique key rather than via save!/update!.
+  def upsert_raw(date, raw_kg)
+    scope = user.weight_trends.where(trend_date: date)
+    if scope.exists?
+      scope.update_all(raw_kg: raw_kg, updated_at: Time.current)
+    else
+      user.weight_trends.create!(trend_date: date, raw_kg: raw_kg, ewma_kg: raw_kg)
+    end
+  end
+
+  def recompute_ewma_from(start_date)
+    previous_ewma = user.weight_trends
+      .where(trend_date: ...start_date)
+      .order(trend_date: :desc)
+      .pick(:ewma_kg)
+
+    user.weight_trends
+      .where("trend_date >= ?", start_date)
+      .order(:trend_date)
+      .pluck(:trend_date, :raw_kg)
+      .each do |date, raw|
+        previous_ewma = previous_ewma ? (ALPHA * raw + (1 - ALPHA) * previous_ewma) : raw
+        user.weight_trends.where(trend_date: date).update_all(ewma_kg: previous_ewma.round(2), updated_at: Time.current)
+      end
   end
 
   def daily_weight

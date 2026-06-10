@@ -7,7 +7,10 @@ module Api
         result = WearableSyncIngestor.new(@device, samples: sync_params.fetch(:samples)).call
         render json: result, status: :accepted
       rescue ActiveRecord::RecordInvalid, KeyError, ArgumentError => error
-        render json: { error: error.message }, status: :unprocessable_entity
+        # Don't echo internal validation/DB details back to the device; log them
+        # server-side and return a generic rejection.
+        Rails.logger.warn("WearableSync rejected for device #{@device&.id}: #{error.class}: #{error.message}")
+        render json: { error: "Sync rejected" }, status: :unprocessable_entity
       end
 
       private

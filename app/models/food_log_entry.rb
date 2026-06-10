@@ -1,5 +1,6 @@
 class FoodLogEntry < ApplicationRecord
   MEAL_TYPES = %w[breakfast lunch dinner snack].freeze
+  SOURCES = %w[manual copy].freeze
 
   belongs_to :user
   belongs_to :food, optional: true
@@ -15,6 +16,7 @@ class FoodLogEntry < ApplicationRecord
 
   validates :logged_at, presence: true
   validates :meal_type, inclusion: { in: MEAL_TYPES }
+  validates :source, inclusion: { in: SOURCES }
   validates :quantity_grams, numericality: { greater_than: 0 }
   validates :kcal, :protein_g, :carb_g, :fat_g, numericality: { greater_than_or_equal_to: 0 }
   validate :copied_entry_belongs_to_same_user

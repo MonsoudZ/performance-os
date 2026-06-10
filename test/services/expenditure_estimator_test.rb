@@ -26,6 +26,21 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
     assert_equal "low", estimate.confidence
   end
 
+  test "ignores intake logged outside the weight-trend span" do
+    # Weight trends cover an older 8-day span (stable weight).
+    (14..21).each { |offset| create_trend(Date.current - offset.days, 80) }
+    # Intake logged densely within that span...
+    (14..21).each { |offset| create_intake(Date.current - offset.days, 2_000) }
+    # ...and a burst of higher intake AFTER the trend span that must not leak in.
+    (0..6).each { |offset| create_intake(Date.current - offset.days, 3_500) }
+
+    estimate = ExpenditureEstimator.new(@user).call
+
+    # Stable weight + 2,000 kcal/day over the trend span => TDEE 2,000.
+    # The recent 3,500 kcal days are outside the span and excluded.
+    assert_equal 2_000, estimate.estimated_tdee.to_f
+  end
+
   private
 
   def create_intake(date, kcal)

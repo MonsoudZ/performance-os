@@ -34,6 +34,12 @@ port ENV.fetch("PORT", 3000)
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 
+# Run the Solid Queue worker inside Puma so a single Railway process serves web
+# requests and drains the evaluator-pipeline jobs. On by default in production;
+# scale it out to a dedicated `bin/jobs` process (and unset the flag) as traffic
+# grows.
+plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"] || ENV["RAILS_ENV"] == "production"
+
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]

@@ -2,6 +2,7 @@ require "test_helper"
 
 class Api::V1::WearableSyncControllerTest < ActionDispatch::IntegrationTest
   setup do
+    Rack::Attack.reset!
     @user = users(:one)
     @user.update!(time_zone: "America/Denver")
     @device, @access_token = WearableDevice.issue_for!(
@@ -12,6 +13,8 @@ class Api::V1::WearableSyncControllerTest < ActionDispatch::IntegrationTest
     )
     @instant = Time.utc(2026, 6, 10, 5, 30)
   end
+
+  teardown { Rack::Attack.reset! }
 
   test "rejects a missing bearer token" do
     post api_v1_wearable_sync_path, params: { samples: [] }, as: :json
@@ -56,6 +59,21 @@ class Api::V1::WearableSyncControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal 0, response.parsed_body.fetch("inserted")
     assert_equal 3, response.parsed_body.fetch("duplicates")
+  end
+
+  test "throttles a device that floods the sync endpoint" do
+    # Pin time so the rate-limit window is stable, then saturate the per-device
+    # counter through Rack::Attack's own cache (the throttle keys on
+    # "#{name}:#{discriminator}") instead of 60 real round-trips.
+    travel_to @instant do
+      counter_key = "api/v1/wearable_sync/device:#{@device.id}"
+      Rack::Attack::WEARABLE_SYNC_LIMIT.times do
+        Rack::Attack.cache.count(counter_key, Rack::Attack::WEARABLE_SYNC_PERIOD)
+      end
+
+      post api_v1_wearable_sync_path, params: { samples: [] }, headers: authorization_header, as: :json
+      assert_response :too_many_requests
+    end
   end
 
   test "revoked devices cannot sync" do

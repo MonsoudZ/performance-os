@@ -22,16 +22,20 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_difference "WorkoutSession.count", 1 do
       assert_difference "SetEntry.count", 3 do
         assert_difference "CoachingDecision.count", 1 do
-          post workout_sessions_path, params: {
-            workout_session: {
-              performed_at: Time.current,
-              set_entries_attributes: {
-                "0" => set_params(1),
-                "1" => set_params(2),
-                "2" => set_params(3)
+          # Session + sets persist synchronously; the progression decision is
+          # produced by WorkoutProgressionRecomputeJob.
+          perform_enqueued_jobs do
+            post workout_sessions_path, params: {
+              workout_session: {
+                performed_at: Time.current,
+                set_entries_attributes: {
+                  "0" => set_params(1),
+                  "1" => set_params(2),
+                  "2" => set_params(3)
+                }
               }
             }
-          }
+          end
         end
       end
     end

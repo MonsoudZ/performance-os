@@ -9,6 +9,11 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%# Morph the page in place when a background recompute broadcasts a refresh,
+        so live decision panels update without a jarring full reload. %>
+    <%= turbo_refresh_method_tag :morph %>
+    <%= turbo_refresh_scroll_tag :preserve %>
+
     <%= yield :head %>
 
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>

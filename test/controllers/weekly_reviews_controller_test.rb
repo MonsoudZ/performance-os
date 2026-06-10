@@ -20,11 +20,23 @@ class WeeklyReviewsControllerTest < ActionDispatch::IntegrationTest
 
   test "creates a review and its nutrition adjustment decision" do
     assert_difference "CoachingDecision.count", 2 do
-      post weekly_review_path
+      # The review + adjustment are produced by WeeklyReviewRecomputeJob.
+      perform_enqueued_jobs do
+        post weekly_review_path
+      end
     end
 
     assert_redirected_to weekly_review_path
     assert_equal "weekly_review", CoachingDecision.order(:created_at).second_to_last.decision_type
     assert_equal "nutrition_adjustment", CoachingDecision.order(:created_at).last.decision_type
+  end
+
+  test "enqueues the review job and returns immediately" do
+    assert_enqueued_with(job: WeeklyReviewRecomputeJob) do
+      assert_no_difference "CoachingDecision.count" do
+        post weekly_review_path
+      end
+    end
+    assert_redirected_to weekly_review_path
   end
 end
