@@ -4,9 +4,8 @@
 # exercise names, notes) are rendered into Turbo/ERB views, so this is the
 # defense-in-depth layer against injected scripts.
 #
-# Shipped in REPORT-ONLY first: violations are reported but not enforced, so we
-# can confirm nothing legitimate is blocked before flipping
-# `content_security_policy_report_only` to false to enforce.
+# Enforced: all scripts are same-origin or nonced importmap/Turbo tags, styles
+# are same-origin (plus inline style attributes), and Action Cable is same-origin.
 Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src :self
@@ -26,9 +25,9 @@ Rails.application.configure do
   end
 
   # Nonce the importmap/Turbo inline <script> tags so script-src can stay :self
-  # without 'unsafe-inline'.
-  config.content_security_policy_nonce_generator = ->(request) { request.session.id.to_s }
+  # without 'unsafe-inline'. A per-request random nonce is used rather than the
+  # session id: auth here is a custom signed cookie, so the Rails session is
+  # empty and request.session.id would yield a blank, unusable nonce.
+  config.content_security_policy_nonce_generator = ->(_request) { SecureRandom.base64(16) }
   config.content_security_policy_nonce_directives = %w[script-src]
-
-  config.content_security_policy_report_only = true
 end
