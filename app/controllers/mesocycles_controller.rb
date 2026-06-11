@@ -52,6 +52,6 @@ class MesocyclesController < ApplicationController
   end
 
   def mesocycle_params
-    params.require(:mesocycle).permit(:name, :started_on, :weeks, :deload_week)
+    params.require(:mesocycle).permit(:name, :started_on, :weeks, :deload_week, :focus)
   end
 end

@@ -183,7 +183,9 @@ class DailyTrainingOrchestrator
       "week" => active_mesocycle.current_week(plan_date),
       "total_weeks" => active_mesocycle.weeks,
       "phase" => active_mesocycle.phase(plan_date),
-      "deload" => deload_week?
+      "deload" => deload_week?,
+      "focus" => active_mesocycle.focus,
+      "emphasis" => active_mesocycle.focus_emphasis
     }
   end
 

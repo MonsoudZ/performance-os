@@ -1,10 +1,17 @@
 class Mesocycle < ApplicationRecord
-  MAX_SET_BONUS = 3 # cap the accumulation volume ramp
+  FOCUSES = {
+    "hypertrophy" => "Hypertrophy — chase volume and effort; reps and a strong pump over max load.",
+    "strength" => "Strength — prioritize load and low reps; quality over quantity.",
+    "power" => "Power — move lighter loads with maximum intent; keep volume low and crisp."
+  }.freeze
+  # How aggressively accumulation volume ramps, by focus.
+  SET_BONUS_CAPS = { "hypertrophy" => 3, "strength" => 1, "power" => 1 }.freeze
 
   belongs_to :user
 
   validates :started_on, presence: true
   validates :weeks, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 16 }
+  validates :focus, inclusion: { in: FOCUSES.keys }
   validates :deload_week, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :deload_within_block
   validate :ends_after_start
@@ -36,12 +43,16 @@ class Mesocycle < ApplicationRecord
     deload?(date) ? "deload" : "accumulation"
   end
 
-  # Extra working sets to add during accumulation: +1 per week, bounded, and
-  # zero on the deload week.
+  # Extra working sets to add during accumulation: +1 per week, capped by the
+  # block focus, and zero on the deload week.
   def accumulation_set_bonus(date)
     return 0 if deload?(date)
 
-    [ current_week(date) - 1, MAX_SET_BONUS ].min
+    [ current_week(date) - 1, SET_BONUS_CAPS.fetch(focus, 3) ].min
+  end
+
+  def focus_emphasis
+    FOCUSES.fetch(focus, FOCUSES["hypertrophy"])
   end
 
   def label

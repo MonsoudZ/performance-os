@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -219,6 +219,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_120000) do
     t.datetime "created_at", null: false
     t.integer "deload_week"
     t.date "ended_on"
+    t.string "focus", default: "hypertrophy", null: false
     t.string "name"
     t.date "started_on", null: false
     t.datetime "updated_at", null: false
@@ -228,6 +229,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_120000) do
     t.index ["user_id"], name: "index_mesocycles_on_user_id"
     t.check_constraint "deload_week IS NULL OR deload_week > 0 AND deload_week <= weeks", name: "mesocycles_deload_week_check"
     t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "mesocycles_dates_check"
+    t.check_constraint "focus::text = ANY (ARRAY['hypertrophy'::character varying, 'strength'::character varying, 'power'::character varying]::text[])", name: "mesocycles_focus_check"
     t.check_constraint "weeks > 0 AND weeks <= 16", name: "mesocycles_weeks_check"
   end
 

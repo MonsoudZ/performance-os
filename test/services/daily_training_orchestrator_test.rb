@@ -120,6 +120,19 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     assert_match(/Volume ramp/i, lift["guidance"])
   end
 
+  test "a strength block caps the volume ramp and carries its focus into the plan" do
+    create_readiness_decision("push", 88, "high")
+    create_progression_decision("increase", 102.5, "high")
+    # Week 5 of a strength block — hypertrophy would add +4, strength caps at +1.
+    @user.mesocycles.create!(started_on: Date.current - 28.days, weeks: 6, deload_week: 6, focus: "strength")
+
+    output = DailyTrainingOrchestrator.new(@user).call.output
+
+    assert_equal 4, output["lifts"].first["working_sets"] # baseline 3 + 1
+    assert_equal "strength", output.dig("mesocycle", "focus")
+    assert_match(/Strength/i, output.dig("mesocycle", "emphasis"))
+  end
+
   test "week one of accumulation uses baseline volume" do
     create_readiness_decision("push", 88, "high")
     create_progression_decision("increase", 102.5, "high")

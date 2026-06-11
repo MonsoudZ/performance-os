@@ -25,6 +25,12 @@ class NextBlockSuggestionTest < ActiveSupport::TestCase
     assert_equal "Block 2", suggestion.name
   end
 
+  test "carries the focus forward" do
+    @user.mesocycles.create!(name: "Block 1", started_on: Date.current - 40.days, weeks: 4, focus: "power")
+
+    assert_equal "power", NextBlockSuggestion.new(@user).call.focus
+  end
+
   test "recently_ended? is true just after a block ends" do
     @user.mesocycles.create!(started_on: Date.current - 30.days, ended_on: Date.current - 2.days, weeks: 4)
 

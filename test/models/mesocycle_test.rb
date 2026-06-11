@@ -28,4 +28,16 @@ class MesocycleTest < ActiveSupport::TestCase
   test "deload week must be within the block length" do
     assert_not @user.mesocycles.new(started_on: Date.current, weeks: 4, deload_week: 5).valid?
   end
+
+  test "focus caps the accumulation set bonus" do
+    date = Date.new(2026, 6, 1)
+    week5 = date + 28
+
+    assert_equal 3, Mesocycle.new(started_on: date, weeks: 6, focus: "hypertrophy").accumulation_set_bonus(week5)
+    assert_equal 1, Mesocycle.new(started_on: date, weeks: 6, focus: "strength").accumulation_set_bonus(week5)
+  end
+
+  test "rejects an unknown focus" do
+    assert_not @user.mesocycles.new(started_on: Date.current, weeks: 4, focus: "cardio").valid?
+  end
 end

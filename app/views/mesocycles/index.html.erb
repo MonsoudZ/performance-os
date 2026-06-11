@@ -21,12 +21,13 @@
       <% today = Current.user.local_date %>
       <div class="compact-list">
         <div class="compact-list__item">
-          <strong><%= @active.label %></strong>
+          <strong><%= @active.label %> · <%= @active.focus.humanize %></strong>
           <span>
             Week <%= @active.current_week(today) %> of <%= @active.weeks %> ·
             <%= @active.phase(today) == "deload" ? "Deload" : "Accumulation" %> ·
             <%= @active.started_on.strftime("%b %-d") %>–<%= @active.natural_end.strftime("%b %-d") %>
           </span>
+          <small><%= @active.focus_emphasis %></small>
         </div>
       </div>
       <%= button_to "End this block", finish_mesocycle_path(@active), method: :patch, class: "button button--secondary" %>
@@ -53,6 +54,10 @@
 
     <%= form_with model: @mesocycle, url: mesocycles_path, class: "stacked-form stacked-form--wide" do |form| %>
       <label><span>Name (optional)</span><%= form.text_field :name, placeholder: "Hypertrophy block 1" %></label>
+      <label>
+        <span>Focus</span>
+        <%= form.select :focus, Mesocycle::FOCUSES.keys.map { |focus| [ focus.humanize, focus ] } %>
+      </label>
       <div class="form-grid">
         <label><span>Start date</span><%= form.date_field :started_on, required: true %></label>
         <label><span>Length (weeks)</span><%= form.number_field :weeks, min: 1, max: 16, required: true %></label>

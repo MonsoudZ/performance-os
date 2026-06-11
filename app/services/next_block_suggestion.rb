@@ -32,7 +32,8 @@ class NextBlockSuggestion
       name: suggested_name,
       started_on: @user.local_date,
       weeks: last_block.weeks,
-      deload_week: last_block.deload_week
+      deload_week: last_block.deload_week,
+      focus: last_block.focus
     )
   end
 

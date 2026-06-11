@@ -23,6 +23,12 @@ class MesocyclesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to mesocycles_path
   end
 
+  test "starts a block with a chosen focus" do
+    post mesocycles_path, params: { mesocycle: { started_on: Date.current, weeks: 4, focus: "strength" } }
+
+    assert_equal "strength", @user.mesocycles.order(:id).last.focus
+  end
+
   test "starting a new block retires the active one" do
     old = @user.mesocycles.create!(started_on: Date.current - 10.days, weeks: 4)
 

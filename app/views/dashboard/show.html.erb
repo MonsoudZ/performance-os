@@ -210,6 +210,9 @@
             <% end %>
           </p>
           <h2>Execute the plan.</h2>
+          <% if (meso = @decision.output["mesocycle"]) && meso["emphasis"] %>
+            <p class="evidence-note"><%= meso["emphasis"] %></p>
+          <% end %>
         </div>
         <span class="step"><%= @decision.output["goal"]&.humanize || "No active goal" %></span>
       </div>
