@@ -20,5 +20,7 @@ class DashboardController < ApplicationController
       .includes(workout_template_exercises: :exercise)
       .order(:name)
     @wearable_device = @user.wearable_devices.active.order(last_synced_at: :desc).first
+    suggester = NextBlockSuggestion.new(@user)
+    @suggested_block = suggester.recently_ended? ? suggester.call : nil
   end
 end

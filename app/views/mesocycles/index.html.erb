@@ -43,6 +43,10 @@
       </div>
     </div>
 
+    <% if @suggestion && !@active %>
+      <p class="evidence-note">Suggested from your last block — adjust the dates and length, then start.</p>
+    <% end %>
+
     <% if @mesocycle.errors.any? %>
       <div class="form-errors"><%= @mesocycle.errors.full_messages.to_sentence %></div>
     <% end %>

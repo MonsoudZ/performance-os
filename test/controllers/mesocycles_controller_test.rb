@@ -49,6 +49,16 @@ class MesocyclesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "pre-fills the form with a suggested next block when none is active" do
+    @user.mesocycles.create!(name: "Block 1", started_on: Date.current - 60.days, weeks: 6, deload_week: 6)
+
+    get mesocycles_path
+
+    assert_response :success
+    assert_select "input[name='mesocycle[name]'][value='Block 2']"
+    assert_select "input[name='mesocycle[weeks]'][value='6']"
+  end
+
   test "cannot end another user's block" do
     foreign = users(:two).mesocycles.create!(started_on: Date.current, weeks: 4)
 

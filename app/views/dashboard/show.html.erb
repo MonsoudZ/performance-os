@@ -47,6 +47,17 @@
     <% end %>
   </section>
 
+  <% if @suggested_block %>
+    <section class="panel block-nudge">
+      <div>
+        <p class="eyebrow">Block complete</p>
+        <h2>Your training block wrapped — start the next one?</h2>
+        <p>We've lined up <strong><%= @suggested_block.name %></strong> (<%= @suggested_block.weeks %> weeks<% if @suggested_block.deload_week %>, deload week <%= @suggested_block.deload_week %><% end %>) to continue your progression.</p>
+      </div>
+      <%= link_to "Plan the next block", mesocycles_path, class: "button button--inline" %>
+    </section>
+  <% end %>
+
   <section class="panel today-workout">
     <div>
       <p class="eyebrow">Today’s workout</p>

@@ -54,6 +54,15 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".score-card h2", text: decision.output["headline"]
   end
 
+  test "nudges to start the next block when one recently ended" do
+    @user.mesocycles.create!(name: "Block 1", started_on: Date.current - 30.days, ended_on: Date.current - 2.days, weeks: 4)
+
+    get root_path
+
+    assert_response :success
+    assert_select ".block-nudge"
+  end
+
   test "shows complete once the subjective taps are in" do
     @user.daily_readiness_inputs.create!(
       metric_date: @user.local_date,

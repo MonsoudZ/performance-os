@@ -37,7 +37,8 @@ class MesocyclesController < ApplicationController
   def load_index
     @mesocycles = Current.user.mesocycles.order(started_on: :desc, id: :desc)
     @active = Current.user.mesocycles.active_on(Current.user.local_date).order(started_on: :desc).first
-    @mesocycle ||= Current.user.mesocycles.new(started_on: Current.user.local_date, weeks: 4, deload_week: 4)
+    @suggestion = NextBlockSuggestion.new(Current.user).call
+    @mesocycle ||= @suggestion || Current.user.mesocycles.new(started_on: Current.user.local_date, weeks: 4, deload_week: 4)
   end
 
   def close_active_mesocycle(new_start)
