@@ -1,0 +1,57 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Welcome</p>
+      <h1>Get set up in a few steps.</h1>
+      <p>PerformanceOS turns your daily inputs into one auditable plan. Here's the quickest path to your first one.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <ol class="onboarding">
+      <li class="onboarding-step <%= "onboarding-step--done" if @goal %>">
+        <span class="onboarding-step__mark"><%= @goal ? "✓" : "1" %></span>
+        <div>
+          <strong>Set your training goal</strong>
+          <% if @goal %>
+            <p>You're training for <%= @goal.goal_type.humanize.downcase %>. <%= link_to "Change", goal_periods_path, class: "text-link" %></p>
+          <% else %>
+            <p>Your goal drives calorie, protein, and training targets. <%= link_to "Set a goal", goal_periods_path, class: "text-link" %></p>
+          <% end %>
+        </div>
+      </li>
+
+      <li class="onboarding-step <%= "onboarding-step--done" if @has_target %>">
+        <span class="onboarding-step__mark"><%= @has_target ? "✓" : "2" %></span>
+        <div>
+          <strong>Add a training target</strong>
+          <p>Tell the engine what to progress. <%= link_to @has_target ? "Manage targets" : "Add a target", @has_target ? exercise_prescriptions_path : new_exercise_prescription_path, class: "text-link" %></p>
+        </div>
+      </li>
+
+      <li class="onboarding-step <%= "onboarding-step--done" if @has_checkin %>">
+        <span class="onboarding-step__mark"><%= @has_checkin ? "✓" : "3" %></span>
+        <div>
+          <strong>Do your first check-in</strong>
+          <p>Sixty seconds of recovery inputs generates today's plan. <%= link_to "Check in on the dashboard", root_path, class: "text-link" %></p>
+        </div>
+      </li>
+
+      <li class="onboarding-step <%= "onboarding-step--done" if @has_device %>">
+        <span class="onboarding-step__mark"><%= @has_device ? "✓" : "★" %></span>
+        <div>
+          <strong>Pair your watch <small>(optional)</small></strong>
+          <p>Auto-fill HRV, resting HR, and sleep from HealthKit. <%= link_to "Manage devices", wearable_devices_path, class: "text-link" %></p>
+        </div>
+      </li>
+    </ol>
+
+    <% if @complete %>
+      <%= link_to "You're set — go to today's plan", root_path, class: "button" %>
+    <% else %>
+      <%= link_to "Skip for now", root_path, class: "text-link" %>
+    <% end %>
+  </section>
+</main>

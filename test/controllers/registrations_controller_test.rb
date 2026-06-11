@@ -14,7 +14,7 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to root_path
+    assert_redirected_to onboarding_path
     assert cookies[:session_id]
     assert_equal "America/Denver", User.order(:created_at).last.time_zone
   end

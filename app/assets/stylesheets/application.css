@@ -1778,3 +1778,46 @@ h1 {
   width: 100%;
   height: auto;
 }
+
+/* Onboarding */
+.onboarding {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.onboarding-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.onboarding-step__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  background: rgba(24, 33, 29, 0.08);
+  font-weight: 800;
+}
+
+.onboarding-step--done {
+  border-color: var(--green);
+}
+
+.onboarding-step--done .onboarding-step__mark {
+  background: var(--green);
+  color: var(--lime);
+}
+
+.onboarding-step p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
