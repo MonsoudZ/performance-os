@@ -51,6 +51,14 @@ Rails.application.configure do
   # pipelines execute in a worker process instead of holding a Puma thread.
   config.active_job.queue_adapter = :solid_queue
 
+  # Allow the app's own origin(s) so the Turbo morph-refresh websocket connects
+  # behind the SSL-terminating proxy. Set CABLE_ALLOWED_ORIGINS to a
+  # comma-separated list of https origins (e.g. https://app.example.com).
+  if ENV["CABLE_ALLOWED_ORIGINS"].present?
+    config.action_cable.allowed_request_origins =
+      ENV["CABLE_ALLOWED_ORIGINS"].split(",").map { |origin| origin.strip }
+  end
+
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false

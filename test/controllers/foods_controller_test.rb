@@ -101,6 +101,23 @@ class FoodsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".food-result", count: 0
   end
 
+  test "throttles the food database search to protect the external API" do
+    Rack::Attack.reset!
+    stub_request(:get, %r{world\.openfoodfacts\.org/cgi/search\.pl}).to_return(status: 200, body: { "products" => [] }.to_json)
+
+    travel_to Time.utc(2026, 6, 11, 12, 0) do
+      Rack::Attack::FOOD_SEARCH_LIMIT.times do |i|
+        get search_foods_path, params: { q: "yogurt#{i}" }
+        assert_response :success
+      end
+
+      get search_foods_path, params: { q: "yogurt-over" }
+      assert_response :too_many_requests
+    end
+  ensure
+    Rack::Attack.reset!
+  end
+
   test "imports a database result into the catalog as an imported food" do
     assert_difference "Food.count", 1 do
       post import_foods_path, params: {

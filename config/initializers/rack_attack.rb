@@ -14,6 +14,9 @@ class Rack::Attack
   WEARABLE_SYNC_PATH = %r{\A/api/v1/wearable_sync/?\z}
   WEARABLE_SYNC_LIMIT = 60
   WEARABLE_SYNC_PERIOD = 1.minute
+  FOOD_SEARCH_PATH = %r{\A/foods/search/?\z}
+  FOOD_SEARCH_LIMIT = 20
+  FOOD_SEARCH_PERIOD = 1.minute
 
   # In production the counters live in the shared Solid Cache so every Puma
   # worker (and any future dyno) enforces one global limit. In dev/test a
@@ -63,6 +66,18 @@ class Rack::Attack
   ) do |request|
     if request.post? && request.path.match?(WEARABLE_SYNC_PATH)
       request.get_header("HTTP_AUTHORIZATION").to_s.delete_prefix("Bearer ").split(".", 2).first.presence
+    end
+  end
+
+  # Each food search triggers an outbound Open Food Facts request, so cap how
+  # fast one signed-in session (or IP, when there's no session) can issue them.
+  throttle(
+    "foods/search",
+    limit: FOOD_SEARCH_LIMIT,
+    period: FOOD_SEARCH_PERIOD
+  ) do |request|
+    if request.get? && request.path.match?(FOOD_SEARCH_PATH)
+      request.cookies["session_id"].presence || CLIENT_IP.call(request)
     end
   end
 
