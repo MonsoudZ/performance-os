@@ -27,6 +27,27 @@ module ProgressHelper
     end
   end
 
+  # Generic server-rendered SVG line over a series of numbers (CSP-clean).
+  def line_chart(values, width: 320, height: 80)
+    return tag.span("Not enough data yet", class: "muted") if values.size < 2
+
+    min, max = values.minmax
+    span = (max - min).zero? ? 1.0 : (max - min)
+    step = width.to_f / (values.size - 1)
+    pad = 6
+
+    coords = values.each_with_index.map do |value, index|
+      x = (index * step).round(2)
+      y = (height - pad - ((value - min) / span * (height - 2 * pad))).round(2)
+      "#{x},#{y}"
+    end
+
+    tag.svg(viewBox: "0 0 #{width} #{height}", width: width, height: height, class: "line-chart", role: "img",
+      aria: { label: "Trend" }) do
+      tag.polyline(points: coords.join(" "), fill: "none", stroke: "currentColor", "stroke-width": "2")
+    end
+  end
+
   # Position (0..100%) of a set count along the volume axis for inline-width bars.
   def volume_axis_percent(value, axis_max)
     return 0 if axis_max.to_f.zero?

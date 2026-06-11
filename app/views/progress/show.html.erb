@@ -74,4 +74,38 @@
       <div class="empty-state"><p>Log working sets to start tracking estimated-1RM trends.</p></div>
     <% end %>
   </section>
+
+  <section class="trend-grid">
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Body weight trend</p>
+          <h2>
+            <% if @weight_trend.size >= 2 %>
+              <%= number_with_precision @weight_trend.last.ewma_kg, precision: 2, strip_insignificant_zeros: true %> kg
+            <% else %>
+              Weight
+            <% end %>
+          </h2>
+        </div>
+      </div>
+      <div class="line-chart-wrap line-chart-wrap--weight">
+        <%= line_chart(@weight_trend.map { |trend| trend.ewma_kg.to_f }) %>
+      </div>
+      <p class="evidence-note">Smoothed (EWMA) weight over the last <%= @weight_trend.size %> tracked days.</p>
+    </article>
+
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Readiness trend</p>
+          <h2><%= @readiness_trend.last&.score || "—" %></h2>
+        </div>
+      </div>
+      <div class="line-chart-wrap line-chart-wrap--readiness">
+        <%= line_chart(@readiness_trend.map(&:score)) %>
+      </div>
+      <p class="evidence-note">Daily readiness score over the last <%= @readiness_trend.size %> check-ins.</p>
+    </article>
+  </section>
 </main>

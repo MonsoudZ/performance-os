@@ -27,4 +27,16 @@ class ProgressControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".empty-state", minimum: 1
   end
+
+  test "renders weight and readiness trend charts when data exists" do
+    3.times do |i|
+      @user.weight_trends.create!(trend_date: Date.current - i.days, raw_kg: 80 - i, ewma_kg: 80 - (i * 0.5))
+      @user.readiness_scores.create!(score_date: Date.current - i.days, score: 70 + i)
+    end
+
+    get progress_path
+
+    assert_response :success
+    assert_select ".line-chart", 2
+  end
 end
