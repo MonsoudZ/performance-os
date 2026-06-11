@@ -114,6 +114,12 @@
           <%= form.submit "Generate today’s plan", class: "button" %>
         <% end %>
       <% end %>
+
+      <div class="push-toggle" data-controller="push" hidden>
+        <button type="button" class="text-button" data-action="push#toggle" data-push-target="button">
+          Enable check-in reminders
+        </button>
+      </div>
     </article>
 
     <% if @decision %>

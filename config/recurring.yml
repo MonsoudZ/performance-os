@@ -1,0 +1,6 @@
+# Solid Queue recurring tasks (loaded by the worker in production).
+production:
+  check_in_reminder:
+    class: CheckInReminderJob
+    schedule: "every hour"
+    # No-ops for users outside their local reminder hour or already checked in.

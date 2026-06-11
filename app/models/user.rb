@@ -17,6 +17,7 @@ class User < ApplicationRecord
   has_many :wearable_devices, dependent: :destroy
   has_many :wearable_samples, dependent: :destroy
   has_many :conditioning_sessions, dependent: :destroy
+  has_many :push_subscriptions, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
@@ -26,6 +27,10 @@ class User < ApplicationRecord
 
   def active_goal
     goal_periods.active_on(local_date).order(started_on: :desc).first
+  end
+
+  def local_time
+    Time.current.in_time_zone(time_zone)
   end
 
   def local_date

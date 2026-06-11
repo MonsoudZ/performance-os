@@ -33,6 +33,8 @@ Rails.application.routes.draw do
   resources :workout_sessions, only: %i[new create show edit update destroy]
   resources :conditioning_sessions, only: %i[index create destroy]
   resource :profile, only: :update
+  post "push_subscriptions", to: "push_subscriptions#create"
+  delete "push_subscriptions", to: "push_subscriptions#destroy"
 
   namespace :api do
     namespace :v1 do
@@ -45,7 +47,7 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  # Render dynamic PWA files from app/views/pwa/*.
+  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 end
