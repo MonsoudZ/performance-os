@@ -34,6 +34,26 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".synced-note"
   end
 
+  test "the check-in actually generates a plan the dashboard then renders" do
+    perform_enqueued_jobs do
+      post readiness_check_in_path, params: {
+        daily_readiness_input: { sleep_hours: 7.5, sleep_quality: 4, soreness: 2, fatigue: 2, stress: 3 }
+      }
+    end
+
+    # The background job wrote a real readiness score and daily_training plan...
+    assert @user.readiness_scores.find_by(score_date: @user.local_date), "expected a generated readiness score"
+    decision = @user.coaching_decisions.where(decision_type: "daily_training").order(:created_at).last
+    assert decision, "expected a generated daily_training plan"
+
+    # ...and the dashboard renders that plan, not the "Calculating…" placeholder.
+    get root_path
+
+    assert_response :success
+    assert_select ".score-card--empty", count: 0
+    assert_select ".score-card h2", text: decision.output["headline"]
+  end
+
   test "shows complete once the subjective taps are in" do
     @user.daily_readiness_inputs.create!(
       metric_date: @user.local_date,
