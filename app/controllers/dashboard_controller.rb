@@ -3,6 +3,9 @@ class DashboardController < ApplicationController
     @user = Current.user
     today = @user.local_date
     @today_input = @user.daily_readiness_inputs.find_by(metric_date: today)
+    # Prefill the check-in with any objective metrics the watch already synced
+    # today, so the form only asks for the subjective taps.
+    @check_in = @today_input || @user.daily_readiness_inputs.new(metric_date: today)
     @readiness_score = @user.readiness_scores.find_by(score_date: today)
     @decision = @user.coaching_decisions
       .where(decision_type: "daily_training")

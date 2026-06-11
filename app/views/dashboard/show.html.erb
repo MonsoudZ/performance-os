@@ -78,7 +78,7 @@
         <span class="step">01 / Check-in</span>
       </div>
 
-      <% if @today_input %>
+      <% if @today_input&.checked_in? %>
         <div class="completed">
           <span class="completed__check">✓</span>
           <h3>Today’s check-in is complete.</h3>
@@ -86,14 +86,26 @@
           <%= link_to "Edit or review past check-ins", readiness_inputs_path, class: "text-link" %>
         </div>
       <% else %>
-        <%= form_with model: DailyReadinessInput.new, url: readiness_check_in_path, class: "check-in__form" do |form| %>
-          <label>
-            <span>Sleep duration</span>
-            <div class="input-with-unit">
-              <%= form.number_field :sleep_minutes, value: 450, min: 0, max: 900, required: true %>
-              <span>min</span>
+        <%= form_with model: @check_in, url: readiness_check_in_path, method: :post, class: "check-in__form" do |form| %>
+          <% if @check_in.sleep_from_watch? %>
+            <div class="synced-field">
+              <span>Sleep</span>
+              <strong><%= number_with_precision @check_in.sleep_hours, precision: 1, strip_insignificant_zeros: true %> h</strong>
+              <small>synced from your watch</small>
             </div>
-          </label>
+          <% else %>
+            <label>
+              <span>Sleep duration</span>
+              <div class="input-with-unit">
+                <%= form.number_field :sleep_hours, value: (@check_in.sleep_hours || 7.5), min: 0, max: 14, step: 0.25, required: true %>
+                <span>h</span>
+              </div>
+            </label>
+          <% end %>
+
+          <% if @check_in.hrv_sdnn_ms.present? || @check_in.resting_hr.present? %>
+            <p class="synced-note">HRV and resting heart rate synced from your watch.</p>
+          <% end %>
 
           <%= render "rating_field", form: form, field: :sleep_quality, label: "Sleep quality", low: "Poor", high: "Excellent" %>
           <%= render "rating_field", form: form, field: :soreness, label: "Muscle soreness", low: "Fresh", high: "Very sore" %>

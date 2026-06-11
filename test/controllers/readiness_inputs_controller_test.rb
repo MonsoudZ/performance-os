@@ -20,7 +20,7 @@ class ReadinessInputsControllerTest < ActionDispatch::IntegrationTest
 
     assert_enqueued_with(job: ReadinessRecomputeJob) do
       patch readiness_input_path(input), params: {
-        daily_readiness_input: { sleep_minutes: 480, sleep_quality: 5, soreness: 1, fatigue: 1, stress: 1 }
+        daily_readiness_input: { sleep_hours: 8.0, sleep_quality: 5, soreness: 1, fatigue: 1, stress: 1 }
       }
     end
 

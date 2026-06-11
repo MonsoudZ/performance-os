@@ -16,7 +16,7 @@ class ReadinessCheckInsControllerTest < ActionDispatch::IntegrationTest
             perform_enqueued_jobs do
               post readiness_check_in_path, params: {
                 daily_readiness_input: {
-                  sleep_minutes: 450,
+                  sleep_hours: 7.5,
                   sleep_quality: 4,
                   soreness: 2,
                   fatigue: 2,
@@ -38,7 +38,7 @@ class ReadinessCheckInsControllerTest < ActionDispatch::IntegrationTest
       assert_no_difference "CoachingDecision.count" do
         post readiness_check_in_path, params: {
           daily_readiness_input: {
-            sleep_minutes: 450, sleep_quality: 4, soreness: 2, fatigue: 2, stress: 3
+            sleep_hours: 7.5, sleep_quality: 4, soreness: 2, fatigue: 2, stress: 3
           }
         }
       end
@@ -51,7 +51,7 @@ class ReadinessCheckInsControllerTest < ActionDispatch::IntegrationTest
     travel_to Time.utc(2026, 6, 10, 5, 30) do
       post readiness_check_in_path, params: {
         daily_readiness_input: {
-          sleep_minutes: 450,
+          sleep_hours: 7.5,
           sleep_quality: 4,
           soreness: 2,
           fatigue: 2,

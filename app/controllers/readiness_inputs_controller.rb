@@ -25,6 +25,6 @@ class ReadinessInputsController < ApplicationController
   end
 
   def readiness_params
-    params.require(:daily_readiness_input).permit(:sleep_minutes, :sleep_quality, :soreness, :fatigue, :stress)
+    params.require(:daily_readiness_input).permit(:sleep_hours, :sleep_quality, :soreness, :fatigue, :stress)
   end
 end

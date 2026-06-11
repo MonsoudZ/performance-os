@@ -1672,3 +1672,36 @@ h1 {
 .muted {
   color: var(--muted);
 }
+
+/* Watch-synced check-in fields */
+.synced-field {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(200, 242, 107, 0.18);
+}
+
+.synced-field > span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.synced-field strong {
+  font-size: 1.1rem;
+}
+
+.synced-field small,
+.synced-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.synced-note {
+  margin: 0;
+}

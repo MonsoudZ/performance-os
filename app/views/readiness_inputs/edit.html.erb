@@ -18,9 +18,12 @@
       <label>
         <span>Sleep duration</span>
         <div class="input-with-unit">
-          <%= form.number_field :sleep_minutes, min: 0, max: 900 %>
-          <span>min</span>
+          <%= form.number_field :sleep_hours, min: 0, max: 14, step: 0.25 %>
+          <span>h</span>
         </div>
+        <% if @input.sleep_from_watch? %>
+          <small>Synced from your watch — edit to override.</small>
+        <% end %>
       </label>
 
       <%= render "dashboard/rating_field", form: form, field: :sleep_quality, label: "Sleep quality", low: "Poor", high: "Excellent" %>
