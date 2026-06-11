@@ -11,7 +11,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "form.check-in__form"
-    assert_select "input[name='daily_readiness_input[sleep_hours]']"
+    assert_select "select[name='daily_readiness_input[sleep_hours]']"
+    assert_select "select[name='daily_readiness_input[sleep_hours]'] option[selected][value='7.5']"
   end
 
   test "a watch-only sync is not checked in and auto-fills sleep and heart metrics" do
@@ -29,7 +30,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     # ...but sleep is shown as synced rather than a manual field, and the watch
     # metrics are noted.
     assert_select ".synced-field"
-    assert_select "input[name='daily_readiness_input[sleep_hours]']", count: 0
+    assert_select "select[name='daily_readiness_input[sleep_hours]']", count: 0
     assert_select ".synced-note"
   end
 

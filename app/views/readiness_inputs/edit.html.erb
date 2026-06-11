@@ -17,12 +17,9 @@
     <%= form_with model: @input, url: readiness_input_path(@input), method: :patch, class: "stacked-form stacked-form--wide" do |form| %>
       <label>
         <span>Sleep duration</span>
-        <div class="input-with-unit">
-          <%= form.number_field :sleep_hours, min: 0, max: 14, step: 0.25 %>
-          <span>h</span>
-        </div>
+        <%= form.select :sleep_hours, sleep_hour_options(@input.sleep_hours) %>
         <% if @input.sleep_from_watch? %>
-          <small>Synced from your watch — edit to override.</small>
+          <small>Synced from your watch — change to override.</small>
         <% end %>
       </label>
 
