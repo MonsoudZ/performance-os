@@ -40,6 +40,22 @@
         </div>
       <% end %>
 
+      <% if @recent_body_metrics.any? %>
+        <div class="compact-list">
+          <% @recent_body_metrics.each do |metric| %>
+            <div class="compact-list__item">
+              <strong><%= number_with_precision metric.weight_kg, precision: 2, strip_insignificant_zeros: true %> kg</strong>
+              <span><%= metric.measured_on.strftime("%b %-d, %Y") %></span>
+              <small>
+                <%= button_to "Remove", body_metric_path(metric), method: :delete,
+                  form: { data: { turbo_confirm: "Remove this weigh-in?" } },
+                  class: "text-button text-button--danger" %>
+              </small>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
       <p class="evidence-note">
         <% if @expenditure %>
           Adaptive expenditure: <strong><%= @expenditure.estimated_tdee.round %> kcal</strong> · <%= @expenditure.confidence %> confidence

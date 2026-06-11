@@ -1,0 +1,36 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Recovery history</p>
+      <h1>Past check-ins.</h1>
+      <p>Each day’s inputs are independent. Editing one re-derives that day’s readiness score.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <% if @inputs.any? %>
+      <div class="compact-list">
+        <% @inputs.each do |input| %>
+          <div class="compact-list__item">
+            <strong><%= input.metric_date.strftime("%A, %b %-d") %></strong>
+            <span>
+              <% if (score = @scores[input.metric_date]) %>
+                Readiness <%= score.score %>
+              <% else %>
+                Not yet scored
+              <% end %>
+              · sleep <%= input.sleep_minutes ? "#{input.sleep_minutes} min" : "—" %>
+            </span>
+            <small><%= link_to "Edit", edit_readiness_input_path(input), class: "text-link" %></small>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>No check-ins recorded yet. Complete today’s on the dashboard.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

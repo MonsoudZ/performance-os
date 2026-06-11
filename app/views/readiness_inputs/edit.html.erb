@@ -1,0 +1,35 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Recovery history</p>
+      <h1>Edit <%= @input.metric_date.strftime("%A, %b %-d") %>.</h1>
+      <p>Correct what you logged. Saving re-derives this day’s readiness score.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <% if @input.errors.any? %>
+      <div class="form-errors"><%= @input.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= form_with model: @input, url: readiness_input_path(@input), method: :patch, class: "stacked-form stacked-form--wide" do |form| %>
+      <label>
+        <span>Sleep duration</span>
+        <div class="input-with-unit">
+          <%= form.number_field :sleep_minutes, min: 0, max: 900 %>
+          <span>min</span>
+        </div>
+      </label>
+
+      <%= render "dashboard/rating_field", form: form, field: :sleep_quality, label: "Sleep quality", low: "Poor", high: "Excellent" %>
+      <%= render "dashboard/rating_field", form: form, field: :soreness, label: "Muscle soreness", low: "Fresh", high: "Very sore" %>
+      <%= render "dashboard/rating_field", form: form, field: :fatigue, label: "General fatigue", low: "Energized", high: "Drained" %>
+      <%= render "dashboard/rating_field", form: form, field: :stress, label: "Life stress", low: "Calm", high: "Overloaded" %>
+
+      <%= form.submit "Save check-in", class: "button" %>
+      <%= link_to "Back to history", readiness_inputs_path, class: "text-link" %>
+    <% end %>
+  </section>
+</main>

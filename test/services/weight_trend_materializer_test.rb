@@ -46,6 +46,20 @@ class WeightTrendMaterializerTest < ActiveSupport::TestCase
     assert_equal 85.56, trend(0).ewma_kg.to_f
   end
 
+  test "drops the trend and re-propagates when a day's measurements are removed" do
+    create_metric(2, 80)
+    create_metric(1, 84)
+    create_metric(0, 88)
+    [ 2, 1, 0 ].each { |offset| WeightTrendMaterializer.new(@user, trend_date: Date.current - offset.days).call }
+
+    @user.body_metrics.where(measured_on: Date.current - 1.day).delete_all
+    WeightTrendMaterializer.new(@user, trend_date: Date.current - 1.day).call
+
+    assert_nil @user.weight_trends.find_by(trend_date: Date.current - 1.day)
+    # day0 now seeds from day-2: .25*88 + .75*80 = 82.0
+    assert_equal 82.0, trend(0).ewma_kg.to_f
+  end
+
   private
 
   def create_metric(offset, weight)

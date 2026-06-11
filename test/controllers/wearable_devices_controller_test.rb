@@ -47,4 +47,15 @@ class WearableDevicesControllerTest < ActionDispatch::IntegrationTest
     assert_not device.reload.authenticate_token(first_token.split(".", 2).last)
     assert device.authenticate_token(response.parsed_body.fetch("access_token").split(".", 2).last)
   end
+
+  test "lists the user's paired devices" do
+    WearableDevice.issue_for!(user: @user, platform: "ios_healthkit", external_id: "phone-a", name: "iPhone")
+    foreign, = WearableDevice.issue_for!(user: users(:two), platform: "ios_healthkit", external_id: "phone-b", name: "Other phone")
+
+    get wearable_devices_path
+
+    assert_response :success
+    assert_select "strong", text: "iPhone"
+    assert_select "strong", text: foreign.name, count: 0
+  end
 end

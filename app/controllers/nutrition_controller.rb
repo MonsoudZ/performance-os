@@ -14,6 +14,7 @@ class NutritionController < ApplicationController
     @custom_foods = Current.user.foods.order(:name, :brand)
     @body_metric = Current.user.body_metrics.new(measured_on: today)
     @weight_trends = Current.user.weight_trends.order(trend_date: :desc).limit(7)
+    @recent_body_metrics = Current.user.body_metrics.order(measured_on: :desc, id: :desc).limit(7)
     @expenditure = Current.user.expenditure_estimates.order(estimate_date: :desc).first
   end
 end

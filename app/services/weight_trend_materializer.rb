@@ -8,13 +8,18 @@ class WeightTrendMaterializer
 
   def call
     raw_kg = daily_weight
-    return existing_trend unless raw_kg
 
     user.weight_trends.transaction do
-      upsert_raw(trend_date, raw_kg)
-      # Recompute this date and every later date so corrections and out-of-order
-      # backfills propagate through the whole EWMA chain instead of leaving stale
-      # downstream rows.
+      if raw_kg
+        upsert_raw(trend_date, raw_kg)
+      else
+        # The last measurement for this date was removed; drop the trend row so
+        # the EWMA chain re-derives without it.
+        user.weight_trends.where(trend_date: trend_date).delete_all
+      end
+      # Recompute this date and every later date so corrections, out-of-order
+      # backfills, and deletions propagate through the whole EWMA chain instead
+      # of leaving stale downstream rows.
       recompute_ewma_from(trend_date)
     end
 

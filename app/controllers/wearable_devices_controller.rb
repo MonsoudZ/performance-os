@@ -1,4 +1,8 @@
 class WearableDevicesController < ApplicationController
+  def index
+    @devices = Current.user.wearable_devices.order(created_at: :desc)
+  end
+
   def create
     device, access_token = WearableDevice.issue_for!(
       user: Current.user,

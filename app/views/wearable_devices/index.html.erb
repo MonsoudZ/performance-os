@@ -1,0 +1,44 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Wearable sync</p>
+      <h1>Paired devices.</h1>
+      <p>HealthKit devices are paired from the iPhone app. Revoke a device to stop it syncing.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <% if @devices.any? %>
+      <div class="compact-list">
+        <% @devices.each do |device| %>
+          <div class="compact-list__item">
+            <strong><%= device.name %></strong>
+            <span>
+              <%= device.platform.humanize %> ·
+              <% if device.revoked_at? %>
+                revoked <%= time_ago_in_words(device.revoked_at) %> ago
+              <% elsif device.last_synced_at %>
+                last synced <%= time_ago_in_words(device.last_synced_at) %> ago
+              <% else %>
+                awaiting first sync
+              <% end %>
+            </span>
+            <small>
+              <% unless device.revoked_at? %>
+                <%= button_to "Revoke", wearable_device_path(device), method: :delete,
+                  form: { data: { turbo_confirm: "Revoke #{device.name}? It will stop syncing." } },
+                  class: "text-button text-button--danger" %>
+              <% end %>
+            </small>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>No devices paired yet. Connect HealthKit in the iPhone app to start syncing.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

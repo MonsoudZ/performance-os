@@ -5,17 +5,18 @@ Rails.application.routes.draw do
   root "dashboard#show"
 
   resource :readiness_check_in, only: :create
+  resources :readiness_inputs, only: %i[index edit update]
   resources :goal_periods, only: %i[index create] do
     patch :finish, on: :member
   end
   resource :nutrition, only: :show, controller: "nutrition"
   resource :weekly_review, only: %i[show create]
-  resources :wearable_devices, only: %i[create destroy]
+  resources :wearable_devices, only: %i[index create destroy]
   resources :foods, only: %i[create edit update destroy]
   resources :food_log_entries, only: %i[create update destroy] do
     post :copy_yesterday, on: :collection
   end
-  resources :body_metrics, only: :create
+  resources :body_metrics, only: %i[create destroy]
   resources :exercises, only: %i[new create]
   resources :exercise_prescriptions, only: %i[index new create edit update] do
     patch :finish, on: :member

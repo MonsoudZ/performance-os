@@ -83,6 +83,7 @@
           <span class="completed__check">✓</span>
           <h3>Today’s check-in is complete.</h3>
           <p>Tomorrow’s snapshot stays independent, so your history never silently changes.</p>
+          <%= link_to "Edit or review past check-ins", readiness_inputs_path, class: "text-link" %>
         </div>
       <% else %>
         <%= form_with model: DailyReadinessInput.new, url: readiness_check_in_path, class: "check-in__form" do |form| %>
@@ -167,6 +168,7 @@
     <% else %>
       <span class="confidence">Native pairing required · manual check-in remains available</span>
     <% end %>
+    <%= link_to "Manage devices", wearable_devices_path, class: "text-link" %>
   </section>
 
   <% if @decision && @decision.output["lifts"].any? %>
