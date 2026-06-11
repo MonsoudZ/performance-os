@@ -1705,3 +1705,19 @@ h1 {
 .synced-note {
   margin: 0;
 }
+
+/* Food database search */
+.food-search {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.food-search input[type="search"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.food-result strong {
+  display: block;
+}

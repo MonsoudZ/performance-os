@@ -75,4 +75,54 @@ class FoodsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "searches the food database and renders results" do
+    result = FoodDatabaseSearch::Result.new(
+      name: "Greek Yogurt", brand: "Fage", serving_grams: 100,
+      kcal: 59, protein_g: 10, carb_g: 4, fat_g: 0, code: "1"
+    )
+
+    with_search_results([ result ]) do
+      get search_foods_path, params: { q: "yogurt" }
+    end
+
+    assert_response :success
+    assert_select ".food-result", 1
+    assert_select "strong", text: "Fage · Greek Yogurt"
+  end
+
+  test "a blank search renders no results and does not call the database" do
+    get search_foods_path, params: { q: "" }
+
+    assert_response :success
+    assert_select ".food-result", count: 0
+  end
+
+  test "imports a database result into the catalog as an imported food" do
+    assert_difference "Food.count", 1 do
+      post import_foods_path, params: {
+        q: "yogurt",
+        food: { name: "Greek Yogurt", brand: "Fage", serving_grams: 100, kcal: 59, protein_g: 10.3, carb_g: 3.6, fat_g: 0.4 }
+      }
+    end
+
+    food = Food.order(:id).last
+    assert_equal @user, food.user
+    assert_equal "import", food.source
+    assert_equal "Greek Yogurt", food.name
+    assert_redirected_to nutrition_path
+  end
+
+  private
+
+  # Swaps the external search with canned results for the block (no
+  # Minitest::Mock available in this build).
+  def with_search_results(results)
+    fake = Object.new
+    fake.define_singleton_method(:call) { results }
+    FoodDatabaseSearch.define_singleton_method(:new) { |*, **| fake }
+    yield
+  ensure
+    FoodDatabaseSearch.singleton_class.send(:remove_method, :new)
+  end
 end

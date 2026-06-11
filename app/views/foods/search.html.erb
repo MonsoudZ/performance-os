@@ -1,0 +1,56 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Food catalog</p>
+      <h1>Search the food database.</h1>
+      <p>Results come from Open Food Facts. Add one to your catalog, then log it from the nutrition page.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <%= form_with url: search_foods_path, method: :get, class: "food-search" do %>
+      <%= search_field_tag :q, @query, placeholder: "Search foods, brands…", autofocus: true, aria: { label: "Search the food database" } %>
+      <%= submit_tag "Search", class: "button", name: nil %>
+    <% end %>
+
+    <% if @query.present? %>
+      <% if @results.any? %>
+        <div class="compact-list">
+          <% @results.each do |result| %>
+            <div class="compact-list__item food-result">
+              <strong><%= [ result.brand, result.name ].compact.join(" · ") %></strong>
+              <span>
+                <%= result.kcal.round %> kcal ·
+                <%= result.protein_g.round %>P / <%= result.carb_g.round %>C / <%= result.fat_g.round %>F
+                per <%= result.serving_grams %> g
+              </span>
+              <small>
+                <%= button_to "Add to catalog", import_foods_path, method: :post, class: "text-button",
+                  params: {
+                    q: @query,
+                    food: {
+                      name: result.name,
+                      brand: result.brand,
+                      serving_grams: result.serving_grams,
+                      kcal: result.kcal,
+                      protein_g: result.protein_g,
+                      carb_g: result.carb_g,
+                      fat_g: result.fat_g
+                    }
+                  } %>
+              </small>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="empty-state">
+          <p>No matches for “<%= @query %>”. Try a different term, or add it manually on the nutrition page.</p>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= link_to "Back to nutrition", nutrition_path, class: "text-link" %>
+  </section>
+</main>

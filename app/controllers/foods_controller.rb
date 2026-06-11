@@ -11,6 +11,21 @@ class FoodsController < ApplicationController
     end
   end
 
+  def search
+    @query = params[:q].to_s.strip
+    @results = @query.present? ? FoodDatabaseSearch.new(@query).call : []
+  end
+
+  def import
+    food = Current.user.foods.new(import_params.merge(source: "import"))
+
+    if food.save
+      redirect_to nutrition_path, notice: "#{food.display_name} added from the food database."
+    else
+      redirect_to search_foods_path(q: params[:q]), alert: food.errors.full_messages.to_sentence
+    end
+  end
+
   def edit
   end
 
@@ -47,4 +62,6 @@ class FoodsController < ApplicationController
       :fat_g
     )
   end
+
+  alias import_params food_params
 end

@@ -72,6 +72,13 @@
           <h2>Add a staple.</h2>
         </div>
       </div>
+
+      <%= form_with url: search_foods_path, method: :get, class: "food-search" do %>
+        <%= search_field_tag :q, nil, placeholder: "Search the food database…", aria: { label: "Search the food database" } %>
+        <%= submit_tag "Search", class: "button button--secondary", name: nil %>
+      <% end %>
+
+      <p class="evidence-note">Or enter one manually:</p>
       <%= render "foods/form", food: @food, submit_label: "Add food" %>
 
       <% if @custom_foods.any? %>
