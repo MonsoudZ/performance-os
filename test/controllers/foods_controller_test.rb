@@ -115,4 +115,31 @@ class FoodsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Greek Yogurt", food.name
     assert_redirected_to nutrition_path
   end
+
+  test "logs a database result in one step" do
+    assert_difference [ "Food.count", "FoodLogEntry.count" ], 1 do
+      assert_enqueued_with(job: NutritionRecomputeJob) do
+        post log_foods_path, params: {
+          q: "yogurt",
+          food: { name: "Greek Yogurt", brand: "Fage", serving_grams: 100, kcal: 59, protein_g: 10, carb_g: 4, fat_g: 0 }
+        }
+      end
+    end
+
+    entry = FoodLogEntry.order(:id).last
+    assert_equal 59, entry.kcal.to_f # 100 g of a 59 kcal/100 g food
+    assert_equal "import", entry.food.source
+    assert_redirected_to nutrition_path
+  end
+
+  test "logging the same database food twice reuses one catalog entry" do
+    2.times do
+      post log_foods_path, params: {
+        food: { name: "Oats", serving_grams: 100, kcal: 380, protein_g: 13, carb_g: 67, fat_g: 7 }
+      }
+    end
+
+    assert_equal 1, @user.foods.where(name: "Oats").count
+    assert_equal 2, @user.food_log_entries.count
+  end
 end

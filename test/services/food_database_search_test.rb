@@ -82,4 +82,27 @@ class FoodDatabaseSearchTest < ActiveSupport::TestCase
 
     assert_equal [], FoodDatabaseSearch.new("yogurt").call
   end
+
+  test "looks up a digit-only query as a barcode via the product endpoint" do
+    body = {
+      "status" => 1,
+      "product" => {
+        "code" => "737628064502", "product_name" => "Thai Peanut Sauce", "brands" => "Taste of Thai",
+        "nutriments" => { "energy-kcal_100g" => 450, "proteins_100g" => 8, "carbohydrates_100g" => 60, "fat_100g" => 20 }
+      }
+    }.to_json
+    stub_request(:get, %r{world\.openfoodfacts\.org/api/v2/product/737628064502\.json}).to_return(status: 200, body: body)
+
+    results = FoodDatabaseSearch.new("737628064502").call
+
+    assert_equal 1, results.size
+    assert_equal "Thai Peanut Sauce", results.first.name
+    assert_not_requested :get, SEARCH_PATH # never hit the text-search endpoint
+  end
+
+  test "an unknown barcode returns nothing" do
+    stub_request(:get, %r{/api/v2/product/}).to_return(status: 200, body: { "status" => 0 }.to_json)
+
+    assert_equal [], FoodDatabaseSearch.new("000000000000").call
+  end
 end

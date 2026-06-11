@@ -26,6 +26,27 @@ class FoodsController < ApplicationController
     end
   end
 
+  # One-step: import the food (deduped) and log a serving in a single tap.
+  def log
+    food = find_or_import_food
+    quantity = 100.to_d
+    entry = Current.user.food_log_entries.new(
+      food: food,
+      logged_at: Time.current,
+      meal_type: FoodLogEntry.meal_type_for(Time.current),
+      quantity_grams: quantity,
+      source: "manual",
+      **food.macros_for(quantity)
+    )
+
+    if entry.save
+      NutritionRecomputeJob.perform_later(Current.user, Current.user.local_date)
+      redirect_to nutrition_path, notice: "#{food.display_name} logged (100 g — adjust below if needed)."
+    else
+      redirect_to search_foods_path(q: params[:q]), alert: entry.errors.full_messages.to_sentence
+    end
+  end
+
   def edit
   end
 
@@ -64,4 +85,11 @@ class FoodsController < ApplicationController
   end
 
   alias import_params food_params
+
+  def find_or_import_food
+    attributes = import_params
+    Current.user.foods
+      .create_with(attributes.merge(source: "import"))
+      .find_or_create_by!(name: attributes[:name], brand: attributes[:brand].presence)
+  end
 end

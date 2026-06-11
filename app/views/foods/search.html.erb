@@ -11,7 +11,7 @@
 
   <section class="panel">
     <%= form_with url: search_foods_path, method: :get, class: "food-search" do %>
-      <%= search_field_tag :q, @query, placeholder: "Search foods, brands…", autofocus: true, aria: { label: "Search the food database" } %>
+      <%= search_field_tag :q, @query, placeholder: "Search foods, brands, or a barcode…", autofocus: true, aria: { label: "Search the food database or enter a barcode" } %>
       <%= submit_tag "Search", class: "button", name: nil %>
     <% end %>
 
@@ -26,20 +26,16 @@
                 <%= result.protein_g.round %>P / <%= result.carb_g.round %>C / <%= result.fat_g.round %>F
                 per <%= result.serving_grams %> g
               </span>
-              <small>
-                <%= button_to "Add to catalog", import_foods_path, method: :post, class: "text-button",
-                  params: {
-                    q: @query,
-                    food: {
-                      name: result.name,
-                      brand: result.brand,
-                      serving_grams: result.serving_grams,
-                      kcal: result.kcal,
-                      protein_g: result.protein_g,
-                      carb_g: result.carb_g,
-                      fat_g: result.fat_g
-                    }
-                  } %>
+              <% food_fields = {
+                   q: @query,
+                   food: {
+                     name: result.name, brand: result.brand, serving_grams: result.serving_grams,
+                     kcal: result.kcal, protein_g: result.protein_g, carb_g: result.carb_g, fat_g: result.fat_g
+                   }
+                 } %>
+              <small class="food-result__actions">
+                <%= button_to "Log 100 g", log_foods_path, method: :post, class: "text-button", params: food_fields %>
+                <%= button_to "Add to catalog", import_foods_path, method: :post, class: "text-button", params: food_fields %>
               </small>
             </div>
           <% end %>

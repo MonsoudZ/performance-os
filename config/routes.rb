@@ -17,6 +17,7 @@ Rails.application.routes.draw do
     collection do
       get :search
       post :import
+      post :log
     end
   end
   resources :food_log_entries, only: %i[create update destroy] do
