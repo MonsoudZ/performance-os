@@ -52,6 +52,12 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
+  # Run evaluator pipelines inline in development so a check-in generates its
+  # plan synchronously and shows on the next page render — no background worker
+  # or websocket needed locally. Production uses Solid Queue + Solid Cable for
+  # the real async, eventual-consistency flow.
+  config.active_job.queue_adapter = :inline
+
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
 
