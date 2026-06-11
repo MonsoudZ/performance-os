@@ -1,0 +1,77 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Progress</p>
+      <h1>What the work is building.</h1>
+      <p>Weekly volume per muscle and estimated-1RM trends, straight from your logged sets.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Weekly volume by muscle</p>
+        <h2><%= @week_start.strftime("%b %-d") %> – <%= @week_end.strftime("%b %-d") %></h2>
+      </div>
+    </div>
+
+    <% if @volume.any? %>
+      <div class="volume-list">
+        <% @volume.each do |entry| %>
+          <% landmark = entry.landmark %>
+          <% axis_max = landmark ? landmark[:mrv] * 1.25 : [ entry.fractional_sets, 1 ].max %>
+          <div class="volume-row volume-row--<%= entry.status %>">
+            <div class="volume-row__label">
+              <strong><%= entry.muscle.humanize %></strong>
+              <span><%= entry.fractional_sets %> sets · <%= volume_status_label(entry.status) %></span>
+            </div>
+            <div class="volume-bar">
+              <div class="volume-bar__fill" style="width: <%= volume_axis_percent(entry.fractional_sets, axis_max) %>%"></div>
+              <% if landmark %>
+                <span class="volume-bar__tick" style="left: <%= volume_axis_percent(landmark[:mev], axis_max) %>%" title="MEV <%= landmark[:mev] %>"></span>
+                <span class="volume-bar__tick" style="left: <%= volume_axis_percent(landmark[:mav], axis_max) %>%" title="MAV <%= landmark[:mav] %>"></span>
+                <span class="volume-bar__tick volume-bar__tick--max" style="left: <%= volume_axis_percent(landmark[:mrv], axis_max) %>%" title="MRV <%= landmark[:mrv] %>"></span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <p class="evidence-note">Ticks mark minimum-effective (MEV), adaptive-target (MAV), and maximum-recoverable (MRV) weekly sets. Secondary muscles count as half a set.</p>
+    <% else %>
+      <div class="empty-state"><p>Log a workout this week to see volume per muscle.</p></div>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Strength progression</p>
+        <h2>Estimated 1RM trends</h2>
+      </div>
+    </div>
+
+    <% if @progress.any? %>
+      <div class="progress-grid">
+        <% @progress.each do |item| %>
+          <article class="progress-card">
+            <div class="progress-card__head">
+              <strong><%= item.exercise.name %></strong>
+              <span><%= number_with_precision item.current_e1rm, precision: 1, strip_insignificant_zeros: true %> kg</span>
+            </div>
+            <div class="progress-card__chart"><%= e1rm_sparkline(item.points) %></div>
+            <div class="progress-card__meta">
+              <span>Best <%= number_with_precision item.best_e1rm, precision: 1, strip_insignificant_zeros: true %> kg</span>
+              <% if item.pr_count.positive? %>
+                <span class="pr-badge"><%= pluralize item.pr_count, "PR" %><% if item.last_pr_on %> · <%= item.last_pr_on.strftime("%b %-d") %><% end %></span>
+              <% end %>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state"><p>Log working sets to start tracking estimated-1RM trends.</p></div>
+    <% end %>
+  </section>
+</main>
