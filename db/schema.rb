@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -55,6 +55,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_160000) do
     t.index ["user_id", "decision_type", "created_at"], name: "index_decisions_on_user_type_and_created_at"
     t.index ["user_id"], name: "index_coaching_decisions_on_user_id"
     t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying, 'moderate'::character varying, 'high'::character varying]::text[])", name: "coaching_decisions_confidence_check"
+  end
+
+  create_table "conditioning_sessions", force: :cascade do |t|
+    t.string "activity_type", null: false
+    t.integer "avg_hr_bpm"
+    t.datetime "created_at", null: false
+    t.integer "distance_meters"
+    t.integer "duration_seconds", null: false
+    t.text "notes"
+    t.datetime "performed_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "performed_at"], name: "index_conditioning_sessions_on_user_id_and_performed_at"
+    t.index ["user_id"], name: "index_conditioning_sessions_on_user_id"
+    t.check_constraint "avg_hr_bpm IS NULL OR avg_hr_bpm > 0", name: "conditioning_hr_check"
+    t.check_constraint "distance_meters IS NULL OR distance_meters >= 0", name: "conditioning_distance_check"
+    t.check_constraint "duration_seconds > 0", name: "conditioning_duration_check"
   end
 
   create_table "daily_readiness_inputs", force: :cascade do |t|
@@ -395,12 +412,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_160000) do
     t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.decimal "height_cm", precision: 5, scale: 1
+    t.integer "max_hr"
     t.string "password_digest", null: false
     t.string "sex"
     t.string "time_zone", default: "UTC", null: false
     t.string "unit_system", default: "metric", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.check_constraint "max_hr IS NULL OR max_hr > 0", name: "users_max_hr_check"
     t.check_constraint "sex::text = ANY (ARRAY['male'::character varying, 'female'::character varying, 'unspecified'::character varying]::text[])", name: "users_sex_check"
     t.check_constraint "unit_system::text = ANY (ARRAY['metric'::character varying, 'imperial'::character varying]::text[])", name: "users_unit_system_check"
   end
@@ -494,6 +513,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_160000) do
   add_foreign_key "coaching_decision_links", "coaching_decisions", column: "child_decision_id", on_delete: :restrict
   add_foreign_key "coaching_decision_links", "coaching_decisions", column: "parent_decision_id", on_delete: :cascade
   add_foreign_key "coaching_decisions", "users"
+  add_foreign_key "conditioning_sessions", "users"
   add_foreign_key "daily_readiness_inputs", "users"
   add_foreign_key "exercise_muscle_contributions", "exercises"
   add_foreign_key "exercise_muscle_contributions", "muscle_groups"

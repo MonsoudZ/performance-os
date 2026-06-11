@@ -16,6 +16,7 @@ class User < ApplicationRecord
   has_many :expenditure_estimates, dependent: :destroy
   has_many :wearable_devices, dependent: :destroy
   has_many :wearable_samples, dependent: :destroy
+  has_many :conditioning_sessions, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 

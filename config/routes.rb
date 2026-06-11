@@ -29,6 +29,8 @@ Rails.application.routes.draw do
   end
   resources :workout_templates, except: :show
   resources :workout_sessions, only: %i[new create show edit update destroy]
+  resources :conditioning_sessions, only: %i[index create destroy]
+  resource :profile, only: :update
 
   namespace :api do
     namespace :v1 do

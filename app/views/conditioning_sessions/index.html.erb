@@ -1,0 +1,105 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Conditioning</p>
+      <h1>Train the engine.</h1>
+      <p>Log runs, rides, rows, and jumps. Pace and heart-rate zones come from each session.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">This week</p>
+        <h2><%= @week_start.strftime("%b %-d") %> – <%= @week_end.strftime("%b %-d") %></h2>
+      </div>
+      <span class="step"><%= conditioning_goal_headline(@active_goal, @summary) %></span>
+    </div>
+
+    <div class="workout-summary">
+      <div><span>Sessions</span><strong><%= @summary.session_count %></strong></div>
+      <div><span>Distance</span><strong><%= @summary.total_distance_km %> km</strong></div>
+      <div><span>Time</span><strong><%= format_duration(@summary.total_duration_minutes) %></strong></div>
+      <div><span>Zone 2</span><strong><%= @summary.zone2_minutes %> min</strong></div>
+    </div>
+
+    <% if Current.user.max_hr.blank? %>
+      <p class="evidence-note">Set your max heart rate to see training zones.</p>
+    <% elsif @summary.zone_minutes.any? %>
+      <div class="zone-strip">
+        <% ConditioningSession::ZONE_CEILINGS.keys.each do |zone| %>
+          <div><span><%= zone %></span><strong><%= @summary.zone_minutes[zone] || 0 %>m</strong></div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= form_with model: Current.user, url: profile_path, method: :patch, class: "food-search" do |form| %>
+      <label class="inline-label">
+        <span>Max HR</span>
+        <%= form.number_field :max_hr, min: 100, max: 230, placeholder: "e.g. 190" %>
+      </label>
+      <%= form.submit "Save", class: "button button--secondary", name: nil %>
+    <% end %>
+  </section>
+
+  <section class="panel form-panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Log conditioning</p>
+        <h2>Record a session.</h2>
+      </div>
+    </div>
+
+    <% if @conditioning_session.errors.any? %>
+      <div class="form-errors"><%= @conditioning_session.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= form_with model: @conditioning_session, class: "stacked-form stacked-form--wide" do |form| %>
+      <div class="form-grid">
+        <label>
+          <span>Activity</span>
+          <%= form.select :activity_type, ConditioningSession::ACTIVITY_TYPES.map { |type| [ type.humanize, type ] } %>
+        </label>
+        <label><span>Duration (min)</span><%= form.number_field :duration_minutes, min: 1, step: 0.5, required: true %></label>
+        <label><span>Distance (km)</span><%= form.number_field :distance_km, min: 0, step: 0.1 %></label>
+        <label><span>Avg HR (bpm)</span><%= form.number_field :avg_hr_bpm, min: 1, max: 250 %></label>
+        <label><span>Performed at</span><%= form.datetime_local_field :performed_at, required: true %></label>
+      </div>
+      <label><span>Notes</span><%= form.text_area :notes, rows: 2, placeholder: "Optional" %></label>
+      <%= form.submit "Log session", class: "button" %>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Recent</p>
+        <h2>Logged sessions.</h2>
+      </div>
+    </div>
+
+    <% if @sessions.any? %>
+      <div class="compact-list">
+        <% @sessions.each do |session| %>
+          <div class="compact-list__item">
+            <strong><%= session.activity_type.humanize %><% if session.hr_zone %> · <%= session.hr_zone %><% end %></strong>
+            <span>
+              <%= session.performed_at.strftime("%b %-d") %> ·
+              <%= format_duration((session.duration_seconds / 60.0).round) %>
+              <% if session.distance_km %> · <%= session.distance_km %> km · <%= format_pace(session.pace_seconds_per_km) %><% end %>
+              <% if session.avg_hr_bpm %> · <%= session.avg_hr_bpm %> bpm<% end %>
+            </span>
+            <small>
+              <%= button_to "Remove", conditioning_session_path(session), method: :delete,
+                form: { data: { turbo_confirm: "Remove this session?" } }, class: "text-button text-button--danger" %>
+            </small>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state"><p>No conditioning logged yet.</p></div>
+    <% end %>
+  </section>
+</main>
