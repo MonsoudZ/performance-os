@@ -26,6 +26,14 @@ class ConditioningSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to conditioning_sessions_path
   end
 
+  test "logging a session recomputes today's training plan" do
+    assert_enqueued_with(job: TrainingPlanRecomputeJob) do
+      post conditioning_sessions_path, params: {
+        conditioning_session: { activity_type: "run", performed_at: Time.current, duration_minutes: 30 }
+      }
+    end
+  end
+
   test "rejects an unknown activity type" do
     assert_no_difference "ConditioningSession.count" do
       post conditioning_sessions_path, params: {

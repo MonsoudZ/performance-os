@@ -7,6 +7,7 @@ class ConditioningSessionsController < ApplicationController
     @conditioning_session = Current.user.conditioning_sessions.new(conditioning_params)
 
     if @conditioning_session.save
+      recompute_training_plan
       redirect_to conditioning_sessions_path, notice: "#{@conditioning_session.activity_type.humanize} session logged."
     else
       load_workspace
@@ -17,10 +18,16 @@ class ConditioningSessionsController < ApplicationController
   def destroy
     session = Current.user.conditioning_sessions.find(params[:id])
     session.destroy!
+    recompute_training_plan
     redirect_to conditioning_sessions_path, notice: "Session removed."
   end
 
   private
+
+  # The week's conditioning feeds today's plan directive, so recompose it.
+  def recompute_training_plan
+    TrainingPlanRecomputeJob.perform_later(Current.user, Current.user.local_date)
+  end
 
   def load_workspace
     service = WeeklyConditioningSummary.new(Current.user)

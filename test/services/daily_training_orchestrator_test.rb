@@ -65,6 +65,34 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     end
   end
 
+  test "composes a conditioning directive from the goal and the week's progress" do
+    create_readiness_decision("steady", 60, "moderate")
+    @user.update!(max_hr: 190)
+    @user.conditioning_sessions.create!(
+      activity_type: "run", performed_at: Time.current,
+      duration_seconds: 1800, distance_meters: 5000, avg_hr_bpm: 125
+    ) # 30 min in Zone 2
+
+    conditioning = DailyTrainingOrchestrator.new(@user).call.output["conditioning"]
+
+    assert conditioning, "expected a conditioning directive in the plan"
+    assert_equal "zone2", conditioning["metric"] # increase_strength -> Zone 2 base
+    assert_equal 30, conditioning["done"]
+    assert_equal 60, conditioning["target"]
+  end
+
+  test "regenerates the plan when the week's conditioning changes" do
+    create_readiness_decision("steady", 60, "moderate")
+    first = DailyTrainingOrchestrator.new(@user).call
+
+    @user.update!(max_hr: 190)
+    @user.conditioning_sessions.create!(activity_type: "run", performed_at: Time.current, duration_seconds: 1800, avg_hr_bpm: 125)
+
+    assert_difference "CoachingDecision.count", 1 do
+      assert_not_equal first, DailyTrainingOrchestrator.new(@user).call
+    end
+  end
+
   private
 
   def create_readiness_decision(status, score, confidence)

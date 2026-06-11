@@ -87,7 +87,18 @@ class DailyTrainingOrchestrator
       "readiness_decision_id" => readiness_decision.id,
       "progression_decision_ids" => progression_decisions.values.map(&:id),
       "nutrition_decision_id" => nutrition_decision&.id,
-      "prescription_ids" => prescriptions.map(&:id)
+      "prescription_ids" => prescriptions.map(&:id),
+      "conditioning" => conditioning_identity
+    }
+  end
+
+  # Compact conditioning state so the plan regenerates when the week's
+  # conditioning changes.
+  def conditioning_identity
+    {
+      "sessions" => conditioning_summary.session_count,
+      "distance_km" => conditioning_summary.total_distance_km,
+      "zone2_minutes" => conditioning_summary.zone2_minutes
     }
   end
 
@@ -102,19 +113,16 @@ class DailyTrainingOrchestrator
   def current_parent_matches?
     return false unless current_parent
 
-    current_parent.inputs.slice(
-      "active_goal",
-      "readiness_decision_id",
-      "progression_decision_ids",
-      "nutrition_decision_id",
-      "prescription_ids"
-    ) == serialized_input_snapshot.slice(
-      "active_goal",
-      "readiness_decision_id",
-      "progression_decision_ids",
-      "nutrition_decision_id",
-      "prescription_ids"
-    )
+    comparable_keys = %w[
+      active_goal
+      readiness_decision_id
+      progression_decision_ids
+      nutrition_decision_id
+      prescription_ids
+      conditioning
+    ]
+
+    current_parent.inputs.slice(*comparable_keys) == serialized_input_snapshot.slice(*comparable_keys)
   end
 
   def serialized_input_snapshot
@@ -122,8 +130,6 @@ class DailyTrainingOrchestrator
   end
 
   def composed_output
-    readiness_status = readiness_decision.output.fetch("status")
-
     {
       "status" => readiness_status,
       "headline" => headline_for(readiness_status),
@@ -132,8 +138,25 @@ class DailyTrainingOrchestrator
       "goal" => active_goal&.goal_type,
       "session_directive" => readiness_decision.output["guidance"],
       "nutrition" => nutrition_output,
+      "conditioning" => conditioning_output,
       "lifts" => prescriptions.map { |prescription| lift_directive(prescription, readiness_status) }
     }
+  end
+
+  def readiness_status
+    @readiness_status ||= readiness_decision.output.fetch("status")
+  end
+
+  def conditioning_summary
+    @conditioning_summary ||= WeeklyConditioningSummary.new(user, week_start: plan_date.beginning_of_week).call
+  end
+
+  def conditioning_output
+    @conditioning_output ||= ConditioningDirective.new(
+      goal: active_goal,
+      readiness_status: readiness_status,
+      summary: conditioning_summary
+    ).call
   end
 
   def headline_for(readiness_status)

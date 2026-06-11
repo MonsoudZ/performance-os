@@ -226,6 +226,20 @@
     </section>
   <% end %>
 
+  <% if (conditioning = @decision&.output&.dig("conditioning")) %>
+    <section class="panel nutrition-directive conditioning-directive--<%= conditioning["focus"] %>">
+      <div>
+        <p class="eyebrow">Conditioning directive</p>
+        <h2><%= conditioning["headline"] %></h2>
+        <p><%= conditioning["guidance"] %></p>
+      </div>
+      <div class="nutrition-directive__numbers">
+        <div><span><%= conditioning["label"].humanize %></span><strong><%= conditioning["done"] %> / <%= conditioning["target"] %></strong></div>
+      </div>
+      <%= link_to "Log conditioning", conditioning_sessions_path, class: "text-link" %>
+    </section>
+  <% end %>
+
   <section class="training-overview">
     <article class="panel">
       <div class="panel__header">
