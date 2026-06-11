@@ -1,4 +1,6 @@
 class Mesocycle < ApplicationRecord
+  MAX_SET_BONUS = 3 # cap the accumulation volume ramp
+
   belongs_to :user
 
   validates :started_on, presence: true
@@ -32,6 +34,14 @@ class Mesocycle < ApplicationRecord
 
   def phase(date)
     deload?(date) ? "deload" : "accumulation"
+  end
+
+  # Extra working sets to add during accumulation: +1 per week, bounded, and
+  # zero on the deload week.
+  def accumulation_set_bonus(date)
+    return 0 if deload?(date)
+
+    [ current_week(date) - 1, MAX_SET_BONUS ].min
   end
 
   def label

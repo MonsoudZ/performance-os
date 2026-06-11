@@ -211,7 +211,7 @@
             </div>
             <strong><%= lift["headline"] %></strong>
             <p><%= lift["guidance"] %></p>
-            <small><%= lift["target"] %></small>
+            <small><%= lift["target"] %><% if lift["working_sets"] %> · <%= pluralize lift["working_sets"], "set" %> today<% end %></small>
           </article>
         <% end %>
       </div>

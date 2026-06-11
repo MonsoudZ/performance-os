@@ -108,6 +108,29 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     assert_equal 4, parent.output.dig("mesocycle", "week")
   end
 
+  test "ramps accumulation volume week over week" do
+    create_readiness_decision("push", 88, "high")
+    create_progression_decision("increase", 102.5, "high")
+    # 14 days in -> week 3 of a 4-week block (deload week 4): accumulation, +2 sets.
+    @user.mesocycles.create!(started_on: Date.current - 14.days, weeks: 4, deload_week: 4)
+
+    lift = DailyTrainingOrchestrator.new(@user).call.output["lifts"].first
+
+    assert_equal 5, lift["working_sets"] # baseline 3 + 2
+    assert_match(/Volume ramp/i, lift["guidance"])
+  end
+
+  test "week one of accumulation uses baseline volume" do
+    create_readiness_decision("push", 88, "high")
+    create_progression_decision("increase", 102.5, "high")
+    @user.mesocycles.create!(started_on: Date.current, weeks: 4, deload_week: 4) # week 1
+
+    lift = DailyTrainingOrchestrator.new(@user).call.output["lifts"].first
+
+    assert_equal 3, lift["working_sets"]
+    assert_no_match(/Volume ramp/i, lift["guidance"])
+  end
+
   private
 
   def create_readiness_decision(status, score, confidence)

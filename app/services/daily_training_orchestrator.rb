@@ -96,7 +96,11 @@ class DailyTrainingOrchestrator
   def mesocycle_identity
     return unless active_mesocycle
 
-    { "id" => active_mesocycle.id, "phase" => active_mesocycle.phase(plan_date) }
+    {
+      "id" => active_mesocycle.id,
+      "phase" => active_mesocycle.phase(plan_date),
+      "week" => active_mesocycle.current_week(plan_date)
+    }
   end
 
   # Compact conditioning state so the plan regenerates when the week's
@@ -236,73 +240,94 @@ class DailyTrainingOrchestrator
 
   def lift_directive(prescription, execution_mode)
     progression = progression_decisions[prescription.exercise_id]
+    sets = working_sets_for(prescription)
     base = {
       "exercise_id" => prescription.exercise_id,
       "exercise_name" => prescription.exercise.name,
       "prescription_id" => prescription.id,
       "target" => prescription.target_label,
+      "working_sets" => sets,
       "progression_decision_id" => progression&.id
     }
 
-    return base.merge(deload_lift_output(prescription)) if execution_mode == "deload"
-    return base.merge(recovery_lift_output(prescription, progression)) if execution_mode == "recover"
-    return base.merge(steady_lift_output(prescription, progression)) if execution_mode == "steady"
+    return base.merge(deload_lift_output(sets)) if execution_mode == "deload"
+    return base.merge(recovery_lift_output(progression, sets)) if execution_mode == "recover"
+    return base.merge(steady_lift_output(progression, sets)) if execution_mode == "steady"
 
-    base.merge(push_lift_output(prescription, progression))
+    base.merge(push_lift_output(progression, sets))
   end
 
-  def deload_lift_output(prescription)
-    reduced_sets = [ (prescription.working_sets * 0.5).ceil, 1 ].max
+  # Effective working sets for the day: the deload/recover reductions, or the
+  # prescription baseline plus the accumulation ramp.
+  def working_sets_for(prescription)
+    base = prescription.working_sets
+    case execution_mode
+    when "deload" then [ (base * 0.5).ceil, 1 ].max
+    when "recover" then [ (base * 0.6).ceil, 1 ].max
+    else base + accumulation_bonus
+    end
+  end
+
+  def accumulation_bonus
+    @accumulation_bonus ||= active_mesocycle ? active_mesocycle.accumulation_set_bonus(plan_date) : 0
+  end
+
+  def volume_note(sets)
+    return "" unless accumulation_bonus.positive?
+
+    " Volume ramp: aim for #{sets} working #{'set'.pluralize(sets)} this week."
+  end
+
+  def deload_lift_output(sets)
     {
       "action" => "deload",
-      "headline" => "#{reduced_sets} easy working #{'set'.pluralize(reduced_sets)}",
+      "headline" => "#{sets} easy working #{'set'.pluralize(sets)}",
       "guidance" => "Planned deload — cut volume, keep the load comfortable, and leave several reps in reserve. No progression test this week."
     }
   end
 
-  def recovery_lift_output(prescription, progression)
-    reduced_sets = [ (prescription.working_sets * 0.6).ceil, 1 ].max
+  def recovery_lift_output(progression, sets)
     {
       "action" => "reduce",
-      "headline" => "#{reduced_sets} easy working #{'set'.pluralize(reduced_sets)}",
+      "headline" => "#{sets} easy working #{'set'.pluralize(sets)}",
       "guidance" => progression_context(progression, "Keep the current load and leave at least 3 reps in reserve.")
     }
   end
 
-  def steady_lift_output(_prescription, progression)
+  def steady_lift_output(progression, sets)
     if progression&.output&.fetch("status", nil) == "increase"
       {
         "action" => "conditional_increase",
         "headline" => "#{format_weight(progression.output["next_weight_kg"])} kg if warm-ups are crisp",
-        "guidance" => "The load increase is earned, but keep effort capped near RPE 8 today."
+        "guidance" => "The load increase is earned, but keep effort capped near RPE 8 today.#{volume_note(sets)}"
       }
     else
       {
         "action" => "hold",
         "headline" => progression&.output&.fetch("headline", nil) || "Follow the current prescription",
-        "guidance" => progression_context(progression, "Stay inside the prescribed rep and RIR range.")
+        "guidance" => progression_context(progression, "Stay inside the prescribed rep and RIR range.#{volume_note(sets)}")
       }
     end
   end
 
-  def push_lift_output(_prescription, progression)
+  def push_lift_output(progression, sets)
     if progression&.output&.fetch("status", nil) == "increase"
       {
         "action" => "increase",
         "headline" => "#{format_weight(progression.output["next_weight_kg"])} kg",
-        "guidance" => progression.output["guidance"]
+        "guidance" => "#{progression.output["guidance"]}#{volume_note(sets)}"
       }
     elsif progression
       {
         "action" => progression.output["status"],
         "headline" => progression.output["headline"],
-        "guidance" => progression.output["guidance"]
+        "guidance" => "#{progression.output["guidance"]}#{volume_note(sets)}"
       }
     else
       {
         "action" => "establish",
         "headline" => "Establish today’s baseline",
-        "guidance" => "Follow the active prescription; no prior progression decision exists yet."
+        "guidance" => "Follow the active prescription; no prior progression decision exists yet.#{volume_note(sets)}"
       }
     end
   end
