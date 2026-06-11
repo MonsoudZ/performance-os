@@ -1,11 +1,11 @@
 module ReadinessHelper
-  SLEEP_QUARTER_HOUR_RANGE = (8..52).freeze # 2h00 .. 13h00 in 15-minute steps
+  SLEEP_HALF_HOUR_RANGE = (4..26).freeze # 2h00 .. 13h00 in 30-minute steps
 
   # [label, decimal-hours] pairs for the sleep dropdown. A watch-synced value
-  # that doesn't land on the 15-minute grid is added so it stays selectable.
+  # that doesn't land on the 30-minute grid is added so it stays selectable.
   def sleep_hour_options(current = nil)
-    options = SLEEP_QUARTER_HOUR_RANGE.map do |quarter_hours|
-      hours = quarter_hours / 4.0
+    options = SLEEP_HALF_HOUR_RANGE.map do |half_hours|
+      hours = half_hours / 2.0
       [ sleep_hours_label(hours), hours ]
     end
 
