@@ -25,6 +25,9 @@ Rails.application.routes.draw do
     post :copy_yesterday, on: :collection
   end
   resources :body_metrics, only: %i[create destroy]
+  resources :mesocycles, only: %i[index create] do
+    patch :finish, on: :member
+  end
   resources :exercises, only: %i[new create]
   resources :exercise_prescriptions, only: %i[index new create edit update] do
     patch :finish, on: :member

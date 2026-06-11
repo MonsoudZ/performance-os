@@ -88,8 +88,15 @@ class DailyTrainingOrchestrator
       "progression_decision_ids" => progression_decisions.values.map(&:id),
       "nutrition_decision_id" => nutrition_decision&.id,
       "prescription_ids" => prescriptions.map(&:id),
-      "conditioning" => conditioning_identity
+      "conditioning" => conditioning_identity,
+      "mesocycle" => mesocycle_identity
     }
+  end
+
+  def mesocycle_identity
+    return unless active_mesocycle
+
+    { "id" => active_mesocycle.id, "phase" => active_mesocycle.phase(plan_date) }
   end
 
   # Compact conditioning state so the plan regenerates when the week's
@@ -120,6 +127,7 @@ class DailyTrainingOrchestrator
       nutrition_decision_id
       prescription_ids
       conditioning
+      mesocycle
     ]
 
     current_parent.inputs.slice(*comparable_keys) == serialized_input_snapshot.slice(*comparable_keys)
@@ -132,19 +140,47 @@ class DailyTrainingOrchestrator
   def composed_output
     {
       "status" => readiness_status,
-      "headline" => headline_for(readiness_status),
-      "guidance" => guidance_for(readiness_status),
+      "headline" => headline_for(execution_mode),
+      "guidance" => guidance_for(execution_mode),
       "readiness_score" => readiness_decision.output["readiness_score"],
       "goal" => active_goal&.goal_type,
       "session_directive" => readiness_decision.output["guidance"],
       "nutrition" => nutrition_output,
       "conditioning" => conditioning_output,
-      "lifts" => prescriptions.map { |prescription| lift_directive(prescription, readiness_status) }
+      "mesocycle" => mesocycle_output,
+      "lifts" => prescriptions.map { |prescription| lift_directive(prescription, execution_mode) }
     }
   end
 
   def readiness_status
     @readiness_status ||= readiness_decision.output.fetch("status")
+  end
+
+  def active_mesocycle
+    return @active_mesocycle if defined?(@active_mesocycle)
+
+    @active_mesocycle = user.mesocycles.active_on(plan_date).order(started_on: :desc).first
+  end
+
+  def deload_week?
+    active_mesocycle&.deload?(plan_date) || false
+  end
+
+  # A planned deload overrides readiness; otherwise the day runs on readiness.
+  def execution_mode
+    @execution_mode ||= deload_week? ? "deload" : readiness_status
+  end
+
+  def mesocycle_output
+    return unless active_mesocycle
+
+    {
+      "name" => active_mesocycle.label,
+      "week" => active_mesocycle.current_week(plan_date),
+      "total_weeks" => active_mesocycle.weeks,
+      "phase" => active_mesocycle.phase(plan_date),
+      "deload" => deload_week?
+    }
   end
 
   def conditioning_summary
@@ -159,8 +195,9 @@ class DailyTrainingOrchestrator
     ).call
   end
 
-  def headline_for(readiness_status)
-    case readiness_status
+  def headline_for(execution_mode)
+    case execution_mode
+    when "deload" then "Deload week — back off to recover"
     when "recover" then "Make recovery the training goal"
     when "steady" then "Train the plan, trim the ambition"
     when "push"
@@ -170,10 +207,12 @@ class DailyTrainingOrchestrator
     end
   end
 
-  def guidance_for(readiness_status)
+  def guidance_for(execution_mode)
     goal_context = active_goal ? "Your current goal is #{active_goal.goal_type.humanize.downcase}." : "No active goal is set."
 
-    training_guidance = case readiness_status
+    training_guidance = case execution_mode
+    when "deload"
+      "#{goal_context} This is a planned deload — roughly halve working sets, keep loads comfortable, and let accumulated fatigue clear before the next block."
     when "recover"
       "#{goal_context} Keep the movement pattern, reduce prescribed working sets by 30–40%, and do not treat today as a progression test."
     when "steady"
@@ -195,7 +234,7 @@ class DailyTrainingOrchestrator
     nutrition_decision.output.merge("decision_id" => nutrition_decision.id)
   end
 
-  def lift_directive(prescription, readiness_status)
+  def lift_directive(prescription, execution_mode)
     progression = progression_decisions[prescription.exercise_id]
     base = {
       "exercise_id" => prescription.exercise_id,
@@ -205,10 +244,20 @@ class DailyTrainingOrchestrator
       "progression_decision_id" => progression&.id
     }
 
-    return base.merge(recovery_lift_output(prescription, progression)) if readiness_status == "recover"
-    return base.merge(steady_lift_output(prescription, progression)) if readiness_status == "steady"
+    return base.merge(deload_lift_output(prescription)) if execution_mode == "deload"
+    return base.merge(recovery_lift_output(prescription, progression)) if execution_mode == "recover"
+    return base.merge(steady_lift_output(prescription, progression)) if execution_mode == "steady"
 
     base.merge(push_lift_output(prescription, progression))
+  end
+
+  def deload_lift_output(prescription)
+    reduced_sets = [ (prescription.working_sets * 0.5).ceil, 1 ].max
+    {
+      "action" => "deload",
+      "headline" => "#{reduced_sets} easy working #{'set'.pluralize(reduced_sets)}",
+      "guidance" => "Planned deload — cut volume, keep the load comfortable, and leave several reps in reserve. No progression test this week."
+    }
   end
 
   def recovery_lift_output(prescription, progression)

@@ -1,0 +1,80 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Periodization</p>
+      <h1>Training blocks.</h1>
+      <p>Plan a multi-week block with a scheduled deload. The daily engine still auto-regulates within it.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Active block</p>
+        <h2>Where you are.</h2>
+      </div>
+    </div>
+
+    <% if @active %>
+      <% today = Current.user.local_date %>
+      <div class="compact-list">
+        <div class="compact-list__item">
+          <strong><%= @active.label %></strong>
+          <span>
+            Week <%= @active.current_week(today) %> of <%= @active.weeks %> ·
+            <%= @active.phase(today) == "deload" ? "Deload" : "Accumulation" %> ·
+            <%= @active.started_on.strftime("%b %-d") %>–<%= @active.natural_end.strftime("%b %-d") %>
+          </span>
+        </div>
+      </div>
+      <%= button_to "End this block", finish_mesocycle_path(@active), method: :patch, class: "button button--secondary" %>
+    <% else %>
+      <div class="empty-state"><p>No active block. Start one below to add a deload to your progression.</p></div>
+    <% end %>
+  </section>
+
+  <section class="panel form-panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow"><%= @active ? "Switch block" : "Start a block" %></p>
+        <h2>Plan the next block.</h2>
+      </div>
+    </div>
+
+    <% if @mesocycle.errors.any? %>
+      <div class="form-errors"><%= @mesocycle.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= form_with model: @mesocycle, url: mesocycles_path, class: "stacked-form stacked-form--wide" do |form| %>
+      <label><span>Name (optional)</span><%= form.text_field :name, placeholder: "Hypertrophy block 1" %></label>
+      <div class="form-grid">
+        <label><span>Start date</span><%= form.date_field :started_on, required: true %></label>
+        <label><span>Length (weeks)</span><%= form.number_field :weeks, min: 1, max: 16, required: true %></label>
+        <label><span>Deload week</span><%= form.number_field :deload_week, min: 1, max: 16, placeholder: "e.g. 4 (blank = none)" %></label>
+      </div>
+      <p class="evidence-note">The deload week backs off volume in the daily plan; leave it blank for straight progression.</p>
+      <%= form.submit(@active ? "Switch block" : "Start block", class: "button") %>
+    <% end %>
+  </section>
+
+  <% if @mesocycles.any? %>
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">History</p>
+          <h2>Past blocks.</h2>
+        </div>
+      </div>
+      <div class="compact-list">
+        <% @mesocycles.each do |block| %>
+          <div class="compact-list__item">
+            <strong><%= block.label %></strong>
+            <span><%= block.started_on.strftime("%b %-d, %Y") %> → <%= block.effective_end.strftime("%b %-d, %Y") %><% if block.deload_week %> · deload wk <%= block.deload_week %><% end %></span>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</main>

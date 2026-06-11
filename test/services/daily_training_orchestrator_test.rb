@@ -93,6 +93,21 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     end
   end
 
+  test "a deload week backs off the lifts and headline even when readiness is high" do
+    create_readiness_decision("push", 90, "high")
+    create_progression_decision("increase", 102.5, "high")
+    # Started 21 days ago -> today is week 4, the scheduled deload.
+    @user.mesocycles.create!(started_on: Date.current - 21.days, weeks: 4, deload_week: 4)
+
+    parent = DailyTrainingOrchestrator.new(@user).call
+    lift = parent.output["lifts"].first
+
+    assert_equal "deload", lift["action"]
+    assert_match(/Deload week/i, parent.output["headline"])
+    assert parent.output.dig("mesocycle", "deload")
+    assert_equal 4, parent.output.dig("mesocycle", "week")
+  end
+
   private
 
   def create_readiness_decision(status, score, confidence)

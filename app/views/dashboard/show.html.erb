@@ -192,7 +192,12 @@
     <section class="panel daily-plan">
       <div class="panel__header">
         <div>
-          <p class="eyebrow">Today’s lift directives</p>
+          <p class="eyebrow">
+            Today’s lift directives
+            <% if (meso = @decision.output["mesocycle"]) %>
+              · <%= meso["name"] %> — week <%= meso["week"] %>/<%= meso["total_weeks"] %><%= " · deload" if meso["deload"] %>
+            <% end %>
+          </p>
           <h2>Execute the plan.</h2>
         </div>
         <span class="step"><%= @decision.output["goal"]&.humanize || "No active goal" %></span>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -213,6 +213,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_110000) do
     t.index ["user_id"], name: "index_goal_periods_on_user_id"
     t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "goal_periods_dates_check"
     t.check_constraint "goal_type::text = ANY (ARRAY['build_muscle'::character varying, 'lose_fat'::character varying, 'increase_strength'::character varying, 'athletic_performance'::character varying, 'vertical_jump'::character varying, 'marathon'::character varying, 'longevity'::character varying]::text[])", name: "goal_periods_goal_type_check"
+  end
+
+  create_table "mesocycles", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "deload_week"
+    t.date "ended_on"
+    t.string "name"
+    t.date "started_on", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "weeks", default: 4, null: false
+    t.index ["user_id"], name: "index_mesocycles_on_active_user", unique: true, where: "(ended_on IS NULL)"
+    t.index ["user_id"], name: "index_mesocycles_on_user_id"
+    t.check_constraint "deload_week IS NULL OR deload_week > 0 AND deload_week <= weeks", name: "mesocycles_deload_week_check"
+    t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "mesocycles_dates_check"
+    t.check_constraint "weeks > 0 AND weeks <= 16", name: "mesocycles_weeks_check"
   end
 
   create_table "muscle_groups", force: :cascade do |t|
@@ -537,6 +553,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_110000) do
   add_foreign_key "food_log_entries", "users"
   add_foreign_key "foods", "users"
   add_foreign_key "goal_periods", "users"
+  add_foreign_key "mesocycles", "users"
   add_foreign_key "push_subscriptions", "users"
   add_foreign_key "readiness_scores", "users"
   add_foreign_key "sessions", "users"
