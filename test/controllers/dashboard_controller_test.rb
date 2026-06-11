@@ -76,4 +76,46 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".completed h3", "Today’s check-in is complete."
     assert_select "form.check-in__form", count: 0
   end
+
+  test "offers the AI coach panel with prior exchanges when configured and a plan exists" do
+    original_key = Rails.application.config.x.anthropic[:api_key]
+    Rails.application.config.x.anthropic[:api_key] = "test-key"
+    decision = @user.coaching_decisions.create!(
+      decision_type: "daily_training", rule_key: "daily_training_orchestrator.v1", rule_version: "1.0.0",
+      inputs: { "plan_date" => @user.local_date.iso8601 },
+      output: { "status" => "push", "headline" => "Run the plan", "guidance" => "Go.", "lifts" => [] },
+      confidence: "high"
+    )
+    @user.coach_narratives.create!(
+      question: "Why push today?", coaching_decision: decision,
+      status: "complete", answer: "Because your readiness is high.", model_id: "claude-opus-4-8"
+    )
+
+    get root_path
+
+    assert_response :success
+    assert_select "section.coach"
+    assert_select ".coach__question", text: "Why push today?"
+    assert_select ".coach__answer", text: /readiness is high/
+  ensure
+    Rails.application.config.x.anthropic[:api_key] = original_key
+  end
+
+  test "hides the AI coach panel when no API key is configured" do
+    original_key = Rails.application.config.x.anthropic[:api_key]
+    Rails.application.config.x.anthropic[:api_key] = nil
+    @user.coaching_decisions.create!(
+      decision_type: "daily_training", rule_key: "daily_training_orchestrator.v1", rule_version: "1.0.0",
+      inputs: { "plan_date" => @user.local_date.iso8601 },
+      output: { "status" => "push", "headline" => "Run the plan", "guidance" => "Go.", "lifts" => [] },
+      confidence: "high"
+    )
+
+    get root_path
+
+    assert_response :success
+    assert_select "section.coach", count: 0
+  ensure
+    Rails.application.config.x.anthropic[:api_key] = original_key
+  end
 end

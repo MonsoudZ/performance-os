@@ -1821,3 +1821,89 @@ h1 {
   margin: 4px 0 0;
   color: var(--muted);
 }
+
+/* AI coach — plain-language explanation of today's decision DAG */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.coach__lede {
+  margin: 0 0 18px;
+  max-width: 52ch;
+  color: var(--muted);
+}
+
+.coach__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.coach__suggestion {
+  margin: 0;
+}
+
+.coach__ask {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.coach__input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.coach__thread {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.coach__exchange {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.coach__question {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.coach__answer {
+  margin: 0;
+  color: var(--ink);
+}
+
+.coach__answer p {
+  margin: 0 0 10px;
+}
+
+.coach__answer--pending,
+.coach__answer--failed {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.coach__meta {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}

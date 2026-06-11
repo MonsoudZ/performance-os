@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -26,6 +26,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_130000) do
     t.index ["user_id"], name: "index_body_metrics_on_user_id"
     t.check_constraint "body_fat_pct IS NULL OR body_fat_pct >= 0::numeric AND body_fat_pct <= 100::numeric", name: "body_metrics_body_fat_check"
     t.check_constraint "weight_kg IS NULL OR weight_kg > 0::numeric", name: "body_metrics_weight_check"
+  end
+
+  create_table "coach_narratives", force: :cascade do |t|
+    t.text "answer"
+    t.integer "cache_read_tokens"
+    t.bigint "coaching_decision_id"
+    t.datetime "created_at", null: false
+    t.integer "input_tokens"
+    t.string "model_id"
+    t.integer "output_tokens"
+    t.string "question", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["coaching_decision_id"], name: "index_coach_narratives_on_coaching_decision_id"
+    t.index ["user_id", "created_at"], name: "index_coach_narratives_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_coach_narratives_on_user_id"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'complete'::character varying, 'failed'::character varying]::text[])", name: "coach_narratives_status_check"
   end
 
   create_table "coaching_decision_links", force: :cascade do |t|
@@ -539,6 +557,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_130000) do
   end
 
   add_foreign_key "body_metrics", "users"
+  add_foreign_key "coach_narratives", "coaching_decisions", on_delete: :nullify
+  add_foreign_key "coach_narratives", "users"
   add_foreign_key "coaching_decision_links", "coaching_decisions", column: "child_decision_id", on_delete: :restrict
   add_foreign_key "coaching_decision_links", "coaching_decisions", column: "parent_decision_id", on_delete: :cascade
   add_foreign_key "coaching_decisions", "users"

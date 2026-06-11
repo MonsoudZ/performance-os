@@ -1,0 +1,53 @@
+<section class="panel coach">
+  <div class="panel__header">
+    <div>
+      <p class="eyebrow">Ask your coach</p>
+      <h2>Why this plan?</h2>
+    </div>
+    <span class="step">Grounded in today's decision</span>
+  </div>
+
+  <p class="coach__lede">
+    The coach answers from today's decision graph — readiness, progression, nutrition and
+    conditioning — and nothing else. No invented numbers.
+  </p>
+
+  <div class="coach__suggestions">
+    <% CoachNarrative::SUGGESTED_QUESTIONS.each do |question| %>
+      <%= form_with url: coach_narratives_path, method: :post, class: "coach__suggestion" do |form| %>
+        <%= form.hidden_field "coach_narrative[question]", value: question %>
+        <%= form.submit question, class: "button button--inline" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%= form_with url: coach_narratives_path, method: :post, class: "coach__ask" do |form| %>
+    <label class="visually-hidden" for="coach_question">Ask the coach a question</label>
+    <%= text_field_tag "coach_narrative[question]", nil,
+      id: "coach_question",
+      placeholder: "Ask anything about today's plan…",
+      maxlength: CoachNarrative::MAX_QUESTION_LENGTH,
+      class: "coach__input" %>
+    <%= form.submit "Ask", class: "button" %>
+  <% end %>
+
+  <% if @coach_narratives.any? %>
+    <ol class="coach__thread">
+      <% @coach_narratives.each do |narrative| %>
+        <li class="coach__exchange">
+          <p class="coach__question"><%= narrative.question %></p>
+          <% if narrative.complete? %>
+            <div class="coach__answer">
+              <%= simple_format narrative.answer %>
+              <small class="coach__meta">Answered by <%= narrative.model_id %></small>
+            </div>
+          <% elsif narrative.failed? %>
+            <p class="coach__answer coach__answer--failed">The coach couldn't answer that one. Try again.</p>
+          <% else %>
+            <p class="coach__answer coach__answer--pending" aria-busy="true">Reading today's decision…</p>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</section>

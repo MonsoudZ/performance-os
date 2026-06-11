@@ -38,6 +38,7 @@ Rails.application.routes.draw do
   resources :workout_templates, except: :show
   resources :workout_sessions, only: %i[new create show edit update destroy]
   resources :conditioning_sessions, only: %i[index create destroy]
+  resources :coach_narratives, only: :create
   resource :profile, only: :update
   post "push_subscriptions", to: "push_subscriptions#create"
   delete "push_subscriptions", to: "push_subscriptions#destroy"

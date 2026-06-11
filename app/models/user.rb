@@ -19,6 +19,7 @@ class User < ApplicationRecord
   has_many :conditioning_sessions, dependent: :destroy
   has_many :push_subscriptions, dependent: :destroy
   has_many :mesocycles, dependent: :destroy
+  has_many :coach_narratives, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 

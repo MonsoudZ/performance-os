@@ -22,5 +22,10 @@ class DashboardController < ApplicationController
     @wearable_device = @user.wearable_devices.active.order(last_synced_at: :desc).first
     suggester = NextBlockSuggestion.new(@user)
     @suggested_block = suggester.recently_ended? ? suggester.call : nil
+    # The AI coach explains today's decision in plain language. Only offer it when
+    # an API key is configured and there's a decision to ground the answer on.
+    @coach_enabled = CoachNarrator.configured? && @decision.present?
+    @coach_narratives = @decision ?
+      @user.coach_narratives.where(coaching_decision_id: @decision.id).recent_first.limit(5) : []
   end
 end

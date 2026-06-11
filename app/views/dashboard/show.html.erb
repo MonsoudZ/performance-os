@@ -173,6 +173,10 @@
     <% end %>
   </section>
 
+  <% if @coach_enabled %>
+    <%= render "coach" %>
+  <% end %>
+
   <section class="panel wearable-status">
     <div>
       <p class="eyebrow">Wearable readiness</p>
