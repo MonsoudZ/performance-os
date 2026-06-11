@@ -7,6 +7,23 @@ class Mesocycle < ApplicationRecord
   # How aggressively accumulation volume ramps, by focus.
   SET_BONUS_CAPS = { "hypertrophy" => 3, "strength" => 1, "power" => 1 }.freeze
 
+  # Preset rep/RIR/set schemes per focus, split by exercise type (compounds run
+  # heavier/lower-rep than isolations). Applied to a user's targets on request.
+  SCHEMES = {
+    "hypertrophy" => {
+      compound: { rep_min: 6, rep_max: 10, rir_min: 1, rir_max: 2, sets: 3 },
+      isolation: { rep_min: 10, rep_max: 15, rir_min: 0, rir_max: 1, sets: 3 }
+    },
+    "strength" => {
+      compound: { rep_min: 3, rep_max: 5, rir_min: 2, rir_max: 3, sets: 4 },
+      isolation: { rep_min: 6, rep_max: 8, rir_min: 1, rir_max: 2, sets: 3 }
+    },
+    "power" => {
+      compound: { rep_min: 2, rep_max: 4, rir_min: 2, rir_max: 3, sets: 3 },
+      isolation: { rep_min: 5, rep_max: 8, rir_min: 1, rir_max: 2, sets: 3 }
+    }
+  }.freeze
+
   belongs_to :user
 
   validates :started_on, presence: true
@@ -53,6 +70,17 @@ class Mesocycle < ApplicationRecord
 
   def focus_emphasis
     FOCUSES.fetch(focus, FOCUSES["hypertrophy"])
+  end
+
+  def scheme
+    SCHEMES.fetch(focus, SCHEMES["hypertrophy"])
+  end
+
+  def scheme_summary
+    compound = scheme[:compound]
+    isolation = scheme[:isolation]
+    "Compounds #{compound[:rep_min]}–#{compound[:rep_max]} reps @ #{compound[:rir_min]}–#{compound[:rir_max]} RIR · " \
+      "isolations #{isolation[:rep_min]}–#{isolation[:rep_max]} reps"
   end
 
   def label

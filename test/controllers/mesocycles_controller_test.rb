@@ -29,6 +29,26 @@ class MesocyclesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "strength", @user.mesocycles.order(:id).last.focus
   end
 
+  test "starting a block with the scheme checkbox rewrites the targets" do
+    prescription = compound_target("Bench")
+
+    post mesocycles_path, params: {
+      apply_scheme: "1", mesocycle: { started_on: Date.current, weeks: 4, focus: "strength" }
+    }
+
+    assert_equal 5, prescription.reload.rep_max # strength compound 3-5
+  end
+
+  test "applies a scheme to targets from the active block" do
+    prescription = compound_target("Overhead Press")
+    block = @user.mesocycles.create!(started_on: Date.current, weeks: 4, focus: "power")
+
+    patch apply_scheme_mesocycle_path(block)
+
+    assert_equal 4, prescription.reload.rep_max # power compound 2-4
+    assert_redirected_to exercise_prescriptions_path
+  end
+
   test "starting a new block retires the active one" do
     old = @user.mesocycles.create!(started_on: Date.current - 10.days, weeks: 4)
 
@@ -71,5 +91,15 @@ class MesocyclesControllerTest < ActionDispatch::IntegrationTest
     patch finish_mesocycle_path(foreign)
 
     assert_response :not_found
+  end
+
+  private
+
+  def compound_target(name)
+    exercise = Exercise.create!(user: @user, name: name, modality: "barbell", is_compound: true)
+    @user.exercise_prescriptions.create!(
+      exercise: exercise, rep_min: 8, rep_max: 12, target_rir_min: 1, target_rir_max: 2,
+      increment_kg: 2.5, working_sets: 3, started_on: Date.current
+    )
   end
 end

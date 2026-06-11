@@ -1,5 +1,5 @@
 class MesocyclesController < ApplicationController
-  before_action :set_mesocycle, only: :finish
+  before_action :set_mesocycle, only: %i[finish apply_scheme]
 
   def index
     load_index
@@ -13,6 +13,7 @@ class MesocyclesController < ApplicationController
       ApplicationRecord.transaction do
         close_active_mesocycle(@mesocycle.started_on)
         @mesocycle.save!
+        apply_scheme_to_targets(@mesocycle.focus) if params[:apply_scheme] == "1"
       end
       recompute_training_plan
       redirect_to mesocycles_path, notice: "Training block started."
@@ -26,6 +27,13 @@ class MesocyclesController < ApplicationController
     @mesocycle.update!(ended_on: [ Current.user.local_date - 1.day, @mesocycle.started_on ].max)
     recompute_training_plan
     redirect_to mesocycles_path, notice: "Training block ended."
+  end
+
+  def apply_scheme
+    count = apply_scheme_to_targets(@mesocycle.focus)
+    recompute_training_plan
+    redirect_to exercise_prescriptions_path,
+      notice: "Applied the #{@mesocycle.focus} rep scheme to #{helpers.pluralize(count, 'target')}."
   end
 
   private
@@ -45,6 +53,10 @@ class MesocyclesController < ApplicationController
     Current.user.mesocycles.active.find_each do |block|
       block.update!(ended_on: [ new_start - 1.day, block.started_on ].max)
     end
+  end
+
+  def apply_scheme_to_targets(focus)
+    ApplyBlockScheme.new(Current.user, focus: focus).call
   end
 
   def recompute_training_plan

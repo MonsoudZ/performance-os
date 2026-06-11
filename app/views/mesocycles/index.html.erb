@@ -28,9 +28,15 @@
             <%= @active.started_on.strftime("%b %-d") %>–<%= @active.natural_end.strftime("%b %-d") %>
           </span>
           <small><%= @active.focus_emphasis %></small>
+          <small><strong>Scheme:</strong> <%= @active.scheme_summary %></small>
         </div>
       </div>
-      <%= button_to "End this block", finish_mesocycle_path(@active), method: :patch, class: "button button--secondary" %>
+      <div class="prescription-card__actions">
+        <%= button_to "Apply scheme to my targets", apply_scheme_mesocycle_path(@active), method: :patch,
+          form: { data: { turbo_confirm: "Reset all active training targets to the #{@active.focus} scheme?" } },
+          class: "button button--secondary" %>
+        <%= button_to "End this block", finish_mesocycle_path(@active), method: :patch, class: "text-button text-button--danger" %>
+      </div>
     <% else %>
       <div class="empty-state"><p>No active block. Start one below to add a deload to your progression.</p></div>
     <% end %>
@@ -64,6 +70,10 @@
         <label><span>Deload week</span><%= form.number_field :deload_week, min: 1, max: 16, placeholder: "e.g. 4 (blank = none)" %></label>
       </div>
       <p class="evidence-note">The deload week backs off volume in the daily plan; leave it blank for straight progression.</p>
+      <label class="checkbox-field">
+        <%= check_box_tag "apply_scheme", "1" %>
+        <span>Reset my training targets to this focus’s rep/RIR scheme</span>
+      </label>
       <%= form.submit(@active ? "Switch block" : "Start block", class: "button") %>
     <% end %>
   </section>

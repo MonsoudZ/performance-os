@@ -26,7 +26,10 @@ Rails.application.routes.draw do
   end
   resources :body_metrics, only: %i[create destroy]
   resources :mesocycles, only: %i[index create] do
-    patch :finish, on: :member
+    member do
+      patch :finish
+      patch :apply_scheme
+    end
   end
   resources :exercises, only: %i[new create]
   resources :exercise_prescriptions, only: %i[index new create edit update] do
