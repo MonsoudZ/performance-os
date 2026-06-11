@@ -1,7 +1,11 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "webmock/minitest"
 require_relative "test_helpers/session_test_helper"
+
+# Outbound HTTP must be stubbed in tests; a stray real request fails loudly.
+WebMock.disable_net_connect!(allow_localhost: true)
 
 module ActiveSupport
   class TestCase

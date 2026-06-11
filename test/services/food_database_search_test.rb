@@ -1,6 +1,8 @@
 require "test_helper"
 
 class FoodDatabaseSearchTest < ActiveSupport::TestCase
+  SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl".freeze
+  SEARCH_PATH = %r{\Ahttps://world\.openfoodfacts\.org/cgi/search\.pl}.freeze # any query
   SAMPLE_BODY = {
     "products" => [
       {
@@ -21,8 +23,38 @@ class FoodDatabaseSearchTest < ActiveSupport::TestCase
 
   setup { Rails.cache.clear }
 
+  test "requests Open Food Facts with the expected query and headers" do
+    stub = stub_request(:get, SEARCH_URL)
+      .with(
+        query: {
+          "search_terms" => "greek yogurt",
+          "search_simple" => "1",
+          "action" => "process",
+          "json" => "1",
+          "page_size" => "20",
+          "fields" => "code,product_name,brands,nutriments"
+        },
+        headers: { "User-Agent" => /\APerformanceOS\// }
+      )
+      .to_return(status: 200, body: SAMPLE_BODY, headers: { "Content-Type" => "application/json" })
+
+    FoodDatabaseSearch.new("greek yogurt").call
+
+    assert_requested stub
+  end
+
+  test "passes the configured limit as page_size" do
+    stub_request(:get, SEARCH_PATH).to_return(status: 200, body: SAMPLE_BODY)
+
+    FoodDatabaseSearch.new("yogurt", limit: 5).call
+
+    assert_requested :get, SEARCH_URL, query: hash_including("page_size" => "5")
+  end
+
   test "maps products to per-100g macro rows and drops incomplete ones" do
-    results = search_returning("yogurt-a", SAMPLE_BODY)
+    stub_request(:get, SEARCH_PATH).to_return(status: 200, body: SAMPLE_BODY)
+
+    results = FoodDatabaseSearch.new("greek yogurt").call
 
     assert_equal 1, results.size
     result = results.first
@@ -34,29 +66,20 @@ class FoodDatabaseSearchTest < ActiveSupport::TestCase
     assert_equal "111", result.code
   end
 
-  test "returns nothing for a blank query without calling the API" do
-    # If fetch were reached it would hit the network; a blank query must not.
+  test "a blank query never touches the network" do
     assert_equal [], FoodDatabaseSearch.new("   ").call
+    assert_not_requested :get, SEARCH_URL
   end
 
-  test "degrades to an empty list when the request fails" do
-    search = FoodDatabaseSearch.new("yogurt-b")
-    search.define_singleton_method(:fetch) { raise "network down" }
+  test "degrades to an empty list on a non-success response" do
+    stub_request(:get, SEARCH_PATH).to_return(status: 503, body: "<html>unavailable</html>")
 
-    assert_equal [], search.call
+    assert_equal [], FoodDatabaseSearch.new("yogurt").call
   end
 
-  test "degrades to an empty list on a non-success response (nil body)" do
-    assert_equal [], search_returning("yogurt-c", nil)
-  end
+  test "degrades to an empty list on a timeout" do
+    stub_request(:get, SEARCH_PATH).to_timeout
 
-  private
-
-  # Overrides the private HTTP fetch with a canned body (no Minitest::Mock in
-  # this build), then runs the real parse/map pipeline.
-  def search_returning(query, body)
-    search = FoodDatabaseSearch.new(query)
-    search.define_singleton_method(:fetch) { body }
-    search.call
+    assert_equal [], FoodDatabaseSearch.new("yogurt").call
   end
 end
