@@ -26,8 +26,10 @@ class WearableSyncIngestor
       device.update!(last_synced_at: Time.current)
     end
 
+    # Defer the evaluator pipeline so the device's request returns immediately;
+    # the dashboard fills in over the stream once each date is materialized.
     affected_dates.sort.each do |metric_date|
-      WearableReadinessMaterializer.new(device.user, metric_date: metric_date).call
+      WearableReadinessMaterializeJob.perform_later(device.user, metric_date)
     end
 
     {

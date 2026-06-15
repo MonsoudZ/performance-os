@@ -25,10 +25,14 @@ class Api::V1::WearableSyncControllerTest < ActionDispatch::IntegrationTest
   test "ingests canonical samples and materializes local-day readiness" do
     travel_to @instant do
       assert_difference "WearableSample.count", 3 do
-        post api_v1_wearable_sync_path,
-          params: { samples: samples },
-          headers: authorization_header,
-          as: :json
+        # Materialization is deferred to a job; perform it so the readiness input
+        # and decision asserted below exist after the request.
+        perform_enqueued_jobs do
+          post api_v1_wearable_sync_path,
+            params: { samples: samples },
+            headers: authorization_header,
+            as: :json
+        end
       end
     end
 

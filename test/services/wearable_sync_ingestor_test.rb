@@ -69,6 +69,23 @@ class WearableSyncIngestorTest < ActiveSupport::TestCase
     assert_equal 1, result[:duplicates]
   end
 
+  test "defers materialization to a job per affected date instead of running inline" do
+    assert_enqueued_with(job: WearableReadinessMaterializeJob, args: [ @user, Date.new(2026, 6, 10) ]) do
+      assert_no_difference "CoachingDecision.count" do
+        WearableSyncIngestor.new(@device, samples: [ hrv_sample(value: 50) ]).call
+      end
+    end
+  end
+
+  test "enqueues nothing when every sample is a replayed duplicate" do
+    samples = [ hrv_sample(value: 52.5) ]
+    WearableSyncIngestor.new(@device, samples: samples).call
+
+    assert_no_enqueued_jobs(only: WearableReadinessMaterializeJob) do
+      WearableSyncIngestor.new(@device, samples: samples).call
+    end
+  end
+
   private
 
   def hrv_sample(value:, started: "2026-06-10T13:00:00Z")
