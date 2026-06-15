@@ -38,5 +38,8 @@ class RetractOrphanedWorkoutDecisions < ActiveRecord::Migration[8.1]
   end
 
   def down
+    # Retraction state is derived from data that no longer exists (the missing
+    # workouts that triggered it), so it can't be reconstructed on rollback.
+    raise ActiveRecord::IrreversibleMigration
   end
 end

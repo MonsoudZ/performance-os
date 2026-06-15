@@ -41,15 +41,13 @@ class ExercisePrescriptionsController < ApplicationController
   end
 
   def update
-    replacement = ExercisePrescriptionSuperseder.new(
+    ExercisePrescriptionSuperseder.new(
       @prescription,
       effective_on: Current.user.local_date
     ).call(prescription_params.except(:exercise_id, :started_on))
 
-    if replacement.persisted?
-      recompute_training_plan
-      redirect_to exercise_prescriptions_path, notice: "Training target updated."
-    end
+    recompute_training_plan
+    redirect_to exercise_prescriptions_path, notice: "Training target updated."
   rescue ActiveRecord::RecordInvalid => error
     unless error.record.equal?(@prescription)
       error.record.errors.each do |validation_error|
