@@ -125,6 +125,7 @@ class WorkoutLogPrefill
 
   def latest_progression_weight(prescription)
     decision = user.coaching_decisions
+      .active_evidence
       .where(decision_type: "double_progression")
       .where("inputs ->> 'exercise_id' = ?", prescription.exercise_id.to_s)
       .where("inputs #>> '{prescription,id}' = ?", prescription.id.to_s)

@@ -25,6 +25,7 @@ class WorkoutSessionsController < ApplicationController
     # Editing re-evaluates progression and writes a fresh decision, so show only
     # the latest decision per exercise.
     @decisions = Current.user.coaching_decisions
+      .active_evidence
       .where(decision_type: "double_progression")
       .where("inputs ->> 'workout_session_id' = ?", @workout_session.id.to_s)
       .order(created_at: :desc)
@@ -41,6 +42,10 @@ class WorkoutSessionsController < ApplicationController
     @workout_session = Current.user.workout_sessions.find(params[:id])
 
     if @workout_session.update(workout_session_params)
+      WorkoutProgressionRetractor.new(
+        @workout_session,
+        reason: "workout_session_corrected"
+      ).call
       WorkoutProgressionRecomputeJob.perform_later(@workout_session)
       redirect_to workout_session_path(@workout_session), notice: "Workout updated. Re-evaluating progression…"
     else
@@ -51,6 +56,10 @@ class WorkoutSessionsController < ApplicationController
 
   def destroy
     workout_session = Current.user.workout_sessions.find(params[:id])
+    WorkoutProgressionRetractor.new(
+      workout_session,
+      reason: "workout_session_deleted"
+    ).call
     workout_session.destroy!
     TrainingPlanRecomputeJob.perform_later(Current.user, Current.user.local_date)
     redirect_to root_path, notice: "Workout deleted."

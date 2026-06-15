@@ -65,6 +65,20 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     end
   end
 
+  test "ignores a retracted progression decision when recomposing the plan" do
+    create_readiness_decision("push", 88, "high")
+    progression = create_progression_decision("increase", 102.5, "high")
+    first_parent = DailyTrainingOrchestrator.new(@user).call
+    progression.retract!(reason: "workout_session_deleted")
+
+    second_parent = DailyTrainingOrchestrator.new(@user).call
+
+    assert_not_equal first_parent, second_parent
+    assert_equal "establish", second_parent.output["lifts"].first["action"]
+    assert_nil second_parent.output["lifts"].first["progression_decision_id"]
+    assert_empty second_parent.child_links.where(role: "progression")
+  end
+
   test "composes a conditioning directive from the goal and the week's progress" do
     create_readiness_decision("steady", 60, "moderate")
     @user.update!(max_hr: 190)

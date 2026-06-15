@@ -6,6 +6,10 @@ class CoachNarrativeJob < ApplicationJob
   # is replaced with the answer — same eventual-consistency UX as the daily plan.
   def perform(narrative)
     return if narrative.coaching_decision.blank?
+    if narrative.coaching_decision.retracted_at?
+      narrative.update!(status: "failed")
+      return
+    end
 
     result = CoachNarrator.new(narrative).call
 

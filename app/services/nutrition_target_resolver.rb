@@ -77,6 +77,7 @@ class NutritionTargetResolver
     return @nutrition_adjustment if defined?(@nutrition_adjustment)
 
     @nutrition_adjustment = user.coaching_decisions
+      .active_evidence
       .where(decision_type: "nutrition_adjustment", rule_key: NutritionAdjustmentEvaluator::RULE_KEY)
       .where("(output ->> 'effective_on')::date <= ?", target_date)
       .order(Arel.sql("(output ->> 'effective_on')::date DESC"), created_at: :desc)

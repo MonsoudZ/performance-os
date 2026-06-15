@@ -10,19 +10,25 @@ class ApplyBlockSchemeTest < ActiveSupport::TestCase
   end
 
   test "applies the compound variant to compounds and the isolation variant to isolations" do
-    count = ApplyBlockScheme.new(@user, focus: "strength").call
+    assert_difference "ExercisePrescription.count", 2 do
+      assert_equal 2, ApplyBlockScheme.new(@user, focus: "strength").call
+    end
 
-    assert_equal 2, count
+    assert_equal Date.current - 1.day, @squat_target.reload.ended_on
+    assert_equal 8, @squat_target.rep_min
+    assert_equal 12, @squat_target.rep_max
+    assert_equal 3, @squat_target.working_sets
 
-    @squat_target.reload # strength compound: 3-5 reps, 4 sets
-    assert_equal 3, @squat_target.rep_min
-    assert_equal 5, @squat_target.rep_max
-    assert_equal 4, @squat_target.working_sets
+    squat_replacement = @user.exercise_prescriptions.active.find_by!(exercise: @squat)
+    assert_equal Date.current, squat_replacement.started_on
+    assert_equal 3, squat_replacement.rep_min
+    assert_equal 5, squat_replacement.rep_max
+    assert_equal 4, squat_replacement.working_sets
 
-    @curl_target.reload # strength isolation: 6-8 reps, 3 sets
-    assert_equal 6, @curl_target.rep_min
-    assert_equal 8, @curl_target.rep_max
-    assert_equal 3, @curl_target.working_sets
+    curl_replacement = @user.exercise_prescriptions.active.find_by!(exercise: @curl)
+    assert_equal 6, curl_replacement.rep_min
+    assert_equal 8, curl_replacement.rep_max
+    assert_equal 3, curl_replacement.working_sets
   end
 
   test "leaves ended targets untouched" do
@@ -37,7 +43,7 @@ class ApplyBlockSchemeTest < ActiveSupport::TestCase
   def prescription_for(exercise)
     @user.exercise_prescriptions.create!(
       exercise: exercise, rep_min: 8, rep_max: 12, target_rir_min: 1, target_rir_max: 2,
-      increment_kg: 2.5, working_sets: 3, started_on: Date.current
+      increment_kg: 2.5, working_sets: 3, started_on: Date.current - 7.days
     )
   end
 end

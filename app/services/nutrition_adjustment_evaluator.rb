@@ -33,6 +33,7 @@ class NutritionAdjustmentEvaluator
 
   def current_decision
     @current_decision ||= user.coaching_decisions
+      .active_evidence
       .where(decision_type: "nutrition_adjustment", rule_key: RULE_KEY)
       .where("inputs ->> 'weekly_review_decision_id' = ?", weekly_review.id.to_s)
       .order(created_at: :desc)
@@ -128,6 +129,7 @@ class NutritionAdjustmentEvaluator
 
   def previous_adjustment
     @previous_adjustment ||= user.coaching_decisions
+      .active_evidence
       .where(decision_type: "nutrition_adjustment", rule_key: RULE_KEY)
       .where.not("output ->> 'calorie_delta' = '0'")
       .where.not(id: current_decision&.id)
@@ -139,7 +141,7 @@ class NutritionAdjustmentEvaluator
     return unless previous_adjustment
 
     review_id = previous_adjustment.inputs["weekly_review_decision_id"]
-    review = user.coaching_decisions.find_by(id: review_id, decision_type: "weekly_review")
+    review = user.coaching_decisions.active_evidence.find_by(id: review_id, decision_type: "weekly_review")
     Date.iso8601(review.output.dig("period", "end")) if review
   end
 end

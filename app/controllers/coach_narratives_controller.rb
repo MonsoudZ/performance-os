@@ -28,6 +28,7 @@ class CoachNarrativesController < ApplicationController
   def todays_decision
     today = Current.user.local_date
     Current.user.coaching_decisions
+      .active_evidence
       .where(decision_type: "daily_training")
       .where("inputs ->> 'plan_date' = ?", today.iso8601)
       .order(created_at: :desc)

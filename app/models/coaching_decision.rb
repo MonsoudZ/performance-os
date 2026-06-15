@@ -15,4 +15,11 @@ class CoachingDecision < ApplicationRecord
 
   validates :decision_type, :rule_key, :rule_version, presence: true
   validates :confidence, inclusion: { in: %w[low moderate high] }
+  validates :retraction_reason, presence: true, if: :retracted_at?
+
+  scope :active_evidence, -> { where(retracted_at: nil) }
+
+  def retract!(reason:)
+    update!(retracted_at: Time.current, retraction_reason: reason) unless retracted_at?
+  end
 end

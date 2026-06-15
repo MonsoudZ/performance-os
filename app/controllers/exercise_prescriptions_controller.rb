@@ -41,12 +41,22 @@ class ExercisePrescriptionsController < ApplicationController
   end
 
   def update
-    if @prescription.update(prescription_params.except(:exercise_id))
+    replacement = ExercisePrescriptionSuperseder.new(
+      @prescription,
+      effective_on: Current.user.local_date
+    ).call(prescription_params.except(:exercise_id, :started_on))
+
+    if replacement.persisted?
       recompute_training_plan
       redirect_to exercise_prescriptions_path, notice: "Training target updated."
-    else
-      render :edit, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordInvalid => error
+    unless error.record.equal?(@prescription)
+      error.record.errors.each do |validation_error|
+        @prescription.errors.add(validation_error.attribute, validation_error.message)
+      end
+    end
+    render :edit, status: :unprocessable_entity
   end
 
   def finish
@@ -58,7 +68,7 @@ class ExercisePrescriptionsController < ApplicationController
   private
 
   def set_prescription
-    @prescription = Current.user.exercise_prescriptions.find(params[:id])
+    @prescription = Current.user.exercise_prescriptions.active.find(params[:id])
   end
 
   def supersede_active_prescription(prescription)

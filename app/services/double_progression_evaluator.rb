@@ -154,6 +154,7 @@ class DoubleProgressionEvaluator
 
   def stalled?(exercise, prescription, current_weight)
     prior_decisions = workout_session.user.coaching_decisions
+      .active_evidence
       .where(decision_type: "double_progression", rule_key: RULE_KEY)
       .where("inputs ->> 'exercise_id' = ?", exercise.id.to_s)
       .where("inputs #>> '{prescription,id}' = ?", prescription.id.to_s)

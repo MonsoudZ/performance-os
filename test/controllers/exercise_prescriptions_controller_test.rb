@@ -62,17 +62,54 @@ class ExercisePrescriptionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, @user.exercise_prescriptions.active.where(exercise: exercise).count
   end
 
-  test "edits an existing target and enqueues a plan recompute" do
+  test "editing a historical target supersedes it effective today" do
     exercise = Exercise.create!(user: @user, name: "Overhead Press", modality: "barbell")
+    prescription = prescription_for(exercise, started_on: Date.current - 10.days)
+
+    assert_difference "ExercisePrescription.count", 1 do
+      assert_enqueued_with(job: TrainingPlanRecomputeJob) do
+        patch exercise_prescription_path(prescription),
+          params: { exercise_prescription: prescription_attributes(exercise).merge(rep_max: 10) }
+      end
+    end
+
+    assert_equal 8, prescription.reload.rep_max
+    assert_equal Date.current - 1.day, prescription.ended_on
+    replacement = @user.exercise_prescriptions.active.find_by!(exercise: exercise)
+    assert_equal Date.current, replacement.started_on
+    assert_equal 10, replacement.rep_max
+    assert_redirected_to exercise_prescriptions_path
+  end
+
+  test "editing a target created today corrects it without creating duplicate history" do
+    exercise = Exercise.create!(user: @user, name: "Paused Squat", modality: "barbell")
     prescription = prescription_for(exercise)
 
-    assert_enqueued_with(job: TrainingPlanRecomputeJob) do
+    assert_no_difference "ExercisePrescription.count" do
       patch exercise_prescription_path(prescription),
         params: { exercise_prescription: prescription_attributes(exercise).merge(rep_max: 10) }
     end
 
     assert_equal 10, prescription.reload.rep_max
-    assert_redirected_to exercise_prescriptions_path
+  end
+
+  test "an invalid historical edit leaves the current target active" do
+    exercise = Exercise.create!(user: @user, name: "Tempo Squat", modality: "barbell")
+    prescription = prescription_for(exercise, started_on: Date.current - 10.days)
+
+    assert_no_difference "ExercisePrescription.count" do
+      patch exercise_prescription_path(prescription),
+        params: {
+          exercise_prescription: prescription_attributes(exercise).merge(
+            rep_min: 10,
+            rep_max: 5
+          )
+        }
+    end
+
+    assert_response :unprocessable_entity
+    assert_nil prescription.reload.ended_on
+    assert_equal 8, prescription.rep_max
   end
 
   test "ends a target" do

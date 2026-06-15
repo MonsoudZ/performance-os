@@ -8,6 +8,7 @@ class DashboardController < ApplicationController
     @check_in = @today_input || @user.daily_readiness_inputs.new(metric_date: today)
     @readiness_score = @user.readiness_scores.find_by(score_date: today)
     @decision = @user.coaching_decisions
+      .active_evidence
       .where(decision_type: "daily_training")
       .where("inputs ->> 'plan_date' = ?", today.iso8601)
       .order(created_at: :desc)

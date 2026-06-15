@@ -149,6 +149,7 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
 
   test "edits a logged set and re-evaluates progression" do
     workout = create_logged_workout
+    decision = DoubleProgressionEvaluator.new(workout).call.first
 
     assert_enqueued_with(job: WorkoutProgressionRecomputeJob) do
       patch workout_session_path(workout), params: {
@@ -160,6 +161,8 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_equal 6, workout.set_entries.order(:set_index).first.reload.reps
+    assert decision.reload.retracted_at
+    assert_equal "workout_session_corrected", decision.retraction_reason
     assert_redirected_to workout_session_path(workout)
   end
 
@@ -178,6 +181,16 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
 
   test "deletes a workout and recomputes the plan" do
     workout = create_logged_workout
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+    parent = @user.coaching_decisions.create!(
+      decision_type: "daily_training",
+      rule_key: "daily_training_orchestrator.v1",
+      rule_version: "1.0.0",
+      inputs: { "plan_date" => Date.current.iso8601 },
+      output: {},
+      confidence: "high"
+    )
+    parent.child_links.create!(child_decision: decision, role: "progression")
 
     assert_enqueued_with(job: TrainingPlanRecomputeJob) do
       assert_difference "WorkoutSession.count", -1 do
@@ -186,6 +199,10 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_equal 0, SetEntry.where(workout_session_id: workout.id).count
+    assert decision.reload.retracted_at
+    assert_equal "workout_session_deleted", decision.retraction_reason
+    assert parent.reload.retracted_at
+    assert_equal "workout_session_deleted", parent.retraction_reason
     assert_redirected_to root_path
   end
 

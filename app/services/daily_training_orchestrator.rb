@@ -63,6 +63,7 @@ class DailyTrainingOrchestrator
   def progression_decisions
     @progression_decisions ||= prescriptions.each_with_object({}) do |prescription, decisions|
       decision = user.coaching_decisions
+        .active_evidence
         .where(decision_type: "double_progression")
         .where("inputs ->> 'exercise_id' = ?", prescription.exercise_id.to_s)
         .where("created_at <= ?", plan_date.end_of_day)
@@ -115,6 +116,7 @@ class DailyTrainingOrchestrator
 
   def current_parent
     @current_parent ||= user.coaching_decisions
+      .active_evidence
       .where(decision_type: "daily_training", rule_key: RULE_KEY)
       .where("inputs ->> 'plan_date' = ?", plan_date.iso8601)
       .order(created_at: :desc)

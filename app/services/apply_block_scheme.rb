@@ -11,18 +11,24 @@ class ApplyBlockScheme
     scheme = Mesocycle::SCHEMES[@focus]
     return 0 unless scheme
 
-    updated = 0
-    @user.exercise_prescriptions.active.includes(:exercise).find_each do |prescription|
-      variant = prescription.exercise.is_compound? ? scheme[:compound] : scheme[:isolation]
-      prescription.update!(
-        rep_min: variant[:rep_min],
-        rep_max: variant[:rep_max],
-        target_rir_min: variant[:rir_min],
-        target_rir_max: variant[:rir_max],
-        working_sets: variant[:sets]
-      )
-      updated += 1
+    prescriptions = @user.exercise_prescriptions.active.includes(:exercise).to_a
+
+    ApplicationRecord.transaction do
+      prescriptions.each do |prescription|
+        variant = prescription.exercise.is_compound? ? scheme[:compound] : scheme[:isolation]
+        ExercisePrescriptionSuperseder.new(
+          prescription,
+          effective_on: @user.local_date
+        ).call(
+          rep_min: variant[:rep_min],
+          rep_max: variant[:rep_max],
+          target_rir_min: variant[:rir_min],
+          target_rir_max: variant[:rir_max],
+          working_sets: variant[:sets]
+        )
+      end
     end
-    updated
+
+    prescriptions.size
   end
 end

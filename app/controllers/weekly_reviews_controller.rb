@@ -2,6 +2,7 @@ class WeeklyReviewsController < ApplicationController
   def show
     today = Current.user.local_date
     @review = Current.user.coaching_decisions
+      .active_evidence
       .where(decision_type: "weekly_review", rule_key: WeeklyEvidenceReview::RULE_KEY)
       .order(created_at: :desc)
       .first
@@ -29,6 +30,7 @@ class WeeklyReviewsController < ApplicationController
     return unless review
 
     Current.user.coaching_decisions
+      .active_evidence
       .where(decision_type: "nutrition_adjustment", rule_key: NutritionAdjustmentEvaluator::RULE_KEY)
       .where("inputs ->> 'weekly_review_decision_id' = ?", review.id.to_s)
       .order(created_at: :desc)

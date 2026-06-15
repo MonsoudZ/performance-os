@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_150100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -65,14 +65,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_140000) do
     t.string "decision_type", null: false
     t.jsonb "inputs", null: false
     t.jsonb "output", null: false
+    t.datetime "retracted_at"
+    t.string "retraction_reason"
     t.string "rule_key", null: false
     t.string "rule_version", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index "user_id, decision_type, ((inputs ->> 'exercise_id'::text)), created_at", name: "index_decisions_on_user_type_exercise_created_at"
+    t.index ["retracted_at"], name: "index_coaching_decisions_on_retracted_at"
     t.index ["user_id", "decision_type", "created_at"], name: "index_decisions_on_user_type_and_created_at"
     t.index ["user_id"], name: "index_coaching_decisions_on_user_id"
     t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying, 'moderate'::character varying, 'high'::character varying]::text[])", name: "coaching_decisions_confidence_check"
+    t.check_constraint "retracted_at IS NULL AND retraction_reason IS NULL OR retracted_at IS NOT NULL AND retraction_reason IS NOT NULL", name: "coaching_decisions_retraction_check"
   end
 
   create_table "conditioning_sessions", force: :cascade do |t|

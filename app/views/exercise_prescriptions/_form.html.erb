@@ -26,6 +26,10 @@
     <%= form.select :progression_model,
       ExercisePrescription::PROGRESSION_MODELS.map { |value, label| [ label, value ] } %>
   </label>
-  <label><span>Effective date</span><%= form.date_field :started_on, required: true %></label>
+  <% if prescription.persisted? %>
+    <label><span>Effective date</span><strong class="static-field"><%= Current.user.local_date.to_fs(:long) %></strong></label>
+  <% else %>
+    <label><span>Effective date</span><%= form.date_field :started_on, required: true %></label>
+  <% end %>
   <%= form.submit submit_label, class: "button" %>
 <% end %>

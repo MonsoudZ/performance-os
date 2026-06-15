@@ -63,6 +63,7 @@ class WeeklyEvidenceReview
 
   def progression_decisions
     @progression_decisions ||= user.coaching_decisions
+      .active_evidence
       .where(decision_type: "double_progression", created_at: period_start.beginning_of_day..period_end.end_of_day)
       .order(:created_at)
       .to_a
@@ -120,6 +121,7 @@ class WeeklyEvidenceReview
 
   def current_decision
     @current_decision ||= user.coaching_decisions
+      .active_evidence
       .where(decision_type: "weekly_review", rule_key: RULE_KEY)
       .where("inputs ->> 'period_end' = ?", period_end.iso8601)
       .order(created_at: :desc)
