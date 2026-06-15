@@ -26,7 +26,7 @@ class MesocyclesController < ApplicationController
   end
 
   def finish
-    @mesocycle.update!(ended_on: [ Current.user.local_date - 1.day, @mesocycle.started_on ].max)
+    @mesocycle.update!(ended_on: @mesocycle.ended_on_for(Current.user.local_date))
     recompute_training_plan
     redirect_to mesocycles_path, notice: "Training block ended."
   end
@@ -53,7 +53,7 @@ class MesocyclesController < ApplicationController
 
   def close_active_mesocycle(new_start)
     Current.user.mesocycles.active.find_each do |block|
-      block.update!(ended_on: [ new_start - 1.day, block.started_on ].max)
+      block.update!(ended_on: block.ended_on_for(new_start))
     end
   end
 

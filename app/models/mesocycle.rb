@@ -24,16 +24,15 @@ class Mesocycle < ApplicationRecord
     }
   }.freeze
 
+  include DateRanged
+
   belongs_to :user
 
-  validates :started_on, presence: true
   validates :weeks, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 16 }
   validates :focus, inclusion: { in: FOCUSES.keys }
   validates :deload_week, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :deload_within_block
-  validate :ends_after_start
 
-  scope :active, -> { where(ended_on: nil) }
   scope :active_on, ->(date) {
     where("started_on <= ?", date)
       .where("COALESCE(ended_on, started_on + (weeks * 7 - 1)) >= ?", date)
@@ -93,11 +92,5 @@ class Mesocycle < ApplicationRecord
     return if deload_week.blank? || weeks.blank?
 
     errors.add(:deload_week, "must be within the block length") if deload_week > weeks
-  end
-
-  def ends_after_start
-    return if ended_on.blank? || started_on.blank? || ended_on >= started_on
-
-    errors.add(:ended_on, "must be on or after the start date")
   end
 end

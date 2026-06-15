@@ -60,7 +60,7 @@ class ExercisePrescriptionsController < ApplicationController
   end
 
   def finish
-    @prescription.update!(ended_on: [ Current.user.local_date - 1.day, @prescription.started_on ].max)
+    @prescription.update!(ended_on: @prescription.ended_on_for(Current.user.local_date))
     recompute_training_plan
     redirect_to exercise_prescriptions_path, notice: "Training target ended."
   end
@@ -76,7 +76,7 @@ class ExercisePrescriptionsController < ApplicationController
       .active
       .where(exercise_id: prescription.exercise_id)
       .find_each do |existing|
-        existing.update!(ended_on: [ prescription.started_on - 1.day, existing.started_on ].max)
+        existing.update!(ended_on: existing.ended_on_for(prescription.started_on))
       end
   end
 

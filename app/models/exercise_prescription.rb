@@ -6,6 +6,8 @@ class ExercisePrescription < ApplicationRecord
     "top_set" => "Top set (heaviest set drives progression)"
   }.freeze
 
+  include DateRanged
+
   belongs_to :user
   belongs_to :exercise
 
@@ -14,12 +16,9 @@ class ExercisePrescription < ApplicationRecord
   validates :target_rir_min, numericality: { greater_than_or_equal_to: 0 }
   validates :target_rir_max, numericality: { greater_than_or_equal_to: 0 }
   validates :progression_model, inclusion: { in: PROGRESSION_MODELS.keys }
-  validates :started_on, presence: true
   validate :valid_ranges
-  validate :ends_after_start
   validate :exercise_available_to_user
 
-  scope :active, -> { where(ended_on: nil) }
   scope :active_on, ->(date) {
     where("started_on <= ? AND (ended_on IS NULL OR ended_on >= ?)", date, date)
   }
@@ -44,12 +43,6 @@ class ExercisePrescription < ApplicationRecord
     if target_rir_min && target_rir_max && target_rir_max < target_rir_min
       errors.add(:target_rir_max, "must be at least the minimum")
     end
-  end
-
-  def ends_after_start
-    return if ended_on.blank? || started_on.blank? || ended_on >= started_on
-
-    errors.add(:ended_on, "must be on or after the start date")
   end
 
   def exercise_available_to_user

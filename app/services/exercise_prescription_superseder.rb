@@ -31,7 +31,7 @@ class ExercisePrescriptionSuperseder
       prescription.lock!
       raise ActiveRecord::RecordInvalid, prescription unless prescription.ended_on.nil?
 
-      prescription.update!(ended_on: effective_on - 1.day)
+      prescription.update!(ended_on: prescription.ended_on_for(effective_on))
       replacement.save!
     end
 

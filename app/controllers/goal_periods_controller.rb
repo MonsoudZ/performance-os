@@ -27,7 +27,7 @@ class GoalPeriodsController < ApplicationController
     goal = Current.user.goal_periods.find(params[:id])
     # End dates are inclusive, so "no longer active today" means the last active
     # day was yesterday (or the start date for a goal opened today).
-    goal.update!(ended_on: [ Current.user.local_date - 1.day, goal.started_on ].max)
+    goal.update!(ended_on: goal.ended_on_for(Current.user.local_date))
     recompute_nutrition
     redirect_to goal_periods_path, notice: "Goal ended."
   end
@@ -45,7 +45,7 @@ class GoalPeriodsController < ApplicationController
 
   def close_active_goal(new_start)
     Current.user.goal_periods.active.find_each do |goal|
-      goal.update!(ended_on: [ new_start - 1.day, goal.started_on ].max)
+      goal.update!(ended_on: goal.ended_on_for(new_start))
     end
   end
 
