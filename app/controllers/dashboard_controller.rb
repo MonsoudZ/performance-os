@@ -9,9 +9,9 @@ class DashboardController < ApplicationController
     @readiness_score = @user.readiness_scores.find_by(score_date: today)
     @decision = @user.coaching_decisions
       .active_evidence
-      .where(decision_type: "daily_training")
-      .where("inputs ->> 'plan_date' = ?", today.iso8601)
-      .order(created_at: :desc)
+      .of_type("daily_training")
+      .for_input("plan_date", today.iso8601)
+      .latest_first
       .first
     @decision_links = @decision&.child_links&.includes(:child_decision)&.order(:role, :id) || []
     @recent_workouts = @user.workout_sessions.includes(:set_entries).order(performed_at: :desc).limit(3)

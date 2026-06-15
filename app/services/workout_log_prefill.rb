@@ -126,11 +126,11 @@ class WorkoutLogPrefill
   def latest_progression_weight(prescription)
     decision = user.coaching_decisions
       .active_evidence
-      .where(decision_type: "double_progression")
-      .where("inputs ->> 'exercise_id' = ?", prescription.exercise_id.to_s)
-      .where("inputs #>> '{prescription,id}' = ?", prescription.id.to_s)
+      .of_type("double_progression")
+      .for_input("exercise_id", prescription.exercise_id)
+      .for_prescription(prescription.id)
       .where("created_at <= ?", workout_session.performed_at || Time.current)
-      .order(created_at: :desc)
+      .latest_first
       .first
 
     decision&.output&.fetch("next_weight_kg", nil)

@@ -39,9 +39,10 @@ class DailyTrainingOrchestrator
 
   def readiness_decision
     @readiness_decision ||= user.coaching_decisions
-      .where(decision_type: "daily_readiness", rule_key: ReadinessEvaluator::RULE_KEY)
-      .where("inputs ->> 'metric_date' = ?", plan_date.iso8601)
-      .order(created_at: :desc)
+      .of_type("daily_readiness")
+      .where(rule_key: ReadinessEvaluator::RULE_KEY)
+      .for_input("metric_date", plan_date.iso8601)
+      .latest_first
       .first
   end
 
@@ -70,11 +71,11 @@ class DailyTrainingOrchestrator
       # target. (Prefill and stall detection scope the same way.)
       decision = user.coaching_decisions
         .active_evidence
-        .where(decision_type: "double_progression")
-        .where("inputs ->> 'exercise_id' = ?", prescription.exercise_id.to_s)
-        .where("inputs #>> '{prescription,id}' = ?", prescription.id.to_s)
+        .of_type("double_progression")
+        .for_input("exercise_id", prescription.exercise_id)
+        .for_prescription(prescription.id)
         .where("created_at <= ?", plan_date.end_of_day)
-        .order(created_at: :desc)
+        .latest_first
         .first
       decisions[prescription.exercise_id] = decision if decision
     end
@@ -82,9 +83,10 @@ class DailyTrainingOrchestrator
 
   def nutrition_decision
     @nutrition_decision ||= user.coaching_decisions
-      .where(decision_type: "daily_nutrition", rule_key: NutritionEvaluator::RULE_KEY)
-      .where("inputs ->> 'nutrition_date' = ?", plan_date.iso8601)
-      .order(created_at: :desc)
+      .of_type("daily_nutrition")
+      .where(rule_key: NutritionEvaluator::RULE_KEY)
+      .for_input("nutrition_date", plan_date.iso8601)
+      .latest_first
       .first
   end
 
@@ -124,9 +126,10 @@ class DailyTrainingOrchestrator
   def current_parent
     @current_parent ||= user.coaching_decisions
       .active_evidence
-      .where(decision_type: "daily_training", rule_key: RULE_KEY)
-      .where("inputs ->> 'plan_date' = ?", plan_date.iso8601)
-      .order(created_at: :desc)
+      .of_type("daily_training")
+      .where(rule_key: RULE_KEY)
+      .for_input("plan_date", plan_date.iso8601)
+      .latest_first
       .first
   end
 

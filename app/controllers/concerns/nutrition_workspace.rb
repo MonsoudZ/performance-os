@@ -21,9 +21,9 @@ module NutritionWorkspace
       .count
     @recent_foods = recent_foods
     @nutrition_decision = Current.user.coaching_decisions
-      .where(decision_type: "daily_nutrition")
-      .where("inputs ->> 'nutrition_date' = ?", date.iso8601)
-      .order(created_at: :desc)
+      .of_type("daily_nutrition")
+      .for_input("nutrition_date", date.iso8601)
+      .latest_first
       .first
   end
 

@@ -28,9 +28,9 @@ class WorkoutSessionsController < ApplicationController
     # the latest decision per exercise.
     @decisions = Current.user.coaching_decisions
       .active_evidence
-      .where(decision_type: "double_progression")
-      .where("inputs ->> 'workout_session_id' = ?", @workout_session.id.to_s)
-      .order(created_at: :desc)
+      .of_type("double_progression")
+      .for_input("workout_session_id", @workout_session.id)
+      .latest_first
       .to_a
       .uniq { |decision| decision.inputs["exercise_id"] }
   end

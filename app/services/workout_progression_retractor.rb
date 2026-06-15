@@ -7,8 +7,8 @@ class WorkoutProgressionRetractor
   def call
     queue = workout_session.user.coaching_decisions
       .active_evidence
-      .where(decision_type: "double_progression")
-      .where("inputs ->> 'workout_session_id' = ?", workout_session.id.to_s)
+      .of_type("double_progression")
+      .for_input("workout_session_id", workout_session.id)
       .to_a
     visited_ids = Set.new
 

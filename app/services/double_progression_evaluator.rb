@@ -155,10 +155,11 @@ class DoubleProgressionEvaluator
   def stalled?(exercise, prescription, current_weight)
     prior_decisions = workout_session.user.coaching_decisions
       .active_evidence
-      .where(decision_type: "double_progression", rule_key: RULE_KEY)
-      .where("inputs ->> 'exercise_id' = ?", exercise.id.to_s)
-      .where("inputs #>> '{prescription,id}' = ?", prescription.id.to_s)
-      .order(created_at: :desc)
+      .of_type("double_progression")
+      .where(rule_key: RULE_KEY)
+      .for_input("exercise_id", exercise.id)
+      .for_prescription(prescription.id)
+      .latest_first
       .to_a
       .uniq { |decision| decision.inputs["workout_session_id"] }
       .first(STALL_SESSION_COUNT - 1)

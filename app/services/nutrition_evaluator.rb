@@ -69,9 +69,10 @@ class NutritionEvaluator
 
   def current_decision
     @current_decision ||= user.coaching_decisions
-      .where(decision_type: "daily_nutrition", rule_key: RULE_KEY)
-      .where("inputs ->> 'nutrition_date' = ?", nutrition_date.iso8601)
-      .order(created_at: :desc)
+      .of_type("daily_nutrition")
+      .where(rule_key: RULE_KEY)
+      .for_input("nutrition_date", nutrition_date.iso8601)
+      .latest_first
       .first
   end
 

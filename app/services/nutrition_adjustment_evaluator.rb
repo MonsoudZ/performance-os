@@ -34,9 +34,10 @@ class NutritionAdjustmentEvaluator
   def current_decision
     @current_decision ||= user.coaching_decisions
       .active_evidence
-      .where(decision_type: "nutrition_adjustment", rule_key: RULE_KEY)
-      .where("inputs ->> 'weekly_review_decision_id' = ?", weekly_review.id.to_s)
-      .order(created_at: :desc)
+      .of_type("nutrition_adjustment")
+      .where(rule_key: RULE_KEY)
+      .for_input("weekly_review_decision_id", weekly_review.id)
+      .latest_first
       .first
   end
 
@@ -130,10 +131,11 @@ class NutritionAdjustmentEvaluator
   def previous_adjustment
     @previous_adjustment ||= user.coaching_decisions
       .active_evidence
-      .where(decision_type: "nutrition_adjustment", rule_key: RULE_KEY)
+      .of_type("nutrition_adjustment")
+      .where(rule_key: RULE_KEY)
       .where.not("output ->> 'calorie_delta' = '0'")
       .where.not(id: current_decision&.id)
-      .order(created_at: :desc)
+      .latest_first
       .first
   end
 

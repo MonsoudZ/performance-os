@@ -3,8 +3,9 @@ class WeeklyReviewsController < ApplicationController
     today = Current.user.local_date
     @review = Current.user.coaching_decisions
       .active_evidence
-      .where(decision_type: "weekly_review", rule_key: WeeklyEvidenceReview::RULE_KEY)
-      .order(created_at: :desc)
+      .of_type("weekly_review")
+      .where(rule_key: WeeklyEvidenceReview::RULE_KEY)
+      .latest_first
       .first
     @adjustment = adjustment_for(@review)
     @active_goal = Current.user.goal_periods
@@ -31,9 +32,10 @@ class WeeklyReviewsController < ApplicationController
 
     Current.user.coaching_decisions
       .active_evidence
-      .where(decision_type: "nutrition_adjustment", rule_key: NutritionAdjustmentEvaluator::RULE_KEY)
-      .where("inputs ->> 'weekly_review_decision_id' = ?", review.id.to_s)
-      .order(created_at: :desc)
+      .of_type("nutrition_adjustment")
+      .where(rule_key: NutritionAdjustmentEvaluator::RULE_KEY)
+      .for_input("weekly_review_decision_id", review.id)
+      .latest_first
       .first
   end
 end

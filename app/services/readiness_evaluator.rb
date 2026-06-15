@@ -135,9 +135,10 @@ class ReadinessEvaluator
 
   def current_decision
     @current_decision ||= readiness_input.user.coaching_decisions
-      .where(decision_type: "daily_readiness", rule_key: RULE_KEY)
-      .where("inputs ->> 'metric_date' = ?", readiness_input.metric_date.iso8601)
-      .order(created_at: :desc)
+      .of_type("daily_readiness")
+      .where(rule_key: RULE_KEY)
+      .for_input("metric_date", readiness_input.metric_date.iso8601)
+      .latest_first
       .first
   end
 
