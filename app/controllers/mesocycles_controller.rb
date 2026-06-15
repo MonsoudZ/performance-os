@@ -1,4 +1,6 @@
 class MesocyclesController < ApplicationController
+  include TrainingRecomputable
+
   before_action :set_mesocycle, only: %i[finish apply_scheme]
 
   def index
@@ -57,10 +59,6 @@ class MesocyclesController < ApplicationController
 
   def apply_scheme_to_targets(focus)
     ApplyBlockScheme.new(Current.user, focus: focus).call
-  end
-
-  def recompute_training_plan
-    TrainingPlanRecomputeJob.perform_later(Current.user, Current.user.local_date)
   end
 
   def mesocycle_params

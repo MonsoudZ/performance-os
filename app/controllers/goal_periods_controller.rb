@@ -1,4 +1,6 @@
 class GoalPeriodsController < ApplicationController
+  include NutritionRecomputable
+
   def index
     load_index
   end
@@ -13,7 +15,7 @@ class GoalPeriodsController < ApplicationController
         close_active_goal(@goal_period.started_on)
         @goal_period.save!
       end
-      recompute_today
+      recompute_nutrition
       redirect_to goal_periods_path, notice: "Goal set to #{@goal_period.goal_type.humanize.downcase}."
     else
       load_index
@@ -26,7 +28,7 @@ class GoalPeriodsController < ApplicationController
     # End dates are inclusive, so "no longer active today" means the last active
     # day was yesterday (or the start date for a goal opened today).
     goal.update!(ended_on: [ Current.user.local_date - 1.day, goal.started_on ].max)
-    recompute_today
+    recompute_nutrition
     redirect_to goal_periods_path, notice: "Goal ended."
   end
 
@@ -45,10 +47,6 @@ class GoalPeriodsController < ApplicationController
     Current.user.goal_periods.active.find_each do |goal|
       goal.update!(ended_on: [ new_start - 1.day, goal.started_on ].max)
     end
-  end
-
-  def recompute_today
-    NutritionRecomputeJob.perform_later(Current.user, Current.user.local_date)
   end
 
   def goal_period_attributes

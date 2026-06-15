@@ -1,4 +1,6 @@
 class ConditioningSessionsController < ApplicationController
+  include TrainingRecomputable
+
   def index
     load_workspace
   end
@@ -23,11 +25,6 @@ class ConditioningSessionsController < ApplicationController
   end
 
   private
-
-  # The week's conditioning feeds today's plan directive, so recompose it.
-  def recompute_training_plan
-    TrainingPlanRecomputeJob.perform_later(Current.user, Current.user.local_date)
-  end
 
   def load_workspace
     service = WeeklyConditioningSummary.new(Current.user)

@@ -1,4 +1,6 @@
 class WorkoutSessionsController < ApplicationController
+  include TrainingRecomputable
+
   def new
     @workout_session = Current.user.workout_sessions.new(performed_at: Time.current)
     @workout_template = requested_workout_template
@@ -61,7 +63,7 @@ class WorkoutSessionsController < ApplicationController
       reason: "workout_session_deleted"
     ).call
     workout_session.destroy!
-    TrainingPlanRecomputeJob.perform_later(Current.user, Current.user.local_date)
+    recompute_training_plan
     redirect_to root_path, notice: "Workout deleted."
   end
 

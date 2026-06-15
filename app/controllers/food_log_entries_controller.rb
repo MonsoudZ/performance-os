@@ -1,5 +1,6 @@
 class FoodLogEntriesController < ApplicationController
   include NutritionWorkspace
+  include NutritionRecomputable
 
   def create
     food = Food.available_to(Current.user).find(food_log_params[:food_id])
@@ -16,7 +17,7 @@ class FoodLogEntriesController < ApplicationController
 
     if entry.save
       date = Current.user.local_date_at(entry.logged_at)
-      refresh_nutrition(date)
+      recompute_nutrition(date)
       respond_after_mutation(date, notice: "#{food.name} logged.")
     else
       redirect_to nutrition_path, alert: entry.errors.full_messages.to_sentence
@@ -36,7 +37,7 @@ class FoodLogEntriesController < ApplicationController
     )
 
     if entry.save
-      refresh_nutrition(date)
+      recompute_nutrition(date)
       respond_after_mutation(date, notice: "#{entry.food&.display_name || 'Food entry'} updated.")
     else
       redirect_to nutrition_path, alert: entry.errors.full_messages.to_sentence
@@ -47,7 +48,7 @@ class FoodLogEntriesController < ApplicationController
     entry = Current.user.food_log_entries.find(params[:id])
     date = Current.user.local_date_at(entry.logged_at)
     entry.destroy!
-    refresh_nutrition(date)
+    recompute_nutrition(date)
     respond_after_mutation(date, notice: "Food entry removed.")
   end
 
@@ -56,7 +57,7 @@ class FoodLogEntriesController < ApplicationController
     result = PreviousDayFoodLogCopier.new(Current.user, destination_date: date).call
     notice = copy_notice(result)
 
-    refresh_nutrition(date) if result.created_entries.any?
+    recompute_nutrition(date) if result.created_entries.any?
     respond_after_mutation(date, notice:)
   end
 
@@ -64,10 +65,6 @@ class FoodLogEntriesController < ApplicationController
 
   def food_log_params
     params.require(:food_log_entry).permit(:food_id, :quantity_grams, :logged_at, :meal_type)
-  end
-
-  def refresh_nutrition(date)
-    NutritionRecomputeJob.perform_later(Current.user, date)
   end
 
   def respond_after_mutation(date, notice:)

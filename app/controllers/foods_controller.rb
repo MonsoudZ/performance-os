@@ -1,4 +1,6 @@
 class FoodsController < ApplicationController
+  include NutritionRecomputable
+
   before_action :set_food, only: %i[edit update destroy]
 
   def create
@@ -40,7 +42,7 @@ class FoodsController < ApplicationController
     )
 
     if entry.save
-      NutritionRecomputeJob.perform_later(Current.user, Current.user.local_date)
+      recompute_nutrition
       redirect_to nutrition_path, notice: "#{food.display_name} logged (100 g — adjust below if needed)."
     else
       redirect_to search_foods_path(q: params[:q]), alert: entry.errors.full_messages.to_sentence

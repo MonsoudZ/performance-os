@@ -1,4 +1,6 @@
 class ExercisePrescriptionsController < ApplicationController
+  include TrainingRecomputable
+
   before_action :set_prescription, only: %i[edit update finish]
 
   def index
@@ -76,10 +78,6 @@ class ExercisePrescriptionsController < ApplicationController
       .find_each do |existing|
         existing.update!(ended_on: [ prescription.started_on - 1.day, existing.started_on ].max)
       end
-  end
-
-  def recompute_training_plan
-    TrainingPlanRecomputeJob.perform_later(Current.user, Current.user.local_date)
   end
 
   def prescription_params
