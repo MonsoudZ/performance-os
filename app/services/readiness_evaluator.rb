@@ -135,6 +135,7 @@ class ReadinessEvaluator
 
   def current_decision
     @current_decision ||= readiness_input.user.coaching_decisions
+      .active_evidence
       .of_type("daily_readiness")
       .where(rule_key: RULE_KEY)
       .for_input("metric_date", readiness_input.metric_date.iso8601)

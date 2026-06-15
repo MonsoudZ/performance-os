@@ -69,6 +69,7 @@ class NutritionEvaluator
 
   def current_decision
     @current_decision ||= user.coaching_decisions
+      .active_evidence
       .of_type("daily_nutrition")
       .where(rule_key: RULE_KEY)
       .for_input("nutrition_date", nutrition_date.iso8601)

@@ -72,6 +72,7 @@ class WeeklyEvidenceReview
 
   def decisions_during(decision_type, date_key)
     user.coaching_decisions
+      .active_evidence
       .of_type(decision_type)
       .where("(inputs ->> ?)::date BETWEEN ? AND ?", date_key, period_start, period_end)
       .order(Arel.sql("inputs ->> '#{date_key}'"), :created_at)

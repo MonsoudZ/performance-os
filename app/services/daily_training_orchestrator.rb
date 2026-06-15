@@ -39,6 +39,7 @@ class DailyTrainingOrchestrator
 
   def readiness_decision
     @readiness_decision ||= user.coaching_decisions
+      .active_evidence
       .of_type("daily_readiness")
       .where(rule_key: ReadinessEvaluator::RULE_KEY)
       .for_input("metric_date", plan_date.iso8601)
@@ -83,6 +84,7 @@ class DailyTrainingOrchestrator
 
   def nutrition_decision
     @nutrition_decision ||= user.coaching_decisions
+      .active_evidence
       .of_type("daily_nutrition")
       .where(rule_key: NutritionEvaluator::RULE_KEY)
       .for_input("nutrition_date", plan_date.iso8601)

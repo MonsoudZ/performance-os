@@ -79,6 +79,15 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     assert_empty second_parent.child_links.where(role: "progression")
   end
 
+  test "treats a retracted readiness decision as missing and writes no plan" do
+    readiness = create_readiness_decision("push", 88, "high")
+    assert DailyTrainingOrchestrator.new(@user).call
+
+    readiness.retract!(reason: "readiness_corrected")
+
+    assert_nil DailyTrainingOrchestrator.new(@user).call
+  end
+
   test "superseding a target resets the day's plan to a fresh progression baseline" do
     @prescription.update!(started_on: Date.current - 10.days)
     create_readiness_decision("push", 88, "high")
