@@ -62,10 +62,17 @@ class DailyTrainingOrchestrator
 
   def progression_decisions
     @progression_decisions ||= prescriptions.each_with_object({}) do |prescription, decisions|
+      # Scope to this prescription's id, not just the exercise: a progression
+      # decision's next_weight_kg is only valid under the rep/RIR/increment
+      # snapshot it was computed against. When a target is superseded the
+      # replacement gets a fresh id, so the day's plan starts from a clean
+      # baseline rather than carrying a recommendation earned under the old
+      # target. (Prefill and stall detection scope the same way.)
       decision = user.coaching_decisions
         .active_evidence
         .where(decision_type: "double_progression")
         .where("inputs ->> 'exercise_id' = ?", prescription.exercise_id.to_s)
+        .where("inputs #>> '{prescription,id}' = ?", prescription.id.to_s)
         .where("created_at <= ?", plan_date.end_of_day)
         .order(created_at: :desc)
         .first

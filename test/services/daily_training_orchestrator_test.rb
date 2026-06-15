@@ -79,6 +79,25 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     assert_empty second_parent.child_links.where(role: "progression")
   end
 
+  test "superseding a target resets the day's plan to a fresh progression baseline" do
+    @prescription.update!(started_on: Date.current - 10.days)
+    create_readiness_decision("push", 88, "high")
+    create_progression_decision("increase", 102.5, "high")
+
+    earned = DailyTrainingOrchestrator.new(@user).call
+    assert_equal "increase", earned.output["lifts"].first["action"]
+
+    ExercisePrescriptionSuperseder.new(@prescription, effective_on: Date.current).call(rep_max: 10)
+
+    rebaselined = DailyTrainingOrchestrator.new(@user).call
+
+    assert_not_equal earned, rebaselined
+    lift = rebaselined.output["lifts"].first
+    assert_equal "establish", lift["action"]
+    assert_nil lift["progression_decision_id"]
+    assert_empty rebaselined.child_links.where(role: "progression")
+  end
+
   test "composes a conditioning directive from the goal and the week's progress" do
     create_readiness_decision("steady", 60, "moderate")
     @user.update!(max_hr: 190)
@@ -183,7 +202,8 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
       rule_version: "1.0.0",
       inputs: {
         "exercise_id" => @exercise.id,
-        "exercise_name" => @exercise.name
+        "exercise_name" => @exercise.name,
+        "prescription" => { "id" => @prescription.id }
       },
       output: {
         "status" => status,
