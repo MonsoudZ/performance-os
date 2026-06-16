@@ -209,3 +209,74 @@
   muscles:
     glutes: primary
     hamstrings: secondary
+- name: Machine Chest Press
+  modality: machine
+  compound: true
+  muscles:
+    chest: primary
+    triceps: secondary
+    shoulders: secondary
+- name: Pec Deck Fly
+  modality: machine
+  compound: false
+  muscles:
+    chest: primary
+- name: Machine Shoulder Press
+  modality: machine
+  compound: true
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Reverse Pec Deck
+  modality: machine
+  compound: false
+  muscles:
+    shoulders: primary
+    back: secondary
+- name: Seated Machine Row
+  modality: machine
+  compound: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Hack Squat
+  modality: machine
+  compound: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Lying Leg Curl
+  modality: machine
+  compound: false
+  muscles:
+    hamstrings: primary
+- name: Seated Calf Raise
+  modality: machine
+  compound: false
+  muscles:
+    calves: primary
+- name: Machine Preacher Curl
+  modality: machine
+  compound: false
+  muscles:
+    biceps: primary
+- name: Straight-Arm Pulldown
+  modality: cable
+  compound: false
+  muscles:
+    back: primary
+- name: Cable Curl
+  modality: cable
+  compound: false
+  muscles:
+    biceps: primary
+- name: Cable Overhead Triceps Extension
+  modality: cable
+  compound: false
+  muscles:
+    triceps: primary
+- name: Cable Crunch
+  modality: cable
+  compound: false
+  muscles:
+    abs: primary

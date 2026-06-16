@@ -54,8 +54,10 @@ class Api::V1::ExercisesControllerTest < ActionDispatch::IntegrationTest
     get api_v1_exercises_path, params: { query: "press", limit: 2 }, as: :json
 
     assert_response :success
+    press_total = Exercise.where(user_id: nil).where("name ILIKE ?", "%press%").count
+    assert_operator press_total, :>, 2, "needs more matches than the limit to exercise the cap"
     assert_equal 2, response.parsed_body.dig("meta", "returned")
-    assert_equal 8, response.parsed_body.dig("meta", "total")
+    assert_equal press_total, response.parsed_body.dig("meta", "total")
     assert_equal 2, response.parsed_body.dig("meta", "limit")
   end
 
