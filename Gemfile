@@ -32,7 +32,7 @@ gem "web-push", "~> 3.0"
 
 # Official Anthropic SDK — powers the AI coach narrative that explains the
 # auditable coaching-decision DAG in plain language [https://github.com/anthropics/anthropic-sdk-ruby]
-gem "anthropic", "~> 1.9"
+gem "anthropic", "~> 1.48"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
