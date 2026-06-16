@@ -33,6 +33,13 @@ class ProgramGenerator
 
   DEFAULT_INCREMENT_KG = 2.5
 
+  # Working-set adjustment by training experience.
+  SET_DELTA_BY_EXPERIENCE = { "beginner" => -1, "intermediate" => 0, "advanced" => 1 }.freeze
+  # Below this many training days, cover only the big compound-driven groups.
+  LOW_FREQUENCY_DAYS = 2
+  HIGH_FREQUENCY_DAYS = 5
+  BIG_ROCK_COUNT = 6
+
   Result = Struct.new(:created, :focus, :goal, keyword_init: true) do
     def created_any? = created.any?
   end
@@ -69,17 +76,35 @@ class ProgramGenerator
   # One lift per covered muscle group, de-duplicated (a lift primary for two
   # groups, e.g. a deadlift, is only prescribed once).
   def selected_exercises
-    @selected_exercises ||= MUSCLE_COVERAGE.each_with_object([]) do |muscle, chosen|
+    @selected_exercises ||= covered_muscles.each_with_object([]) do |muscle, chosen|
       pick = candidates_for(muscle).find { |exercise| chosen.exclude?(exercise) }
       chosen << pick if pick
     end
   end
 
+  # Fewer training days → cover only the big compound-driven groups; more days
+  # can carry the full set of accessories.
+  def covered_muscles
+    return MUSCLE_COVERAGE.first(BIG_ROCK_COUNT) if user.training_days_per_week <= LOW_FREQUENCY_DAYS
+
+    MUSCLE_COVERAGE
+  end
+
+  # Only lifts the user has the equipment for (bodyweight included only if they
+  # kept it). Free-weight compounds rank first within a group.
   def candidates_for(muscle)
     Exercise.available_to(user)
       .joins(exercise_muscle_contributions: :muscle_group)
       .where(exercise_muscle_contributions: { role: "primary" }, muscle_groups: { name: muscle })
+      .select { |exercise| user.available_equipment.include?(exercise.modality) }
       .sort_by { |exercise| [ exercise.is_compound? ? 0 : 1, MODALITY_RANK.fetch(exercise.modality, 9), exercise.name ] }
+  end
+
+  # Experience sets the baseline volume; high training frequency adds a set.
+  def set_delta
+    delta = SET_DELTA_BY_EXPERIENCE.fetch(user.experience_level, 0)
+    delta += 1 if user.training_days_per_week >= HIGH_FREQUENCY_DAYS
+    delta
   end
 
   def already_training?(exercise)
@@ -94,7 +119,7 @@ class ProgramGenerator
       rep_max: variant[:rep_max],
       target_rir_min: variant[:rir_min],
       target_rir_max: variant[:rir_max],
-      working_sets: variant[:sets],
+      working_sets: [ variant[:sets] + set_delta, 1 ].max,
       increment_kg: DEFAULT_INCREMENT_KG,
       progression_model: "double_progression",
       started_on: effective_on

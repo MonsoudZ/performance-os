@@ -1,4 +1,7 @@
 class User < ApplicationRecord
+  EXPERIENCE_LEVELS = %w[beginner intermediate advanced].freeze
+  EQUIPMENT_OPTIONS = Exercise::MODALITIES
+
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :goal_periods, dependent: :destroy
@@ -25,7 +28,14 @@ class User < ApplicationRecord
 
   validates :email_address, presence: true, uniqueness: true
   validates :unit_system, inclusion: { in: %w[metric imperial] }
+  validates :experience_level, inclusion: { in: EXPERIENCE_LEVELS }
+  validates :training_days_per_week,
+    numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 7 }
+  validates :available_equipment, presence: true
   validate :recognized_time_zone
+  validate :recognized_equipment
+
+  before_validation :normalize_equipment
 
   def active_goal
     goal_periods.active_on(local_date).order(started_on: :desc).first
@@ -50,7 +60,20 @@ class User < ApplicationRecord
 
   private
 
+  def normalize_equipment
+    return if available_equipment.nil?
+
+    self.available_equipment = available_equipment.compact_blank.uniq
+  end
+
   def recognized_time_zone
     errors.add(:time_zone, "is not recognized") unless ActiveSupport::TimeZone[time_zone]
+  end
+
+  def recognized_equipment
+    return if available_equipment.blank?
+
+    unknown = available_equipment - EQUIPMENT_OPTIONS
+    errors.add(:available_equipment, "includes an unknown option") if unknown.any?
   end
 end

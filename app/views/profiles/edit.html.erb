@@ -1,0 +1,73 @@
+<% content_for :title, "Profile · PerformanceOS" %>
+
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Profile</p>
+      <h1>Your training profile.</h1>
+      <p>These drive what the program generator builds and how the plan scales. Change them anytime — regenerate to pick up new equipment or goals.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <%= form_with model: @user, url: profile_path, method: :patch, class: "stacked-form" do |form| %>
+      <h2>Training</h2>
+
+      <label>
+        <span>Experience</span>
+        <%= form.select :experience_level, User::EXPERIENCE_LEVELS.map { |level| [ level.humanize, level ] } %>
+      </label>
+
+      <label>
+        <span>Training days per week</span>
+        <%= form.number_field :training_days_per_week, min: 1, max: 7, step: 1 %>
+      </label>
+
+      <fieldset class="checkbox-group">
+        <legend>Available equipment</legend>
+        <p class="checkbox-group__hint">The generator only picks lifts you can do with these.</p>
+        <%= form.collection_check_boxes :available_equipment, User::EQUIPMENT_OPTIONS, :to_s, :humanize do |b| %>
+          <label class="checkbox-option"><%= b.check_box %><span><%= b.text %></span></label>
+        <% end %>
+      </fieldset>
+
+      <h2>About you</h2>
+
+      <label>
+        <span>Sex</span>
+        <%= form.select :sex, %w[male female unspecified].map { |s| [ s.humanize, s ] }, include_blank: "Prefer not to say" %>
+      </label>
+
+      <label>
+        <span>Date of birth</span>
+        <%= form.date_field :birth_date %>
+      </label>
+
+      <label>
+        <span>Height (cm)</span>
+        <%= form.number_field :height_cm, step: 0.1, min: 0 %>
+      </label>
+
+      <label>
+        <span>Max heart rate (bpm)</span>
+        <%= form.number_field :max_hr, min: 1, step: 1 %>
+      </label>
+
+      <h2>Preferences</h2>
+
+      <label>
+        <span>Units</span>
+        <%= form.select :unit_system, [ [ "Metric (kg)", "metric" ], [ "Imperial (lb)", "imperial" ] ] %>
+      </label>
+
+      <label>
+        <span>Time zone</span>
+        <%= form.time_zone_select :time_zone %>
+      </label>
+
+      <%= form.submit "Save profile", class: "button" %>
+    <% end %>
+  </section>
+</main>

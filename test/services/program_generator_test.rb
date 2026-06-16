@@ -73,6 +73,45 @@ class ProgramGeneratorTest < ActiveSupport::TestCase
     assert_operator count_after_first, :>=, 8
   end
 
+  test "only selects lifts the user has equipment for" do
+    @user.update!(available_equipment: %w[dumbbell bodyweight])
+    set_goal("build_muscle")
+
+    ProgramGenerator.new(@user).call
+
+    modalities = @user.exercise_prescriptions.active.includes(:exercise).map { |p| p.exercise.modality }.uniq
+    assert_equal [], modalities - %w[dumbbell bodyweight], "should not prescribe unavailable modalities"
+    # Chest falls to the dumbbell press once barbell is off the table.
+    assert active_prescription_for("Dumbbell Bench Press")
+    assert_nil active_prescription_for("Barbell Bench Press")
+  end
+
+  test "experience scales the working sets" do
+    @user.update!(experience_level: "beginner")
+    set_goal("build_muscle")
+    ProgramGenerator.new(@user).call
+    # Hypertrophy compound is 3 sets; beginner drops one.
+    assert_equal 2, active_prescription_for("Barbell Back Squat").working_sets
+  end
+
+  test "low training frequency covers only the big compound groups" do
+    @user.update!(training_days_per_week: 2)
+    set_goal("build_muscle")
+
+    assert_difference "@user.exercise_prescriptions.active.count", 6 do
+      ProgramGenerator.new(@user).call
+    end
+    assert active_prescription_for("Barbell Back Squat")
+    assert_nil active_prescription_for("Barbell Curl"), "arms are dropped at low frequency"
+  end
+
+  test "high training frequency adds a set" do
+    @user.update!(training_days_per_week: 6) # intermediate + high frequency = +1 set
+    set_goal("build_muscle")
+    ProgramGenerator.new(@user).call
+    assert_equal 4, active_prescription_for("Barbell Back Squat").working_sets
+  end
+
   test "does nothing without an active goal" do
     assert_no_difference [ "ExercisePrescription.count", "Mesocycle.count" ] do
       result = ProgramGenerator.new(@user).call

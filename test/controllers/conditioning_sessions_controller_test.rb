@@ -64,7 +64,10 @@ class ConditioningSessionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sets max HR through the profile" do
-    patch profile_path, params: { user: { max_hr: 188 } }
+    # The inline form lives on the conditioning page, so it returns there.
+    patch profile_path,
+      params: { user: { max_hr: 188 } },
+      headers: { "HTTP_REFERER" => conditioning_sessions_url }
 
     assert_equal 188, @user.reload.max_hr
     assert_redirected_to conditioning_sessions_path

@@ -2034,3 +2034,35 @@ h1 {
     font-size: 16px;
   }
 }
+
+/* ===== Profile checkbox group (e.g. available equipment) ===== */
+.checkbox-group {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0;
+  padding: 0;
+  border: 0;
+}
+
+.checkbox-group legend {
+  padding: 0;
+  font-weight: 700;
+}
+
+.checkbox-group__hint {
+  margin: 2px 0 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 550;
+}
+
+.checkbox-option input {
+  width: 18px;
+  height: 18px;
+}
