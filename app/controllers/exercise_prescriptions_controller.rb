@@ -4,7 +4,9 @@ class ExercisePrescriptionsController < ApplicationController
   before_action :set_prescription, only: %i[edit update finish]
 
   def index
-    @prescriptions = Current.user.exercise_prescriptions.active_on(Current.user.local_date).includes(:exercise).order("exercises.name")
+    # Ongoing targets (not yet ended), so a retired lift leaves the list at once
+    # — even one ended the same day it started.
+    @prescriptions = Current.user.exercise_prescriptions.active.includes(:exercise).order("exercises.name")
   end
 
   def new
