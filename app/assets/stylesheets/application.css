@@ -621,6 +621,12 @@ h1 {
   padding: 72px 0 44px;
 }
 
+.page-heading__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .page-heading h1,
 .auth-card h1 {
   margin-bottom: 16px;

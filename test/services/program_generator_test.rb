@@ -112,6 +112,29 @@ class ProgramGeneratorTest < ActiveSupport::TestCase
     assert_equal 4, active_prescription_for("Barbell Back Squat").working_sets
   end
 
+  test "refresh retires lifts the user can no longer do and adds replacements" do
+    set_goal("build_muscle")
+    ProgramGenerator.new(@user).call
+    assert active_prescription_for("Barbell Back Squat")
+
+    @user.update!(available_equipment: %w[dumbbell machine cable bodyweight]) # dropped barbell
+    result = ProgramGenerator.new(@user, prune_unavailable: true).call
+
+    assert result.retired_any?
+    assert result.created_any?
+    assert_nil active_prescription_for("Barbell Back Squat"), "the barbell lift is retired"
+    assert_equal 0, @user.exercise_prescriptions.active.joins(:exercise).where(exercises: { modality: "barbell" }).count
+    assert active_prescription_for("Bulgarian Split Squat"), "a dumbbell quad lift replaces it"
+  end
+
+  test "refresh is a no-op when the program already matches the profile" do
+    set_goal("build_muscle")
+    ProgramGenerator.new(@user).call
+
+    result = ProgramGenerator.new(@user, prune_unavailable: true).call
+    assert_not result.changed_any?
+  end
+
   test "does nothing without an active goal" do
     assert_no_difference [ "ExercisePrescription.count", "Mesocycle.count" ] do
       result = ProgramGenerator.new(@user).call

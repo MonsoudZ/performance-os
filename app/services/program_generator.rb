@@ -5,7 +5,9 @@
 # intensity, the double-progression evaluator reads logged sets to pick the next
 # weight, and editing a target supersedes it. Idempotent and non-destructive:
 # it only adds lifts the user isn't already training, so re-running fills gaps
-# without clobbering manual targets.
+# without clobbering manual targets. In `prune_unavailable` mode (a "refresh"),
+# it also retires active lifts the user no longer has the equipment for, then
+# adds the now-possible replacements.
 class ProgramGenerator
   # Goal type -> block focus, which selects the rep/RIR/set scheme (and the
   # starting mesocycle) from Mesocycle::SCHEMES.
@@ -40,24 +42,29 @@ class ProgramGenerator
   HIGH_FREQUENCY_DAYS = 5
   BIG_ROCK_COUNT = 6
 
-  Result = Struct.new(:created, :focus, :goal, keyword_init: true) do
+  Result = Struct.new(:created, :retired, :focus, :goal, keyword_init: true) do
     def created_any? = created.any?
+    def retired_any? = retired.any?
+    def changed_any? = created_any? || retired_any?
   end
 
-  def initialize(user, effective_on: nil)
+  def initialize(user, effective_on: nil, prune_unavailable: false)
     @user = user
     @effective_on = effective_on || user.local_date
+    @prune_unavailable = prune_unavailable
   end
 
   def call
     goal = user.active_goal
-    return Result.new(created: [], focus: nil, goal: nil) unless goal
+    return Result.new(created: [], retired: [], focus: nil, goal: nil) unless goal
 
     focus = FOCUS_BY_GOAL.fetch(goal.goal_type, DEFAULT_FOCUS)
     scheme = Mesocycle::SCHEMES.fetch(focus)
     created = []
+    retired = []
 
     ApplicationRecord.transaction do
+      retired = prune_unavailable_lifts if prune_unavailable?
       ensure_starting_block(focus)
       selected_exercises.each do |exercise|
         next if already_training?(exercise)
@@ -66,12 +73,24 @@ class ProgramGenerator
       end
     end
 
-    Result.new(created: created, focus: focus, goal: goal)
+    Result.new(created: created, retired: retired, focus: focus, goal: goal)
   end
 
   private
 
   attr_reader :user, :effective_on
+
+  def prune_unavailable?
+    @prune_unavailable
+  end
+
+  # Retire active lifts whose equipment the user no longer has. The add step
+  # that follows then fills the freed muscle slots with available alternatives.
+  def prune_unavailable_lifts
+    user.exercise_prescriptions.active.includes(:exercise).reject do |prescription|
+      user.available_equipment.include?(prescription.exercise.modality)
+    end.each { |prescription| prescription.update!(ended_on: prescription.ended_on_for(effective_on)) }
+  end
 
   # One lift per covered muscle group, de-duplicated (a lift primary for two
   # groups, e.g. a deadlift, is only prescribed once).
