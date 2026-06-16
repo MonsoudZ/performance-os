@@ -1907,3 +1907,130 @@ h1 {
   color: var(--muted);
   font-size: 0.78rem;
 }
+
+/* ===== Mobile bottom tab bar + phone polish ===== */
+
+/* Hidden on desktop; the topbar handles navigation there. */
+.tabbar {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  /* The topbar's "Log workout" link is redundant with the tab bar's Log tab. */
+  .nav-links__primary {
+    display: none;
+  }
+
+  /* Clear the fixed tab bar so page content isn't hidden behind it. */
+  .shell {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .tabbar {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 50;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    background: rgba(251, 250, 245, 0.94);
+    -webkit-backdrop-filter: saturate(150%) blur(12px);
+    backdrop-filter: saturate(150%) blur(12px);
+    border-top: 1px solid var(--line);
+  }
+
+  .tabbar__item {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 52px;
+    padding: 6px 2px;
+    border-radius: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.66rem;
+    font-weight: 650;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .tabbar__item::-webkit-details-marker {
+    display: none;
+  }
+
+  .tabbar__item.is-active {
+    color: var(--green);
+    background: rgba(200, 242, 107, 0.42);
+  }
+
+  .tabbar__icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* "More" opens a CSS-only popover above the bar. */
+  .tabbar__more {
+    flex: 1 1 0;
+    position: relative;
+  }
+
+  .tabbar__more > summary {
+    width: 100%;
+  }
+
+  .tabbar__more[open] > summary {
+    color: var(--green);
+  }
+
+  .tabbar__sheet {
+    position: absolute;
+    right: 6px;
+    bottom: calc(100% + 8px);
+    display: grid;
+    gap: 2px;
+    min-width: 208px;
+    padding: 8px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(24, 33, 29, 0.22);
+  }
+
+  .tabbar__sheet a,
+  .tabbar__signout {
+    display: block;
+    width: 100%;
+    padding: 13px 14px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .tabbar__sheet a:active {
+    background: var(--paper);
+  }
+
+  .tabbar__signout {
+    margin-top: 4px;
+    border-top: 1px solid var(--line);
+    color: var(--orange);
+  }
+
+  /* Phone touch targets: keep inputs >=48px tall and >=16px so iOS doesn't zoom. */
+  .stacked-form input:not([type="submit"]):not([type="checkbox"]),
+  .stacked-form select,
+  .stacked-form textarea {
+    min-height: 48px;
+    font-size: 16px;
+  }
+}

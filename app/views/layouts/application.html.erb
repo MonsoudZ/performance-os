@@ -2,8 +2,10 @@
 <html>
   <head>
     <title><%= content_for(:title) || "PerformanceOS" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#244d3f">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="application-name" content="PerformanceOS">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
@@ -38,5 +40,6 @@
       <div class="flash flash--alert"><%= alert %></div>
     <% end %>
     <%= yield %>
+    <%= render "shared/mobile_tab_bar" if authenticated? %>
   </body>
 </html>

@@ -1,0 +1,39 @@
+<%# Thumb-reachable primary navigation for phones. Hidden on desktop (the topbar
+    takes over there). Four core destinations plus a "More" sheet for the rest. %>
+<nav class="tabbar" aria-label="Primary">
+  <%= link_to root_path, class: class_names("tabbar__item", "is-active" => current_page?(root_path)) do %>
+    <svg class="tabbar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    <span>Today</span>
+  <% end %>
+
+  <%= link_to new_workout_session_path, class: class_names("tabbar__item", "is-active" => current_page?(new_workout_session_path)) do %>
+    <svg class="tabbar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+    <span>Log</span>
+  <% end %>
+
+  <%= link_to nutrition_path, class: class_names("tabbar__item", "is-active" => current_page?(nutrition_path)) do %>
+    <svg class="tabbar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7c1.5-3 6-3 6 1 0 4-3 8-6 9-3-1-6-5-6-9 0-4 4.5-4 6-1z"/><path d="M12 7V4"/></svg>
+    <span>Nutrition</span>
+  <% end %>
+
+  <%= link_to progress_path, class: class_names("tabbar__item", "is-active" => current_page?(progress_path)) do %>
+    <svg class="tabbar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16l3-4 3 2 4-6"/></svg>
+    <span>Progress</span>
+  <% end %>
+
+  <details class="tabbar__more">
+    <summary class="tabbar__item" aria-label="More">
+      <svg class="tabbar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+      <span>More</span>
+    </summary>
+    <div class="tabbar__sheet">
+      <%= link_to "Goal", goal_periods_path %>
+      <%= link_to "Workouts", workout_templates_path %>
+      <%= link_to "Training targets", exercise_prescriptions_path %>
+      <%= link_to "Blocks", mesocycles_path %>
+      <%= link_to "Conditioning", conditioning_sessions_path %>
+      <%= link_to "Weekly review", weekly_review_path %>
+      <%= button_to "Sign out", session_path, method: :delete, class: "tabbar__signout" %>
+    </div>
+  </details>
+</nav>
