@@ -185,3 +185,27 @@
   default_unit: seconds
   muscles:
     abs: primary
+- name: Dumbbell Hip Thrust
+  modality: dumbbell
+  compound: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Machine Hip Thrust
+  modality: machine
+  compound: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Cable Pull-Through
+  modality: cable
+  compound: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Glute Bridge
+  modality: bodyweight
+  compound: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary

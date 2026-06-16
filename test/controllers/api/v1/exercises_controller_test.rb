@@ -14,8 +14,9 @@ class Api::V1::ExercisesControllerTest < ActionDispatch::IntegrationTest
     get api_v1_exercises_path, as: :json
 
     assert_response :success
+    total = Exercise.where(user_id: nil).count
     assert_equal(
-      { "returned" => 32, "total" => 32, "limit" => 50 },
+      { "returned" => total, "total" => total, "limit" => 50 },
       response.parsed_body.fetch("meta")
     )
     assert_equal "60", response.headers["X-RateLimit-Limit"]
@@ -43,9 +44,10 @@ class Api::V1::ExercisesControllerTest < ActionDispatch::IntegrationTest
     get api_v1_exercises_path, params: { limit: 999_999 }, as: :json
 
     assert_response :success
+    total = Exercise.where(user_id: nil).count
     assert_equal 100, response.parsed_body.dig("meta", "limit")
-    assert_equal 32, response.parsed_body.dig("meta", "returned")
-    assert_equal 32, response.parsed_body.dig("meta", "total")
+    assert_equal total, response.parsed_body.dig("meta", "returned")
+    assert_equal total, response.parsed_body.dig("meta", "total")
   end
 
   test "distinguishes returned records from the filtered total" do

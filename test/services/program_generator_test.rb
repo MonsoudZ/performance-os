@@ -84,6 +84,8 @@ class ProgramGeneratorTest < ActiveSupport::TestCase
     # Chest falls to the dumbbell press once barbell is off the table.
     assert active_prescription_for("Dumbbell Bench Press")
     assert_nil active_prescription_for("Barbell Bench Press")
+    # Glutes are still covered thanks to the non-barbell alternatives.
+    assert active_prescription_for("Dumbbell Hip Thrust")
   end
 
   test "experience scales the working sets" do
