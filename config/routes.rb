@@ -6,6 +6,7 @@ Rails.application.routes.draw do
 
   resource :onboarding, only: :show, controller: "onboarding"
   resource :progress, only: :show, controller: "progress"
+  resource :program, only: :create, controller: "programs"
   resource :readiness_check_in, only: :create
   resources :readiness_inputs, only: %i[index edit update]
   resources :goal_periods, only: %i[index create] do

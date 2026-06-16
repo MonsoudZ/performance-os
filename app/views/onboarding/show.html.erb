@@ -27,7 +27,15 @@
         <span class="onboarding-step__mark"><%= @has_target ? "✓" : "2" %></span>
         <div>
           <strong>Add a training target</strong>
-          <p>Tell the engine what to progress. <%= link_to @has_target ? "Manage targets" : "Add a target", @has_target ? exercise_prescriptions_path : new_exercise_prescription_path, class: "text-link" %></p>
+          <% if @has_target %>
+            <p>Tell the engine what to progress. <%= link_to "Manage targets", exercise_prescriptions_path, class: "text-link" %></p>
+          <% elsif @goal %>
+            <p>Generate a balanced program from your goal — log weights as you go, and edit anything. Or build it yourself.</p>
+            <%= button_to "Generate my program", program_path, class: "button" %>
+            <p><%= link_to "Add targets manually instead", new_exercise_prescription_path, class: "text-link" %></p>
+          <% else %>
+            <p>Set a goal first — it drives the generated program. <%= link_to "Add a target manually", new_exercise_prescription_path, class: "text-link" %></p>
+          <% end %>
         </div>
       </li>
 

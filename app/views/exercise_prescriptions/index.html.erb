@@ -33,6 +33,12 @@
     <% else %>
       <div class="empty-state">
         <p>No training targets yet.</p>
+        <% if Current.user.active_goal %>
+          <p>Generate a balanced program from your goal, then tweak anything.</p>
+          <%= button_to "Generate my program", program_path, class: "button" %>
+        <% else %>
+          <p><%= link_to "Set a training goal", goal_periods_path, class: "text-link" %> and we can generate one for you.</p>
+        <% end %>
       </div>
     <% end %>
   </section>
