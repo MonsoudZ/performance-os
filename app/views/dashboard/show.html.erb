@@ -319,7 +319,7 @@
           <% @active_prescriptions.each do |prescription| %>
             <div class="compact-list__item">
               <strong><%= prescription.exercise.name %></strong>
-              <span><%= prescription.target_label %></span>
+              <span><%= training_targets_for(prescription).label %></span>
               <small>+<%= weight(prescription.increment_kg) %></small>
             </div>
           <% end %>

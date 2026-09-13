@@ -1,6 +1,11 @@
 class DoubleProgressionEvaluator
   RULE_KEY = "double_progression.v1"
-  RULE_VERSION = "1.0.0"
+  # 2.0.0: the rep range, effort target and set count are composed by
+  # TrainingTargets rather than read off the prescription, because a training
+  # block now owns its scheme instead of having it applied to every target. The
+  # snapshot gains a "targets" key recording what was actually in force and where
+  # it came from, which the prescription alone no longer answers.
+  RULE_VERSION = "2.0.0"
   STALL_SESSION_COUNT = 3
   DELOAD_PERCENT = 0.10
 
@@ -28,17 +33,28 @@ class DoubleProgressionEvaluator
       .group_by(&:exercise)
   end
 
+  # The block in force when the session was performed, not today — a decision is
+  # a record of what was prescribed at the time.
+  def training_targets
+    @training_targets ||= TrainingTargets.new(workout_session.user, on: session_date)
+  end
+
+  def session_date
+    @session_date ||= workout_session.user.local_date_at(workout_session.performed_at)
+  end
+
   def prescription_for(exercise)
     workout_session.user.exercise_prescriptions
       .where(exercise: exercise)
-      .active_on(workout_session.user.local_date_at(workout_session.performed_at))
+      .active_on(session_date)
       .order(started_on: :desc)
       .first
   end
 
   def create_decision(exercise, prescription, sets)
-    evaluated_sets = sets.sort_by(&:set_index).first(prescription.working_sets)
-    outcome = outcome_for(exercise, prescription, evaluated_sets)
+    targets = training_targets.targets_for(prescription)
+    evaluated_sets = sets.sort_by(&:set_index).first(targets.working_sets)
+    outcome = outcome_for(exercise, prescription, targets, evaluated_sets)
 
     CoachingDecision.create!(
       user: workout_session.user,
@@ -50,20 +66,21 @@ class DoubleProgressionEvaluator
         "exercise_id" => exercise.id,
         "exercise_name" => exercise.name,
         "prescription" => prescription_snapshot(prescription),
+        "targets" => targets_snapshot(targets),
         "sets" => set_snapshots(evaluated_sets)
       },
       output: outcome,
       citations: [],
-      confidence: confidence_for(prescription, evaluated_sets)
+      confidence: confidence_for(targets, evaluated_sets)
     )
   end
 
-  def outcome_for(exercise, prescription, sets)
-    return insufficient_outcome(prescription, sets) if sets.size < prescription.working_sets
+  def outcome_for(exercise, prescription, targets, sets)
+    return insufficient_outcome(targets, sets) if sets.size < targets.working_sets
 
     current_weight = progression_load(prescription, sets)
 
-    if qualifies_for_increase?(prescription, sets)
+    if qualifies_for_increase?(prescription, targets, sets)
       next_weight = current_weight + prescription.increment_kg
       {
         "status" => "increase",
@@ -76,7 +93,7 @@ class DoubleProgressionEvaluator
       hold = {
         "status" => "hold",
         "headline" => "Keep the load",
-        "guidance" => hold_reason(prescription, sets),
+        "guidance" => hold_reason(prescription, targets, sets),
         "current_weight_kg" => current_weight.to_f,
         "next_weight_kg" => current_weight.to_f
       }
@@ -100,11 +117,11 @@ class DoubleProgressionEvaluator
     decisive_sets(prescription, sets).map(&:weight_kg).max
   end
 
-  def qualifies_for_increase?(prescription, sets)
+  def qualifies_for_increase?(prescription, targets, sets)
     decisive = decisive_sets(prescription, sets)
-    top_range_hit = decisive.all? { |set| set.reps >= prescription.rep_max }
+    top_range_hit = decisive.all? { |set| set.reps >= targets.rep_max }
     rir_on_target = decisive.all? do |set|
-      set.rir.between?(prescription.target_rir_min, prescription.target_rir_max)
+      set.rir.between?(targets.target_rir_min, targets.target_rir_max)
     end
     # Straight sets must also be run at one consistent load; top-set ramps are
     # judged on the top set alone, so a ramp up to it is fine.
@@ -121,25 +138,25 @@ class DoubleProgressionEvaluator
     end
   end
 
-  def insufficient_outcome(prescription, sets)
+  def insufficient_outcome(targets, sets)
     {
       "status" => "insufficient",
       "headline" => "No progression call yet",
-      "guidance" => "Logged #{sets.size} of #{prescription.working_sets} prescribed working sets."
+      "guidance" => "Logged #{sets.size} of #{targets.working_sets} prescribed working sets."
     }
   end
 
-  def hold_reason(prescription, sets)
+  def hold_reason(prescription, targets, sets)
     decisive = decisive_sets(prescription, sets)
-    if decisive.any? { |set| set.reps < prescription.rep_min }
+    if decisive.any? { |set| set.reps < targets.rep_min }
       "At least one set fell below the target rep range. Repeat the load and rebuild reps."
-    elsif decisive.any? { |set| set.reps < prescription.rep_max }
+    elsif decisive.any? { |set| set.reps < targets.rep_max }
       prescription.top_set? ?
         "The top set has not reached the top of the rep range yet." :
         "The top of the rep range is not complete across every working set yet."
-    elsif decisive.any? { |set| set.rir < prescription.target_rir_min }
+    elsif decisive.any? { |set| set.rir < targets.target_rir_min }
       "The reps were achieved with less reserve than prescribed. Repeat the load before increasing."
-    elsif decisive.any? { |set| set.rir > prescription.target_rir_max }
+    elsif decisive.any? { |set| set.rir > targets.target_rir_max }
       prescription.top_set? ?
         "The top set left more in reserve than the target RIR. Keep the load until the effort lands in range." :
         "The load was easier than the target RIR, but the set pattern was not consistent enough to progress."
@@ -189,8 +206,8 @@ class DoubleProgressionEvaluator
     [ rounded, current_weight.to_f - increment ].min.round(2)
   end
 
-  def confidence_for(prescription, sets)
-    sets.size >= prescription.working_sets ? "high" : "low"
+  def confidence_for(targets, sets)
+    sets.size >= targets.working_sets ? "high" : "low"
   end
 
   def prescription_snapshot(prescription)
@@ -204,7 +221,13 @@ class DoubleProgressionEvaluator
       "working_sets",
       "started_on",
       "progression_model"
-    )
+    ).merge("follows_block_scheme" => prescription.follows_block_scheme)
+  end
+
+  # What was actually in force, and whether the block or the target itself set
+  # it. Without this the snapshot records a rep range the rule may not have used.
+  def targets_snapshot(targets)
+    targets.to_h.transform_values { |value| value.is_a?(BigDecimal) ? value.to_f : value }
   end
 
   def set_snapshots(sets)

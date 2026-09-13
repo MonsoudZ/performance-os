@@ -156,11 +156,30 @@ risk they carry, not by size.
   `PG::SyntaxError` — it reaches rows through the unique index now, the way
   `WeightTrendMaterializer` always did. And the nutrition page printed the weight
   trend in bare kilograms under a form labelled in pounds.
-- [ ] **Let a mesocycle carry its own targets.** Blocks currently modulate volume
-  through `accumulation_set_bonus` and deload weeks, but rep and RIR schemes are
-  applied to prescriptions imperatively via `ApplyBlockScheme`. Making the block
-  the owner of the scheme would remove the "apply" step and let a block change
-  recompose the plan the way every other input does.
+- [x] **A mesocycle carries its own targets.** Rep and RIR schemes used to be
+  *applied*: a button rewrote every active target to the focus's preset,
+  superseding each one. Three things were wrong with that. Starting a block did
+  nothing until you remembered to press it. Ending a block left its scheme behind
+  forever, because nothing knew the numbers had come from anywhere. And a rep
+  range you had chosen by hand was gone the first time you pressed it, with no
+  way back.
+
+  `TrainingTargets` composes them at read time instead, so starting or ending a
+  block recomposes the plan through the same recompute pipeline as every other
+  input, and a target's stored numbers stay its own — the fallback for when no
+  block is running. `follows_block_scheme: false` opts one lift out and keeps it
+  on its own numbers, while still taking the block's volume ramp: opting out says
+  "this rep range is mine", not "ignore the block".
+
+  The split that made it work: the block owns the *scheme* (reps, RIR, baseline
+  sets), and `DailyTrainingOrchestrator` keeps owning *today's volume* (the
+  accumulation ramp, deload and recovery cuts). Both used to be described as
+  block behaviour while only one of them was composed.
+
+  `DoubleProgressionEvaluator` goes to `2.0.0`: it judges reps and RIR against
+  the composed targets, resolved on the session's own date rather than today, and
+  snapshots what was in force and where it came from — the prescription alone no
+  longer answers that.
 - [x] **Withdrawn decisions are surfaced.** Retraction was implemented, tested and
   filtered out of every lookup, but only the exercise page showed it. Now the
   workout session that caused a withdrawal lists what it no longer recommends,

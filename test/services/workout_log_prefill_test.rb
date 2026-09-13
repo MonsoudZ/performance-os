@@ -49,4 +49,31 @@ class WorkoutLogPrefillTest < ActiveSupport::TestCase
     assert_equal [ 8, 8, 8 ], contexts.map { |context| context.entry.reps }
     assert_equal [ 8, 8, 7 ], contexts.map { |context| context.last_set.reps }
   end
+
+  test "prefilled rows come from the block's scheme, not the stored target" do
+    @exercise.update!(is_compound: true)
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 3, weeks: 4)
+    session = @user.workout_sessions.new(performed_at: Time.current)
+
+    contexts = WorkoutLogPrefill.new(@user, workout_session: session, log_date: Date.current).call
+
+    # Strength compounds: four sets at 3-5 reps @ 2-3 RIR, against a target that
+    # says three sets of 6-8 @ 1-2.
+    assert_equal 4, contexts.size
+    assert_equal [ 5 ], contexts.map { |context| context.entry.reps }.uniq
+    assert_equal [ 2 ], contexts.map { |context| context.entry.rir.to_i }.uniq
+    assert contexts.first.targets.from_block?
+  end
+
+  test "a target that opted out prefills its own rows inside a block" do
+    @exercise.update!(is_compound: true)
+    @prescription.update!(follows_block_scheme: false)
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 3, weeks: 4)
+    session = @user.workout_sessions.new(performed_at: Time.current)
+
+    contexts = WorkoutLogPrefill.new(@user, workout_session: session, log_date: Date.current).call
+
+    assert_equal 3, contexts.size
+    assert_equal [ 8 ], contexts.map { |context| context.entry.reps }.uniq
+  end
 end

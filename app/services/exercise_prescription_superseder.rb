@@ -7,6 +7,7 @@ class ExercisePrescriptionSuperseder
     increment_kg
     working_sets
     progression_model
+    follows_block_scheme
   ].freeze
 
   def initialize(prescription, effective_on:)

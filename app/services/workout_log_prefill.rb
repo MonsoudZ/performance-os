@@ -1,6 +1,6 @@
 class WorkoutLogPrefill
-  Context = Data.define(:entry, :prescription, :last_set)
-  Plan = Data.define(:exercise, :prescription, :working_sets)
+  Context = Data.define(:entry, :prescription, :targets, :last_set)
+  Plan = Data.define(:exercise, :prescription, :targets)
 
   def initialize(user, workout_session:, log_date:, workout_template: nil)
     @user = user
@@ -16,15 +16,15 @@ class WorkoutLogPrefill
       last_sets = last_working_sets_for(plan.exercise)
       target_weight = target_weight_for(plan.prescription, last_sets)
 
-      plan.working_sets.times.map do |index|
+      planned_sets(plan).times.map do |index|
         entry = workout_session.set_entries.build(
           exercise: plan.exercise,
           set_index: index + 1,
           weight_kg: target_weight,
-          reps: plan.prescription&.rep_max,
-          rir: plan.prescription&.target_rir_min
+          reps: plan.targets&.rep_max,
+          rir: plan.targets&.target_rir_min
         )
-        Context.new(entry:, prescription: plan.prescription, last_set: last_sets[index])
+        Context.new(entry:, prescription: plan.prescription, targets: plan.targets, last_set: last_sets[index])
       end
     end
   end
@@ -37,13 +37,26 @@ class WorkoutLogPrefill
     @exercise_plans ||= if workout_template
       workout_template.workout_template_exercises.includes(:exercise).map do |item|
         prescription = prescription_for(item.exercise)
-        Plan.new(exercise: item.exercise, prescription:, working_sets: prescription&.working_sets || 1)
+        Plan.new(exercise: item.exercise, prescription:, targets: targets_for(prescription))
       end
     else
       prescriptions.map do |prescription|
-        Plan.new(exercise: prescription.exercise, prescription:, working_sets: prescription.working_sets)
+        Plan.new(exercise: prescription.exercise, prescription:, targets: targets_for(prescription))
       end
     end
+  end
+
+  # An exercise on a template with no target of its own still gets a row to log.
+  def planned_sets(plan)
+    plan.targets&.working_sets || 1
+  end
+
+  def training_targets
+    @training_targets ||= TrainingTargets.new(user, on: log_date)
+  end
+
+  def targets_for(prescription)
+    training_targets.targets_for(prescription) if prescription
   end
 
   def prescriptions
@@ -60,7 +73,7 @@ class WorkoutLogPrefill
     workout_session.set_entries.map do |entry|
       prescription = prescription_for(entry.exercise)
       last_set = last_working_sets_for(entry.exercise)[entry.set_index.to_i - 1]
-      Context.new(entry:, prescription:, last_set:)
+      Context.new(entry:, prescription:, targets: targets_for(prescription), last_set:)
     end
   end
 

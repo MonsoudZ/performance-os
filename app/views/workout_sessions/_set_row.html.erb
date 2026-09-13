@@ -9,8 +9,8 @@
     data: { workout_log_target: "setIndex" } %>
   <div class="set-exercise">
     <strong><%= context.entry.exercise&.name %></strong>
-    <% if context.prescription %>
-      <small>Target: <%= context.prescription.rep_min %>–<%= context.prescription.rep_max %> reps · <%= context.prescription.target_rir_min.to_f.round(1) %>–<%= context.prescription.target_rir_max.to_f.round(1) %> RIR</small>
+    <% if context.targets %>
+      <small>Target: <%= context.targets.rep_min %>–<%= context.targets.rep_max %> reps · <%= context.targets.target_rir_min.to_f.round(1) %>–<%= context.targets.target_rir_max.to_f.round(1) %> RIR</small>
     <% end %>
     <% if context.last_set %>
       <small>Last: <%= weight(context.last_set.weight_kg) %> × <%= context.last_set.reps %> @ <%= context.last_set.rir %> RIR</small>

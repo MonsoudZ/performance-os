@@ -22,7 +22,11 @@
           <article class="prescription-card">
             <p class="eyebrow"><%= prescription.exercise.modality %></p>
             <h2><%= link_to prescription.exercise.name, exercise_path(prescription.exercise) %></h2>
-            <strong><%= prescription.target_label %></strong>
+            <% targets = training_targets_for(prescription) %>
+            <strong><%= targets.label %></strong>
+            <% if targets.from_block? %>
+              <small>From the <%= todays_training_targets.mesocycle.focus %> block · your own is <%= prescription.target_label %></small>
+            <% end %>
             <dl>
               <div><dt>Increment</dt><dd><%= weight(prescription.increment_kg) %></dd></div>
               <div><dt>Progression</dt><dd><%= prescription.progression_model_label %></dd></div>

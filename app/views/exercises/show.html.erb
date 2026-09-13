@@ -54,7 +54,7 @@
     <div class="panel__header">
       <div>
         <p class="eyebrow">Current target</p>
-        <h2><%= @history.active_prescription&.target_label || "No active target" %></h2>
+        <h2><%= @history.active_prescription ? training_targets_for(@history.active_prescription).label : "No active target" %></h2>
       </div>
     </div>
 

@@ -31,10 +31,12 @@
           <small><strong>Scheme:</strong> <%= @active.scheme_summary %></small>
         </div>
       </div>
+      <p class="evidence-note">
+        Every <%= link_to "training target", exercise_prescriptions_path, class: "text-link" %> follows this scheme
+        while the block runs, and goes back to its own rep range when it ends. A target you would rather set
+        yourself can opt out on its own edit page.
+      </p>
       <div class="prescription-card__actions">
-        <%= button_to "Apply scheme to my targets", apply_scheme_mesocycle_path(@active), method: :patch,
-          form: { data: { turbo_confirm: "Reset all active training targets to the #{@active.focus} scheme?" } },
-          class: "button button--secondary" %>
         <%= button_to "End this block", finish_mesocycle_path(@active), method: :patch, class: "text-button text-button--danger" %>
       </div>
     <% else %>
@@ -70,10 +72,10 @@
         <label><span>Deload week</span><%= form.number_field :deload_week, min: 1, max: 16, placeholder: "e.g. 4 (blank = none)" %></label>
       </div>
       <p class="evidence-note">The deload week backs off volume in the daily plan; leave it blank for straight progression.</p>
-      <label class="checkbox-field">
-        <%= check_box_tag "apply_scheme", "1" %>
-        <span>Reset my training targets to this focus’s rep/RIR scheme</span>
-      </label>
+      <p class="evidence-note">
+        The focus sets the rep range, effort target and baseline sets for every target that follows it — starting
+        the block is all it takes, and nothing about your targets is overwritten.
+      </p>
       <%= form.submit(@active ? "Switch block" : "Start block", class: "button") %>
     <% end %>
   </section>

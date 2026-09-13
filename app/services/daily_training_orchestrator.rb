@@ -178,10 +178,12 @@ class DailyTrainingOrchestrator
     @readiness_status ||= readiness_decision.output.fetch("status")
   end
 
-  def active_mesocycle
-    return @active_mesocycle if defined?(@active_mesocycle)
+  def training_targets
+    @training_targets ||= TrainingTargets.new(user, on: plan_date)
+  end
 
-    @active_mesocycle = user.mesocycles.active_on(plan_date).order(started_on: :desc).first
+  def active_mesocycle
+    training_targets.mesocycle
   end
 
   def deload_week?
@@ -260,12 +262,13 @@ class DailyTrainingOrchestrator
 
   def lift_directive(prescription, execution_mode)
     progression = progression_decisions[prescription.exercise_id]
-    sets = working_sets_for(prescription)
+    targets = training_targets.targets_for(prescription)
+    sets = working_sets_for(targets)
     base = {
       "exercise_id" => prescription.exercise_id,
       "exercise_name" => prescription.exercise.name,
       "prescription_id" => prescription.id,
-      "target" => prescription.target_label,
+      "target" => targets.label,
       "working_sets" => sets,
       "progression_decision_id" => progression&.id,
       # The headline below states this load in kilograms, the canonical unit the
@@ -282,9 +285,11 @@ class DailyTrainingOrchestrator
   end
 
   # Effective working sets for the day: the deload/recover reductions, or the
-  # prescription baseline plus the accumulation ramp.
-  def working_sets_for(prescription)
-    base = prescription.working_sets
+  # scheme's baseline plus the accumulation ramp. The baseline comes from
+  # TrainingTargets — it may be the block's or the target's own — and the ramp is
+  # the block's week-to-week volume, which applies either way.
+  def working_sets_for(targets)
+    base = targets.working_sets
     case execution_mode
     when "deload" then [ (base * 0.5).ceil, 1 ].max
     when "recover" then [ (base * 0.6).ceil, 1 ].max

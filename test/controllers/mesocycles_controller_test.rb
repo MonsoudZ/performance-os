@@ -29,24 +29,38 @@ class MesocyclesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "strength", @user.mesocycles.order(:id).last.focus
   end
 
-  test "starting a block with the scheme checkbox rewrites the targets" do
-    prescription = compound_target("Bench")
+  test "starting a block changes what the targets prescribe without rewriting them" do
+    prescription = compound_target("Zzz Block Bench")
 
-    post mesocycles_path, params: {
-      apply_scheme: "1", mesocycle: { started_on: Date.current, weeks: 4, focus: "strength" }
-    }
+    post mesocycles_path, params: { mesocycle: { started_on: Date.current, weeks: 4, focus: "strength" } }
 
-    assert_equal 5, prescription.reload.rep_max # strength compound 3-5
+    get exercise_prescriptions_path
+    assert_select ".prescription-card strong", text: /3–5/ # strength compound
+    # The stored target is the user's own and the block never touches it, which
+    # is what lets it come back when the block ends.
+    assert_equal 12, prescription.reload.rep_max
   end
 
-  test "applies a scheme to targets from the active block" do
-    prescription = compound_target("Overhead Press")
-    block = @user.mesocycles.create!(started_on: Date.current, weeks: 4, focus: "power")
+  test "ending a block gives every target its own rep range back" do
+    prescription = compound_target("Zzz Block Row")
+    block = @user.mesocycles.create!(started_on: Date.current - 5.days, weeks: 4, focus: "power")
 
-    patch apply_scheme_mesocycle_path(block)
+    get exercise_prescriptions_path
+    assert_select ".prescription-card strong", text: /2–4/ # power compound
 
-    assert_equal 4, prescription.reload.rep_max # power compound 2-4
-    assert_redirected_to exercise_prescriptions_path
+    patch finish_mesocycle_path(block)
+
+    get exercise_prescriptions_path
+    assert_select ".prescription-card strong", text: /#{prescription.rep_min}–#{prescription.rep_max}/
+  end
+
+  test "the blocks page no longer offers to rewrite anything" do
+    @user.mesocycles.create!(started_on: Date.current, weeks: 4, focus: "strength")
+
+    get mesocycles_path
+
+    assert_response :success
+    assert_select "input[name='apply_scheme']", 0
   end
 
   test "starting a new block retires the active one" do

@@ -5,6 +5,8 @@ class WorkoutTemplateSnapshot
   end
 
   def call
+    targets = TrainingTargets.new(template.user, on: log_date)
+
     {
       "id" => template.id,
       "name" => template.name,
@@ -20,7 +22,10 @@ class WorkoutTemplateSnapshot
           "exercise_id" => item.exercise_id,
           "exercise_name" => item.exercise.name,
           "position" => item.position,
-          "working_sets" => prescription&.working_sets || 1
+          # The set count the block and the target together prescribe for this
+          # day, frozen into the session so a later block change cannot rewrite
+          # what a logged workout was asked for.
+          "working_sets" => prescription ? targets.targets_for(prescription).working_sets : 1
         }
       end
     }

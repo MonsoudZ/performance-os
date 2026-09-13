@@ -124,10 +124,70 @@ class DoubleProgressionEvaluatorTest < ActiveSupport::TestCase
     assert_match(/consistent/i, decision.output["guidance"])
   end
 
+  test "an active block's rep range is what the progression call is judged against" do
+    # 8 reps tops out the target's own 6-8 range, but the strength block asks for
+    # 3-5 across four sets, so this is four sets short of a call, not a win.
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 3, weeks: 4)
+    workout = create_workout([ [ 100, 8, 2 ], [ 100, 8, 1 ], [ 100, 8, 1 ] ])
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    assert_equal "insufficient", decision.output["status"]
+    assert_equal "Logged 3 of 4 prescribed working sets.", decision.output["guidance"]
+  end
+
+  test "hitting the block's range earns the increase the target's own would not" do
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 3, weeks: 4)
+    workout = create_workout([ [ 100, 5, 2 ], [ 100, 5, 2 ], [ 100, 5, 3 ], [ 100, 5, 2 ] ])
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    # Five reps at 2-3 RIR is short of the stored 6-8 @ 1-2 and exactly the
+    # strength block's 3-5 @ 2-3.
+    assert_equal "increase", decision.output["status"]
+    assert_equal 102.5, decision.output["next_weight_kg"]
+  end
+
+  test "a target that opted out of the block is judged on its own numbers" do
+    @prescription.update!(follows_block_scheme: false)
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 3, weeks: 4)
+    workout = create_workout([ [ 100, 8, 2 ], [ 100, 8, 1 ], [ 100, 8, 1 ] ])
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    assert_equal "increase", decision.output["status"]
+  end
+
+  test "the snapshot records the targets in force and where they came from" do
+    @user.mesocycles.create!(focus: "power", started_on: Date.current - 3, weeks: 4)
+    workout = create_workout([ [ 100, 4, 2 ], [ 100, 4, 3 ], [ 100, 4, 2 ] ])
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    # The prescription alone no longer answers what the rule read, so the
+    # decision has to carry it or the audit trail is broken.
+    assert_equal "block_scheme", decision.inputs.dig("targets", "source")
+    assert_equal 4, decision.inputs.dig("targets", "rep_max")
+    assert_equal 8, decision.inputs.dig("prescription", "rep_max")
+    assert_equal "2.0.0", decision.rule_version
+  end
+
+  test "a decision reads the block that was running when the session happened" do
+    @prescription.update!(started_on: Date.current - 40)
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 30, ended_on: Date.current - 10, weeks: 3)
+    workout = create_workout([ [ 100, 5, 2 ], [ 100, 5, 2 ], [ 100, 5, 3 ], [ 100, 5, 2 ] ],
+      performed_at: (Date.current - 20).noon)
+
+    decision = DoubleProgressionEvaluator.new(workout).call.first
+
+    assert_equal "block_scheme", decision.inputs.dig("targets", "source")
+    assert_equal "increase", decision.output["status"]
+  end
+
   private
 
-  def create_workout(set_values)
-    workout = @user.workout_sessions.create!(performed_at: Time.current)
+  def create_workout(set_values, performed_at: Time.current)
+    workout = @user.workout_sessions.create!(performed_at: performed_at)
     set_values.each_with_index do |(weight, reps, rir), index|
       workout.set_entries.create!(
         exercise: @exercise,

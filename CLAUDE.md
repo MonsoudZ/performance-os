@@ -89,6 +89,30 @@ controller → TrainingRecomputable / NutritionRecomputable
 If you add a controller action that changes something an evaluator reads, call
 the matching `recompute_*` helper.
 
+## Training targets and blocks
+
+An `ExercisePrescription` stores a baseline; a `Mesocycle` owns the scheme. What
+a lift is actually asked to do on a day is composed by `TrainingTargets`, never
+read off the prescription:
+
+```ruby
+TrainingTargets.new(user, on: date).targets_for(prescription)
+#=> rep_min, rep_max, target_rir_min, target_rir_max, working_sets, source
+```
+
+- **Views must not print `rep_min`/`working_sets` to describe the present.** Use
+  `training_targets_for(prescription)`. `ExercisePrescription#target_label` is
+  still right for a *past* target, which is a record of what was stored.
+- **The block owns the scheme; the day owns the volume.** Reps, RIR and the
+  baseline set count come from `TrainingTargets`. The accumulation ramp and the
+  deload/recovery cuts stay in `DailyTrainingOrchestrator`, which is the thing
+  that knows about today, and apply whether or not the target follows the scheme.
+- `follows_block_scheme: false` means "this rep range is mine", not "ignore the
+  block" — such a target still gets the block's volume ramp.
+- A rule that reads targets must resolve them **on the date it is reasoning
+  about**, not today. `DoubleProgressionEvaluator` uses the session's local date,
+  so a decision records what was prescribed at the time.
+
 ## Units and measurements
 
 The database stores **kilograms, centimetres and metres**, always, for every

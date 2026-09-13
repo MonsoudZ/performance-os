@@ -94,6 +94,7 @@ class ExercisePrescriptionsController < ApplicationController
         :increment_kg,
         :working_sets,
         :progression_model,
+        :follows_block_scheme,
         :started_on
       ),
       weights: [ :increment_kg ]

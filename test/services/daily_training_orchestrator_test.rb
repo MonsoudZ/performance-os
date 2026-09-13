@@ -175,6 +175,43 @@ class DailyTrainingOrchestratorTest < ActiveSupport::TestCase
     assert_match(/Strength/i, output.dig("mesocycle", "emphasis"))
   end
 
+  test "the block's scheme is the baseline the volume ramp is added to" do
+    create_readiness_decision("push", 88, "high")
+    create_progression_decision("increase", 102.5, "high")
+    # A compound under a strength block is prescribed four sets, not the three
+    # stored on the target, and the week-3 ramp adds its capped +1 on top of
+    # that four rather than on top of the stored three.
+    @exercise.update!(is_compound: true)
+    @user.mesocycles.create!(started_on: Date.current - 14.days, weeks: 4, deload_week: 4, focus: "strength")
+
+    lift = DailyTrainingOrchestrator.new(@user).call.output["lifts"].first
+
+    assert_equal 5, lift["working_sets"]
+    assert_match(/3–5/, lift["target"])
+  end
+
+  test "the plan states the target the block set, not the one stored" do
+    create_readiness_decision("push", 88, "high")
+    create_progression_decision("increase", 102.5, "high")
+    @user.mesocycles.create!(started_on: Date.current, weeks: 4, focus: "power")
+
+    lift = DailyTrainingOrchestrator.new(@user).call.output["lifts"].first
+
+    assert_equal "3 × 5–8 @ 1.0–2.0 RIR", lift["target"]
+    assert_equal 8, @prescription.reload.rep_max
+  end
+
+  test "a target that opted out of the block keeps its own numbers in the plan" do
+    create_readiness_decision("push", 88, "high")
+    create_progression_decision("increase", 102.5, "high")
+    @prescription.update!(follows_block_scheme: false)
+    @user.mesocycles.create!(started_on: Date.current, weeks: 4, focus: "power")
+
+    lift = DailyTrainingOrchestrator.new(@user).call.output["lifts"].first
+
+    assert_equal "3 × 6–8 @ 1.0–2.0 RIR", lift["target"]
+  end
+
   test "week one of accumulation uses baseline volume" do
     create_readiness_decision("push", 88, "high")
     create_progression_decision("increase", 102.5, "high")

@@ -1,7 +1,7 @@
 class MesocyclesController < ApplicationController
   include TrainingRecomputable
 
-  before_action :set_mesocycle, only: %i[finish apply_scheme]
+  before_action :set_mesocycle, only: :finish
 
   def index
     load_index
@@ -15,8 +15,9 @@ class MesocyclesController < ApplicationController
       ApplicationRecord.transaction do
         close_active_mesocycle(@mesocycle.started_on)
         @mesocycle.save!
-        apply_scheme_to_targets(@mesocycle.focus) if params[:apply_scheme] == "1"
       end
+      # Targets are composed against the block rather than rewritten to it, so
+      # this recompute is the whole of "applying" a new focus.
       recompute_training_plan
       redirect_to mesocycles_path, notice: "Training block started."
     else
@@ -29,13 +30,6 @@ class MesocyclesController < ApplicationController
     @mesocycle.update!(ended_on: @mesocycle.ended_on_for(Current.user.local_date))
     recompute_training_plan
     redirect_to mesocycles_path, notice: "Training block ended."
-  end
-
-  def apply_scheme
-    count = apply_scheme_to_targets(@mesocycle.focus)
-    recompute_training_plan
-    redirect_to exercise_prescriptions_path,
-      notice: "Applied the #{@mesocycle.focus} rep scheme to #{helpers.pluralize(count, 'target')}."
   end
 
   private
@@ -55,10 +49,6 @@ class MesocyclesController < ApplicationController
     Current.user.mesocycles.active.find_each do |block|
       block.update!(ended_on: block.ended_on_for(new_start))
     end
-  end
-
-  def apply_scheme_to_targets(focus)
-    ApplyBlockScheme.new(Current.user, focus: focus).call
   end
 
   def mesocycle_params

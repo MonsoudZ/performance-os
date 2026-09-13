@@ -13,6 +13,18 @@
     </label>
   <% end %>
 
+  <% block = todays_training_targets.mesocycle %>
+  <% if block %>
+    <label class="checkbox-field">
+      <%= form.check_box :follows_block_scheme %>
+      <span>Follow the <%= block.focus %> block’s rep scheme (<%= block.scheme_summary %>)</span>
+    </label>
+    <p class="evidence-note">
+      While this is on, the block sets the reps, effort and baseline sets below and they are kept as the
+      fallback for when the block ends. Turn it off to hold this lift to your own numbers.
+    </p>
+  <% end %>
+
   <div class="form-grid">
     <label><span>Working sets</span><%= form.number_field :working_sets, min: 1, required: true %></label>
     <label><span>Rep minimum</span><%= form.number_field :rep_min, min: 1, required: true %></label>

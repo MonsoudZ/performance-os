@@ -62,9 +62,12 @@ recompute; open pages morph themselves when the new decision lands.
   additive and idempotent; "refresh from profile" also retires lifts you no longer
   have the equipment for.
 - **Mesocycles** — blocks with a focus (hypertrophy / strength / power), deload
-  weeks, and accumulation set ramps. Finishing one suggests the next.
+  weeks, and accumulation set ramps. A block owns its rep/RIR scheme: every target
+  follows it while it runs and goes back to its own numbers when it ends, with no
+  "apply" step and nothing overwritten. Finishing one suggests the next.
 - **Training targets** — effective-dated exercise prescriptions (rep range, RIR
-  range, working sets, increment). Editing one supersedes it rather than mutating it.
+  range, working sets, increment). Editing one supersedes it rather than mutating
+  it, and any one lift can opt out of the block and keep its own numbers.
 - **Workout templates and logging** — scheduled templates, prefilled set rows,
   live Turbo updates.
 - **Conditioning** — sessions with duration, distance, and average HR, summarized

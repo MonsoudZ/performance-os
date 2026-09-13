@@ -177,6 +177,18 @@ class CoachingDecisionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
+  test "a snapshot says where a number came from in words, not rule names" do
+    decision = create_decision(
+      decision_type: "double_progression",
+      inputs: { "targets" => { "rep_max" => 5, "source" => "block_scheme" } }
+    )
+
+    get coaching_decision_path(decision)
+
+    assert_response :success
+    assert_select ".snapshot__row dd", text: /training block’s scheme/
+  end
+
   private
 
   def create_decision(user: @user, decision_type: "daily_readiness", inputs: {}, output: nil)

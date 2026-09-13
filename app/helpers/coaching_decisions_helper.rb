@@ -17,6 +17,18 @@ module CoachingDecisionsHelper
   # units and the label does not repeat the canonical one.
   MEASUREMENT_SUFFIXES = %w[_kg _cm _meters _g _ms _bpm _kcal _minutes _seconds].freeze
 
+  # A `source` says where the rule got a number from, and the stored values are
+  # rule names. Read back to a user they have to be sentences — the same reason
+  # CoachingDecision::RETRACTION_EXPLANATIONS exists. Scoped to that one key so
+  # an unrelated field that happens to hold one of these words is left alone.
+  SOURCE_LABELS = {
+    "block_scheme" => "the training block’s scheme",
+    "prescription" => "the target’s own numbers",
+    "healthkit" => "synced from a device",
+    "mixed" => "a check-in plus synced data",
+    "manual" => "entered by hand"
+  }.freeze
+
   def decision_type_label(decision_type)
     DECISION_TYPE_LABELS.fetch(decision_type) { decision_type.to_s.humanize }
   end
@@ -37,6 +49,7 @@ module CoachingDecisionsHelper
 
     name = key.to_s
     case name
+    when "source" then SOURCE_LABELS.fetch(value.to_s) { value.to_s.humanize }
     when /_kg\z/ then weight(value)
     when /_cm\z/ then length(value)
     when /(\A|_)distance_meters\z/, /_meters\z/ then distance(value)

@@ -134,6 +134,52 @@ class ExercisePrescriptionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "the edit form offers to opt a target out of the active block" do
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 2, weeks: 4)
+    prescription = prescription_for(compound_exercise)
+
+    get edit_exercise_prescription_path(prescription)
+
+    assert_response :success
+    assert_select "input[name='exercise_prescription[follows_block_scheme]'][type=checkbox]"
+    assert_select "label", { text: /strength block/ }, "the checkbox has to name the block it opts out of"
+  end
+
+  test "no block means nothing to opt out of" do
+    prescription = prescription_for(compound_exercise)
+
+    get edit_exercise_prescription_path(prescription)
+
+    assert_response :success
+    assert_select "input[name='exercise_prescription[follows_block_scheme]'][type=checkbox]", 0
+  end
+
+  test "opting out holds the target to its own numbers inside the block" do
+    @user.mesocycles.create!(focus: "strength", started_on: Date.current - 2, weeks: 4)
+    exercise = compound_exercise
+    prescription = prescription_for(exercise)
+
+    get exercise_prescriptions_path
+    assert_select ".prescription-card strong", text: /3–5/
+
+    patch exercise_prescription_path(prescription), params: {
+      exercise_prescription: prescription_attributes(exercise).merge(follows_block_scheme: "0")
+    }
+
+    get exercise_prescriptions_path
+    assert_select ".prescription-card strong", text: /6–8/
+  end
+
+  test "the index says when a target's numbers are the block's" do
+    @user.mesocycles.create!(focus: "power", started_on: Date.current - 2, weeks: 4)
+    prescription_for(compound_exercise)
+
+    get exercise_prescriptions_path
+
+    assert_response :success
+    assert_select ".prescription-card small", text: /From the power block/
+  end
+
   private
 
   def prescription_attributes(exercise)
@@ -148,6 +194,10 @@ class ExercisePrescriptionsControllerTest < ActionDispatch::IntegrationTest
       progression_model: "double_progression",
       started_on: Date.current
     }
+  end
+
+  def compound_exercise
+    Exercise.create!(user: @user, name: "Zzz Scheme Press", modality: "barbell", is_compound: true)
   end
 
   def prescription_for(exercise, started_on: Date.current)
