@@ -141,13 +141,13 @@
           <div class="decision-tree__parent">
             <span>Parent</span>
             <strong><%= @decision.rule_key %></strong>
-            <small>Decision #<%= @decision.id %></small>
+            <small><%= link_to "Decision ##{@decision.id}", coaching_decision_path(@decision) %></small>
           </div>
           <% @decision_links.each do |link| %>
             <div class="decision-tree__child">
               <span><%= link.role.humanize %></span>
               <strong><%= link.child_decision.rule_key %></strong>
-              <small>Decision #<%= link.child_decision.id %> · <%= link.child_decision.output["headline"] %></small>
+              <small><%= link_to "Decision ##{link.child_decision.id}", coaching_decision_path(link.child_decision) %> · <%= link.child_decision.output["headline"] %></small>
             </div>
           <% end %>
         </div>

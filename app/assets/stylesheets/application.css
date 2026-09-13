@@ -2360,3 +2360,62 @@ h1 {
   font-size: 0.85rem;
   font-weight: 700;
 }
+
+/* Decision audit view ----------------------------------------------------- */
+
+.snapshot {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.snapshot__row {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: 20px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.snapshot__row dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.snapshot__row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A nested snapshot indents rather than restating the panel's border. */
+.snapshot__row .snapshot {
+  padding-left: 16px;
+  border-left: 2px solid var(--line);
+}
+
+.snapshot__row .snapshot__row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.snapshot__list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.snapshot__list > li::marker {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 560px) {
+  .snapshot__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

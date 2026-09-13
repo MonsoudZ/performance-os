@@ -1,0 +1,92 @@
+# Renders a stored decision snapshot so a person can read it.
+#
+# `inputs` and `output` are untyped JSONB written by whichever rule produced the
+# decision, so nothing here may assume a shape. The goal is that a user can open
+# any decision and understand what the engine saw and what it concluded, without
+# the page pretending the data is something it is not.
+module CoachingDecisionsHelper
+  DECISION_TYPE_LABELS = {
+    "daily_readiness" => "Daily readiness",
+    "double_progression" => "Lift progression",
+    "daily_nutrition" => "Daily nutrition",
+    "weekly_review" => "Weekly review",
+    "daily_training" => "Daily training plan"
+  }.freeze
+
+  # Suffixes that identify a measurement, so the value renders in the reader's
+  # units and the label does not repeat the canonical one.
+  MEASUREMENT_SUFFIXES = %w[_kg _cm _meters _g _ms _bpm _kcal _minutes _seconds].freeze
+
+  def decision_type_label(decision_type)
+    DECISION_TYPE_LABELS.fetch(decision_type) { decision_type.to_s.humanize }
+  end
+
+  # "next_weight_kg" -> "Next weight". The unit belongs to the value, not the
+  # name, because the reader's unit may not be the stored one.
+  def decision_field_label(key)
+    label = key.to_s
+    MEASUREMENT_SUFFIXES.each { |suffix| label = label.delete_suffix(suffix) }
+    label.humanize
+  end
+
+  # A single scalar from a snapshot, in the reader's units where the key says
+  # what it measures.
+  def decision_field_value(key, value)
+    return "—" if value.nil? || value == ""
+    return value ? "Yes" : "No" if value == true || value == false
+
+    name = key.to_s
+    case name
+    when /_kg\z/ then weight(value)
+    when /_cm\z/ then length(value)
+    when /(\A|_)distance_meters\z/, /_meters\z/ then distance(value)
+    when /_seconds_per_km\z/ then pace(value)
+    when /_g\z/ then "#{value} g"
+    when /_kcal\z/, /\Akcal\z/ then "#{value} kcal"
+    when /_ms\z/ then "#{value} ms"
+    when /_bpm\z/ then "#{value} bpm"
+    when /_minutes\z/ then "#{value} min"
+    when /_(at)\z/ then decision_timestamp(value)
+    when /_(date|on)\z/ then decision_date(value)
+    else value.to_s
+    end
+  end
+
+  def decision_date(value)
+    Date.parse(value.to_s).strftime("%b %-d, %Y")
+  rescue Date::Error
+    value.to_s
+  end
+
+  def decision_timestamp(value)
+    Time.zone.parse(value.to_s).strftime("%b %-d, %Y at %H:%M")
+  rescue ArgumentError, TypeError
+    value.to_s
+  end
+
+  # A snapshot stores ids, not associations, so a decision stays readable after
+  # the rows around it change. That makes for an unreadable page unless the view
+  # resolves them back. Returns nil when the referenced record is gone — which is
+  # exactly the case a deleted workout creates — so the caller falls back to the
+  # raw id rather than pretending the reference still resolves.
+  def decision_reference(key, value)
+    return if value.blank?
+
+    case key.to_s
+    when "exercise_id"
+      exercise = Exercise.available_to(Current.user).find_by(id: value)
+      link_to(exercise.name, exercise_path(exercise)) if exercise
+    when "workout_session_id"
+      session = Current.user.workout_sessions.find_by(id: value)
+      return unless session
+
+      label = session.template_name.presence || "Session on #{session.performed_at.to_date.strftime('%b %-d, %Y')}"
+      link_to(label, workout_session_path(session))
+    end
+  end
+
+  # An array of plain scalars reads better inline than as a nested list.
+  def scalar_list?(value)
+    value.is_a?(Array) && value.none? { |item| item.is_a?(Hash) || item.is_a?(Array) }
+  end
+end

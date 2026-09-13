@@ -1,0 +1,35 @@
+<%# Renders one level of a stored JSONB snapshot, recursing into nested hashes
+    and arrays. The data is untyped and written by whichever rule produced the
+    decision, so this assumes nothing about its shape. %>
+<% if data.is_a?(Hash) %>
+  <dl class="snapshot">
+    <% data.each do |key, value| %>
+      <div class="snapshot__row">
+        <dt><%= decision_field_label(key) %></dt>
+        <dd>
+          <% if value.is_a?(Hash) %>
+            <%= render "coaching_decisions/snapshot", data: value %>
+          <% elsif scalar_list?(value) %>
+            <%= value.any? ? value.map { |item| decision_field_value(key, item) }.join(", ") : "—" %>
+          <% elsif value.is_a?(Array) %>
+            <ol class="snapshot__list">
+              <% value.each do |item| %>
+                <li><%= render "coaching_decisions/snapshot", data: item %></li>
+              <% end %>
+            </ol>
+          <% else %>
+            <%= decision_reference(key, value) || decision_field_value(key, value) %>
+          <% end %>
+        </dd>
+      </div>
+    <% end %>
+  </dl>
+<% elsif data.is_a?(Array) %>
+  <ol class="snapshot__list">
+    <% data.each do |item| %>
+      <li><%= render "coaching_decisions/snapshot", data: item %></li>
+    <% end %>
+  </ol>
+<% else %>
+  <%= data.nil? ? "—" : data.to_s %>
+<% end %>

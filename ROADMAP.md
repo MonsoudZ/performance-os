@@ -96,10 +96,17 @@ risk they carry, not by size.
 
 - [x] **Exercise index and detail pages.** `exercises` had only `new`, so there
   was no way to browse the catalog or see a single lift's history.
-- [ ] **Per-decision audit view.** The DAG is the product's central claim, but the
-  only way to read a decision is through the dashboard's composed summary or the
-  AI narrative. A plain "show me this decision, its inputs, its children, and its
-  rule version" page would make the audit trail directly inspectable.
+- [x] **Per-decision audit view.** `/coaching_decisions/:id` shows one decision:
+  the rule and version that wrote it, what it concluded, the input snapshot it was
+  computed from, the decisions it cites and the ones citing it, and its withdrawal
+  state. Every node in the dashboard's decision tree and every card in a
+  progression trail links into it, and each page links on to its own parents and
+  children, so the whole DAG is walkable from today's plan.
+
+  The snapshot renderer assumes nothing about shape — the JSONB is written by
+  whichever rule produced the decision — and resolves stored ids back to linked
+  names, falling back to the raw id when the record is gone, which is exactly
+  what a deleted workout leaves behind.
 - [x] **Workout session index.** Past sessions were only reachable from the
   exercise history page; there is now a History page listing them newest first.
 - [x] **Turbo's progress bar works again.** CSP set `style-src 'self'`, so the

@@ -50,6 +50,12 @@ withdrawn recommendation is part of the record. Every lookup that feeds a new
 decision must scope to `active_evidence`; the `withdrawn` scope is its complement
 and exists only so the UI can show what was taken back.
 
+Every decision is readable at `/coaching_decisions/:id`, which renders `inputs`
+and `output` through `coaching_decisions/_snapshot`. That partial assumes nothing
+about their shape, so a new rule needs no view work; add a case to
+`CoachingDecisionsHelper#decision_reference` if it snapshots a new kind of id, and
+a suffix to `MEASUREMENT_SUFFIXES` if it records a new kind of measurement.
+
 Say "withdrawn" to users and "retracted" in code. A new retraction reason needs
 an entry in `CoachingDecision::RETRACTION_EXPLANATIONS` so it reads as a sentence
 rather than a rule name, and decisions render through

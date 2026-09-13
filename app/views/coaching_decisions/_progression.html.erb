@@ -20,6 +20,7 @@
       </span>
     <% end %>
     <span class="confidence"><%= decision.confidence %> confidence · <%= decision.rule_key %></span>
+    <%= link_to "Audit", coaching_decision_path(decision), class: "text-link" %>
   </div>
   <% if decision.retracted_at? %>
     <p class="decision-trail__retracted">

@@ -1,0 +1,121 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Decision #<%= @decision.id %> · <%= decision_type_label(@decision.decision_type) %></p>
+      <h1><%= @decision.output["headline"].presence || decision_type_label(@decision.decision_type) %></h1>
+      <p><%= @decision.output["guidance"] %></p>
+    </div>
+  </section>
+
+  <% if @decision.retracted_at? %>
+    <p class="withdrawn-note">
+      This recommendation was withdrawn on <%= @decision.retracted_at.to_date.strftime("%b %-d, %Y") %>
+      because <%= @decision.retraction_explanation %>. It is kept here because it was live at the time,
+      and nothing computed since has been allowed to read from it.
+    </p>
+  <% end %>
+
+  <section class="lift-stats">
+    <article class="panel">
+      <p class="eyebrow">Decided</p>
+      <strong><%= @decision.created_at.to_date.strftime("%b %-d, %Y") %></strong>
+      <span><%= @decision.created_at.strftime("%H:%M") %> <%= Current.user.time_zone %></span>
+    </article>
+    <article class="panel">
+      <p class="eyebrow">Rule</p>
+      <strong><%= @decision.rule_key %></strong>
+      <span>Version <%= @decision.rule_version %></span>
+    </article>
+    <article class="panel">
+      <p class="eyebrow">Confidence</p>
+      <strong><%= @decision.confidence.humanize %></strong>
+      <span>From how much evidence existed, not how certain it sounds</span>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Conclusion</p>
+        <h2>What this decision says</h2>
+      </div>
+    </div>
+    <%= render "coaching_decisions/snapshot", data: @decision.output %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Evidence</p>
+        <h2>What the rule saw</h2>
+      </div>
+    </div>
+    <% if @decision.inputs.present? %>
+      <%= render "coaching_decisions/snapshot", data: @decision.inputs %>
+      <p class="evidence-note">
+        The snapshot is taken when the decision is written and never changes afterwards, so
+        this is what the rule actually read — not what the same query would return today.
+      </p>
+    <% else %>
+      <div class="empty-state"><p>This rule recorded no inputs.</p></div>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Composed from</p>
+        <h2><%= pluralize @child_links.size, "cited decision" %></h2>
+      </div>
+    </div>
+    <% if @child_links.any? %>
+      <div class="compact-list">
+        <% @child_links.each do |link| %>
+          <div class="compact-list__item">
+            <strong>
+              <%= link_to coaching_decision_path(link.child_decision) do %>
+                <%= decision_type_label(link.child_decision.decision_type) %> #<%= link.child_decision.id %>
+              <% end %>
+              <% if link.child_decision.retracted_at? %><span class="pill">Withdrawn</span><% end %>
+            </strong>
+            <span><%= link.child_decision.output["headline"] %></span>
+            <small><%= link.role.humanize %></small>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>This decision cites nothing — it reads logs directly rather than other decisions.</p>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Cited by</p>
+        <h2><%= pluralize @parent_links.size, "later decision" %></h2>
+      </div>
+    </div>
+    <% if @parent_links.any? %>
+      <div class="compact-list">
+        <% @parent_links.each do |link| %>
+          <div class="compact-list__item">
+            <strong>
+              <%= link_to coaching_decision_path(link.parent_decision) do %>
+                <%= decision_type_label(link.parent_decision.decision_type) %> #<%= link.parent_decision.id %>
+              <% end %>
+              <% if link.parent_decision.retracted_at? %><span class="pill">Withdrawn</span><% end %>
+            </strong>
+            <span><%= link.parent_decision.output["headline"] %></span>
+            <small>as <%= link.role.humanize.downcase %></small>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state"><p>Nothing has been built on this decision yet.</p></div>
+    <% end %>
+  </section>
+</main>
