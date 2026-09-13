@@ -63,21 +63,11 @@ class ExpenditureEstimator
     )
   end
 
-  # expenditure_estimates has no primary key (id: false), so a persisted row
-  # cannot be written back through save! — Rails builds the UPDATE around the
-  # primary key and there isn't one. Rows are reached through the
-  # (user_id, estimate_date) unique index instead, the same way weight_trends
-  # are, and validated first because update_all does not.
+  # One estimate per date, re-derived whenever the evidence behind it moves.
   def persist(attributes)
-    attributes = attributes.merge(computed_at: Time.current)
-    scope = user.expenditure_estimates.where(estimate_date: estimate_date)
-    existing = scope.take
-    return user.expenditure_estimates.create!(attributes.merge(estimate_date: estimate_date)) if existing.nil?
-
-    existing.assign_attributes(attributes)
-    existing.validate!
-    scope.update_all(attributes)
-    existing
+    user.expenditure_estimates.find_or_initialize_by(estimate_date: estimate_date).tap do |estimate|
+      estimate.update!(attributes.merge(computed_at: Time.current))
+    end
   end
 
   # Total device-reported energy for each complete day in the window that

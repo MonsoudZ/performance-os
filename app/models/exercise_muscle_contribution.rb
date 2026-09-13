@@ -1,9 +1,6 @@
-# A join row keyed by the pair it joins — exercise_muscle_contributions has no
-# primary key (id: false), so a loaded row cannot be written back through save!,
-# update! or destroy: Active Record builds those around the primary key and emits
-# `WHERE "" IS NULL`, which Postgres rejects outright. Reach rows through the
-# (exercise_id, muscle_group_id) unique index with update_all/delete_all instead,
-# the way ExerciseCatalogImporter and WeightTrendMaterializer do.
+# One row per exercise/muscle pair, carrying how much of a set on that exercise
+# counts towards that muscle. The (exercise_id, muscle_group_id) unique index is
+# what stops a muscle being double-counted in weekly volume.
 class ExerciseMuscleContribution < ApplicationRecord
   belongs_to :exercise
   belongs_to :muscle_group

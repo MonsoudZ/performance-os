@@ -14,8 +14,7 @@ class MuscleGroup < ApplicationRecord
     "abs" => { mev: 6, mav: 16, mrv: 25 }
   }.freeze
 
-  # delete_all for the same reason Exercise uses it: these rows carry no primary
-  # key and cannot be destroyed one at a time.
+  # delete_all for the same reason Exercise uses it: a join row has no callbacks.
   has_many :exercise_muscle_contributions, dependent: :delete_all
   has_many :exercises, through: :exercise_muscle_contributions
 

@@ -41,11 +41,9 @@ class ExerciseCatalogImporter
     sync_muscles(exercise, attributes.fetch(:muscles))
   end
 
-  # Contributions are written through their (exercise_id, muscle_group_id) unique
-  # index rather than through save!, because the table has no primary key — see
-  # ExerciseMuscleContribution. Re-importing an exercise whose muscles changed in
-  # the catalog used to raise here rather than update it, which only ever showed
-  # up against a database that already had the old rows.
+  # Re-importing an exercise whose muscles changed in the catalog updates the
+  # contribution rather than adding a second one, and a muscle dropped from the
+  # catalog loses its row.
   def sync_muscles(exercise, muscles)
     muscle_names = muscles.keys
     exercise.exercise_muscle_contributions
@@ -54,19 +52,8 @@ class ExerciseCatalogImporter
 
     muscles.each do |muscle_name, role|
       muscle_group = MuscleGroup.find_or_create_by!(name: muscle_name)
-      write_contribution(exercise, muscle_group, role: role, fraction: CONTRIBUTION_FRACTIONS.fetch(role))
+      contribution = exercise.exercise_muscle_contributions.find_or_initialize_by(muscle_group: muscle_group)
+      contribution.update!(role: role, fraction: CONTRIBUTION_FRACTIONS.fetch(role))
     end
-  end
-
-  def write_contribution(exercise, muscle_group, attributes)
-    scope = exercise.exercise_muscle_contributions.where(muscle_group: muscle_group)
-    existing = scope.take
-    return exercise.exercise_muscle_contributions.create!(attributes.merge(muscle_group: muscle_group)) if existing.nil?
-
-    # update_all skips validations, so run them against the loaded row first.
-    existing.assign_attributes(attributes)
-    existing.validate!
-    scope.update_all(attributes)
-    existing
   end
 end

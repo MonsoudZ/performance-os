@@ -1,8 +1,8 @@
 require "test_helper"
 
-# The score a day's check-in produces. ReadinessEvaluator rewrites it wholesale
-# rather than editing it, which is the only pattern the table's missing primary
-# key leaves open — see KeylessTablesTest.
+# The score a day's check-in produces. ReadinessEvaluator replaces it wholesale
+# rather than editing it, because it is derived state: every component is
+# recomputed from the check-in, so there is nothing to preserve.
 class ReadinessScoreTest < ActiveSupport::TestCase
   setup { @user = users(:one) }
 
@@ -33,8 +33,8 @@ class ReadinessScoreTest < ActiveSupport::TestCase
   test "re-scoring a day replaces the row rather than editing it" do
     @user.readiness_scores.create!(score_date: Date.current, score: 70, components: { "sleep" => 3 })
 
-    # The pattern ReadinessEvaluator uses. Editing in place is not available on a
-    # table with no primary key, and a score is derived state anyway.
+    # The pattern ReadinessEvaluator uses: every component is recomputed from the
+    # check-in, so there is nothing in the old row worth carrying forward.
     @user.readiness_scores.where(score_date: Date.current).delete_all
     @user.readiness_scores.create!(score_date: Date.current, score: 88, components: { "sleep" => 5 })
 

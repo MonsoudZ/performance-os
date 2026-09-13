@@ -1,8 +1,8 @@
 require "test_helper"
 
 # The EWMA of a user's weigh-ins, one row per day. WeightTrendMaterializer owns
-# every write and reaches rows through the (user_id, trend_date) index, because
-# the table has no primary key — see KeylessTablesTest.
+# every write; the (user_id, trend_date) unique index is what makes "one per day"
+# true rather than merely intended.
 class WeightTrendTest < ActiveSupport::TestCase
   setup { @user = users(:one) }
 
@@ -35,13 +35,12 @@ class WeightTrendTest < ActiveSupport::TestCase
     assert_equal BigDecimal("81.646627"), @user.weight_trends.sole.ewma_kg
   end
 
-  test "the materializer's write path reaches a stored row and save! does not" do
+  test "a stored trend can be corrected in place" do
     @user.weight_trends.create!(trend_date: Date.current, raw_kg: 80, ewma_kg: 80)
     trend = @user.weight_trends.sole
 
-    assert_raises(ActiveRecord::StatementInvalid) { trend.update!(ewma_kg: 81) }
+    trend.update!(ewma_kg: 81)
 
-    @user.weight_trends.where(trend_date: Date.current).update_all(ewma_kg: 81)
     assert_equal BigDecimal("81"), @user.weight_trends.sole.ewma_kg
   end
 end

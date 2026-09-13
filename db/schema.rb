@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_080000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -119,7 +119,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_070000) do
     t.check_constraint "stress >= 1 AND stress <= 5", name: "readiness_inputs_stress_check"
   end
 
-  create_table "exercise_muscle_contributions", id: false, force: :cascade do |t|
+  create_table "exercise_muscle_contributions", force: :cascade do |t|
     t.bigint "exercise_id", null: false
     t.decimal "fraction", precision: 3, scale: 2, null: false
     t.bigint "muscle_group_id", null: false
@@ -170,7 +170,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_070000) do
     t.check_constraint "modality::text = ANY (ARRAY['barbell'::character varying::text, 'dumbbell'::character varying::text, 'machine'::character varying::text, 'bodyweight'::character varying::text, 'cable'::character varying::text, 'other'::character varying::text])", name: "exercises_modality_check"
   end
 
-  create_table "expenditure_estimates", id: false, force: :cascade do |t|
+  create_table "expenditure_estimates", force: :cascade do |t|
     t.string "basis", default: "energy_balance", null: false
     t.datetime "computed_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.string "confidence"
@@ -278,7 +278,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_070000) do
     t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
   end
 
-  create_table "readiness_scores", id: false, force: :cascade do |t|
+  create_table "readiness_scores", force: :cascade do |t|
     t.jsonb "components", default: {}, null: false
     t.datetime "created_at", null: false
     t.integer "score", null: false
@@ -520,7 +520,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_070000) do
     t.check_constraint "value IS NULL OR value >= 0::numeric", name: "wearable_samples_value_check"
   end
 
-  create_table "weight_trends", id: false, force: :cascade do |t|
+  create_table "weight_trends", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.decimal "ewma_kg", precision: 10, scale: 6, null: false
     t.decimal "raw_kg", precision: 10, scale: 6

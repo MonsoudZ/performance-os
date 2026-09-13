@@ -26,10 +26,9 @@ class ExerciseMuscleContributionTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordNotUnique) { duplicate.save(validate: false) }
   end
 
-  test "deleting an exercise takes its contributions without instantiating them" do
+  test "deleting an exercise takes its contributions with it" do
     contribution.save!
 
-    # dependent: :destroy would load each row and fail on the missing primary key.
     assert_difference "ExerciseMuscleContribution.count", -1 do
       @exercise.destroy!
     end

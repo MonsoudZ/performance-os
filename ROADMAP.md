@@ -92,18 +92,30 @@ risk they carry, not by size.
   unique per user per day at the index rather than only in a validation, and a
   trend is stored at the same scale as every other weight.
 
-  The rule worth the most was the one four of them share. `readiness_scores`,
+  The rule worth the most was the one four of them shared. `readiness_scores`,
   `weight_trends`, `expenditure_estimates` and `exercise_muscle_contributions`
-  have no primary key, and Active Record builds every UPDATE and DELETE for a
+  had no primary key, and Active Record builds every UPDATE and DELETE for a
   loaded record around one — so `save!`, `update!`, `destroy` and
-  `dependent: :destroy` all emit `WHERE "" IS NULL` and are rejected outright.
-  It fails only on the *second* write for a given key, so it ships looking fine.
+  `dependent: :destroy` all emitted `WHERE "" IS NULL` and were rejected
+  outright. It fails only on the *second* write for a given key, so it ships
+  looking fine.
 
   That had already been a live bug in `ExpenditureEstimator`, and writing the
   test found three more, all on the join table: re-importing a catalog exercise
   whose muscles changed, deleting a custom exercise, and deleting a muscle group.
-  All three are fixed, and `KeylessTablesTest` now fails the moment a fifth
-  keyless table appears.
+
+- [x] **The derived tables have primary keys.** `id: false` was a deliberate
+  choice — every one of these rows is addressed by a natural key, so an id looked
+  like dead weight — but it bought nothing and cost four bugs, each of which had
+  to be worked around by reaching rows through their unique index with
+  `update_all`. All four workarounds are gone: `ExpenditureEstimator`,
+  `WeightTrendMaterializer` and `ExerciseCatalogImporter` write through
+  `find_or_initialize_by` and `update!` like everything else in the app.
+
+  The natural keys did not change. The unique index is still what makes "one per
+  user per day" true; the id only makes the row addressable. `PrimaryKeysTest`
+  fails if a keyless table appears again, and asserts those indexes are still
+  there — an id that quietly replaced one would be a regression, not a fix.
 
 ## Views and navigation
 

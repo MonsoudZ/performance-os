@@ -34,17 +34,16 @@ class WeightTrendMaterializer
     user.weight_trends.find_by(trend_date: trend_date)
   end
 
-  # weight_trends has no primary key (id: false), so rows are written through
-  # the (user_id, trend_date) unique key rather than via save!/update!.
   def upsert_raw(date, raw_kg)
-    scope = user.weight_trends.where(trend_date: date)
-    if scope.exists?
-      scope.update_all(raw_kg: raw_kg, updated_at: Time.current)
-    else
-      user.weight_trends.create!(trend_date: date, raw_kg: raw_kg, ewma_kg: raw_kg)
-    end
+    trend = user.weight_trends.find_or_initialize_by(trend_date: date)
+    # A brand-new day seeds its own EWMA; recompute_ewma_from then walks the
+    # chain forward and overwrites it with the smoothed value.
+    trend.ewma_kg ||= raw_kg
+    trend.update!(raw_kg: raw_kg)
   end
 
+  # Stays a bulk update rather than loading each row: this walks every day from
+  # the edited one to the present, and the EWMA is derived, not edited.
   def recompute_ewma_from(start_date)
     previous_ewma = user.weight_trends
       .where(trend_date: ...start_date)

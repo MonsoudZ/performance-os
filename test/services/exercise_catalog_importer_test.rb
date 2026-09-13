@@ -47,7 +47,6 @@ class ExerciseCatalogImporterTest < ActiveSupport::TestCase
 
     ExerciseCatalogImporter.new.call
 
-    # destroy_all here used to raise: the rows have no primary key to destroy by.
     assert_not_includes squat.reload.muscle_groups.pluck(:name), "zzz_stray_muscle"
   end
 end

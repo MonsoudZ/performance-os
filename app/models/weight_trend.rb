@@ -1,6 +1,4 @@
 class WeightTrend < ApplicationRecord
-  self.primary_key = nil
-
   belongs_to :user
 
   validates :trend_date, presence: true, uniqueness: { scope: :user_id }

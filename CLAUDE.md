@@ -205,15 +205,15 @@ only route back to that checklist once a user has left it.
   this reason.
 - `bundler-audit` only sees gems in `Gemfile.lock`. Default gems like `resolv`
   are invisible to it unless declared in the `Gemfile`.
-- **Four tables carry no primary key** — `readiness_scores`, `weight_trends`,
-  `expenditure_estimates`, `exercise_muscle_contributions` — because they hold
-  derived, naturally keyed state. Active Record builds every UPDATE and DELETE
-  for a loaded record around the primary key, so with none it emits
-  `WHERE "" IS NULL` and Postgres rejects it: `save!`, `update!`, `destroy` and
-  `dependent: :destroy` all fail this way, and only on the *second* write for a
-  given key, so the bug ships looking fine. Reach rows through their unique index
-  with `update_all`/`delete_all` and validate the loaded record first.
-  `KeylessTablesTest` fails when a fifth such table appears.
+- **Every table needs a primary key, including the derived ones.** Four here
+  were created with `id: false` because each row is addressed by a natural key —
+  one per user per day, one per exercise/muscle pair. Active Record builds every
+  UPDATE and DELETE for a loaded record around the primary key, so with none it
+  emits `WHERE "" IS NULL` and Postgres rejects it: `save!`, `update!`, `destroy`
+  and `dependent: :destroy` all fail, and only on the *second* write for a given
+  key, so the bug ships looking fine. They have ids now; `PrimaryKeysTest` fails
+  if a keyless table appears again. The unique index on the natural key is still
+  what enforces "one per user per day" — the id does not.
 - Catalog exercises (`user_id: nil`) survive `db:seed:replant`. Tests must not
   assume an empty `exercises` table — use distinctive names and assert on
   presence rather than totals — and note that a test database prepared with

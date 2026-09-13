@@ -4,8 +4,6 @@ class ExpenditureEstimate < ApplicationRecord
   # active figures, used only while there is not yet enough of the former.
   BASES = %w[energy_balance wearable_energy].freeze
 
-  self.primary_key = nil
-
   belongs_to :user
 
   validates :estimate_date, presence: true, uniqueness: { scope: :user_id }
