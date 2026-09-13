@@ -17,7 +17,15 @@ bin/dev
 audit, the test suite, and a seed replant. Run it before pushing.
 
 Tests are Minitest. `bin/rails test` for the suite, `bin/rails test path:line`
-for one.
+for one. `bin/rails test:system` runs the browser tests separately — `bin/rails
+test` does not include them.
+
+System tests use Capybara with Cuprite, which talks CDP to Chrome directly, so
+there is no chromedriver whose version has to match the browser. Any Chrome on
+the box is found automatically; set `CHROME_BIN` to override. Put a test there
+only when the behaviour needs JavaScript — the logger's rows and volume readout,
+a Turbo morph — and leave server-rendered output to controller tests, which are
+an order of magnitude faster.
 
 ## The decision DAG
 

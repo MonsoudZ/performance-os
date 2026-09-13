@@ -19,6 +19,12 @@ module ActiveSupport
     # with perform_enqueued_jobs / assert_enqueued_with.
     include ActiveJob::TestHelper
 
+    # Rack::Attack counts in a process-global store, so throttle state leaks
+    # between tests in the same worker: sign in as one fixture user six times
+    # across six tests and the sixth is refused. Reset per test so a throttle is
+    # only ever exercised by the test that means to.
+    setup { Rack::Attack.reset! }
+
     # Add more helper methods to be used by all tests here...
   end
 end

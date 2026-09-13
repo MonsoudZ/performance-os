@@ -80,4 +80,12 @@ end
 group :test do
   # Stub and assert outbound HTTP requests in tests [https://github.com/bblimke/webmock]
   gem "webmock"
+
+  # Browser-driven system tests [https://github.com/teamcapybara/capybara]
+  gem "capybara"
+  # Cuprite drives Chrome over CDP directly instead of through chromedriver.
+  # Selenium needs a chromedriver whose major version matches the installed
+  # Chrome exactly, which turns every Chrome update into a broken build; Cuprite
+  # only needs a Chrome binary. [https://github.com/rubycdp/cuprite]
+  gem "cuprite"
 end

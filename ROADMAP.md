@@ -67,14 +67,19 @@ risk they carry, not by size.
 
 ## Test coverage
 
-- [ ] **No system tests.** `test/integration/` contains only the CSP test. Nothing
-  exercises a real browser path — logging a workout, completing a check-in,
-  onboarding a new user. `bin/ci` has a commented-out `bin/rails test:system` step
-  waiting for this.
-- [ ] **No JS tests.** The three Stimulus controllers (`workout_log`,
-  `template_editor`, `push`) have zero coverage. `workout_log` in particular
-  drives set-row add/remove and is where a regression would silently lose logged
-  data.
+- [x] **System tests exist, starting with the workout logger.** Capybara driving
+  Chrome over CDP (Cuprite, so there is no chromedriver version to keep in step
+  with Chrome). Seven tests cover the logger: prefilled rows through to saved
+  sets, the live volume readout including warm-up exclusion, duplicating a set,
+  removing and renumbering, adding an exercise from the catalog search, an
+  imperial round trip, and the no-target empty state. Wired into `bin/ci` and
+  into CI, which uploads screenshots on failure.
+
+- [ ] **Extend system coverage past the logger.** The remaining JavaScript is
+  `template_editor` (drag-free reordering of template rows) and `push` (the
+  notification permission dance, which needs a mocked Notification API). The
+  daily check-in and onboarding are server-rendered but are the paths a new
+  account walks first, so they are worth a browser test each.
 - [ ] **Thin model coverage.** `test/models/` covers 7 of 27 models. The ones
   carrying invariants worth pinning are `CoachingDecision` (retraction rules and
   the JSONB scopes), `ExercisePrescription` (effective-dating), and `Mesocycle`
