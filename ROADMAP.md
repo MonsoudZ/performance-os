@@ -5,13 +5,24 @@ risk they carry, not by size.
 
 ## Correctness
 
-- [ ] **Honor `unit_system` in the UI.** Users choose metric or imperial at
-  registration and in their profile, the value is validated, and then nothing
-  reads it. Every weight in every view is hardcoded `kg` — the dashboard's lift
-  directives, the training-targets page, the workout logger, the progress cards,
-  and the body-metrics form. Decide the boundary (store kg everywhere, convert at
-  the view and at form submission), add a helper pair, and sweep the views. An
-  imperial user currently gets kilograms labelled as their own units.
+- [x] **`unit_system` is honored across the UI.** Storage stays canonical —
+  kilograms and centimetres — so every evaluator, decision and progression
+  comparison is unit-agnostic and switching systems changes nothing about a
+  user's data. Conversion happens at two boundaries only: `WeightsHelper` on the
+  way out, `WeightParams` on the way in.
+
+  Two things were deliberate. Controllers name their measurement fields
+  explicitly instead of the concern inferring them from a `_kg` suffix, because a
+  silent name-based rule would quietly capture any future column that matches and
+  corrupt stored training data. And decision prose stays in kilograms, since a
+  decision is an immutable record; where a decision carries the numbers behind its
+  headline, the view composes its own sentence rather than doing string surgery on
+  the record, falling back to the stored text when it cannot.
+
+  Remaining: `DailyTrainingOrchestrator` and `DoubleProgressionEvaluator` still
+  write kilograms into `guidance` prose in a few places where no numeric field
+  accompanies it. Those read fine today because the guidance rarely names a load,
+  but a fully unit-neutral output schema would need a `rule_version` bump on both.
 
 ## Security
 

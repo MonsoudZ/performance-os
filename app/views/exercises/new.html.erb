@@ -23,7 +23,7 @@
         </label>
         <label>
           <span>Tracked in</span>
-          <%= form.select :default_unit, %w[kg reps seconds meters].map { |unit| [ unit, unit ] } %>
+          <%= form.select :default_unit, %w[kg reps seconds meters].map { |unit| [ unit == "kg" ? weight_unit : unit, unit ] } %>
         </label>
       </div>
       <label class="checkbox-field">

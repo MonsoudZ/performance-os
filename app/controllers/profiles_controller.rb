@@ -1,4 +1,5 @@
 class ProfilesController < ApplicationController
+  include WeightParams
   def edit
     @user = Current.user
   end
@@ -15,16 +16,19 @@ class ProfilesController < ApplicationController
   private
 
   def profile_params
-    params.require(:user).permit(
-      :experience_level,
-      :training_days_per_week,
-      :sex,
-      :birth_date,
-      :height_cm,
-      :unit_system,
-      :time_zone,
-      :max_hr,
-      available_equipment: []
+    to_canonical_units(
+      params.require(:user).permit(
+        :experience_level,
+        :training_days_per_week,
+        :sex,
+        :birth_date,
+        :height_cm,
+        :unit_system,
+        :time_zone,
+        :max_hr,
+        available_equipment: []
+      ),
+      lengths: [ :height_cm ]
     )
   end
 end

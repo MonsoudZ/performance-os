@@ -16,12 +16,18 @@ module ExercisesHelper
     exercise.user_id.nil? ? "Catalog" : "Custom"
   end
 
-  # "3 × 8 @ 100 kg" style summary of one logged set.
+  # How the exercise is measured. `default_unit` is stored canonically, so a
+  # weight-loaded lift reads "kg" in the column and "lb" to an imperial user;
+  # reps, seconds and metres mean the same thing to everyone.
+  def exercise_unit_label(exercise)
+    exercise.default_unit == "kg" ? weight_unit : exercise.default_unit
+  end
+
+  # "100 kg × 8" style summary of one logged set, in the reader's units.
   def set_summary(set)
     return "#{set.reps} reps" if set.weight_kg.blank?
 
-    weight = number_with_precision(set.weight_kg, precision: 2, strip_insignificant_zeros: true)
-    "#{weight} kg × #{set.reps}"
+    "#{weight(set.weight_kg)} × #{set.reps}"
   end
 
   def decision_status_label(status)

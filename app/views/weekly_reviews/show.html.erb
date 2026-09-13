@@ -65,7 +65,7 @@
         <strong><%= evidence["weight_trend_days"] %>/7</strong>
         <small>
           <% if evidence["weight_start_kg"] && evidence["weight_end_kg"] %>
-            <%= evidence["weight_start_kg"] %> → <%= evidence["weight_end_kg"] %> kg
+            <%= weight_amount(evidence["weight_start_kg"]) %> → <%= weight(evidence["weight_end_kg"]) %>
           <% else %>
             Keep logging daily weight
           <% end %>

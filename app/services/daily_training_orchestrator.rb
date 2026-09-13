@@ -1,6 +1,8 @@
 class DailyTrainingOrchestrator
   RULE_KEY = "daily_training_orchestrator.v1"
-  RULE_VERSION = "1.0.0"
+  # 1.1.0 adds next_weight_kg to each lift directive so the UI can render the
+  # load in the reader's units instead of parsing it back out of the headline.
+  RULE_VERSION = "1.1.0"
 
   def initialize(user, plan_date: nil)
     @user = user
@@ -263,7 +265,11 @@ class DailyTrainingOrchestrator
       "prescription_id" => prescription.id,
       "target" => prescription.target_label,
       "working_sets" => sets,
-      "progression_decision_id" => progression&.id
+      "progression_decision_id" => progression&.id,
+      # The headline below states this load in kilograms, the canonical unit the
+      # decision is recorded in. Carrying the raw number alongside lets the view
+      # restate it in the user's units without doing surgery on stored prose.
+      "next_weight_kg" => progression&.output&.fetch("next_weight_kg", nil)
     }
 
     return base.merge(deload_lift_output(sets)) if execution_mode == "deload"

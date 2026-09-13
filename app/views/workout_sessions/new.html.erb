@@ -22,7 +22,7 @@
 
       <%= form_with model: @workout_session,
         class: "stacked-form stacked-form--wide",
-        data: { controller: "workout-log" } do |form| %>
+        data: { controller: "workout-log", workout_log_unit_value: weight_unit } do |form| %>
         <%= hidden_field_tag "workout_session[workout_template_id]", @workout_template.id if @workout_template %>
         <div class="form-grid">
           <label><span>Performed at</span><%= form.datetime_local_field :performed_at, required: true %></label>
@@ -36,13 +36,13 @@
           </div>
           <div>
             <span>Live volume</span>
-            <strong data-workout-log-target="volume">0 kg</strong>
+            <strong data-workout-log-target="volume">0 <%= weight_unit %></strong>
           </div>
         </div>
 
         <div class="set-table">
           <div class="set-table__header">
-            <span>Set</span><span>Exercise</span><span>kg</span><span>Reps</span><span>RIR</span><span>Warm-up</span><span></span>
+            <span>Set</span><span>Exercise</span><span><%= weight_unit %></span><span>Reps</span><span>RIR</span><span>Warm-up</span><span></span>
           </div>
           <div data-workout-log-target="rows">
           <%= form.fields_for :set_entries do |set_form| %>
@@ -73,7 +73,7 @@
             <input type="hidden" name="workout_session[set_entries_attributes][NEW_RECORD][exercise_id]" value="EXERCISE_ID">
             <input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][set_index]" min="1" aria-label="Set number" data-workout-log-target="setIndex">
             <div class="set-exercise"><strong>EXERCISE_NAME</strong><small>Added from catalog</small></div>
-            <label class="set-field"><span>kg</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][weight_kg]" min="0" step="0.25" aria-label="Weight kg" data-action="input->workout-log#updateVolume" data-workout-log-target="weight"></label>
+            <label class="set-field"><span><%= weight_unit %></span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][weight_kg]" min="0" step="<%= weight_field_step %>" aria-label="Weight in <%= weight_unit %>" data-action="input->workout-log#updateVolume" data-workout-log-target="weight"></label>
             <label class="set-field"><span>Reps</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][reps]" min="1" aria-label="Reps" data-action="input->workout-log#updateVolume" data-workout-log-target="reps"></label>
             <label class="set-field"><span>RIR</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][rir]" min="0" step="0.5" aria-label="RIR"></label>
             <label class="set-field set-field--checkbox"><span>Warm-up</span><input type="hidden" name="workout_session[set_entries_attributes][NEW_RECORD][is_warmup]" value="0"><input type="checkbox" name="workout_session[set_entries_attributes][NEW_RECORD][is_warmup]" value="1" aria-label="Warm-up set" data-action="change->workout-log#updateVolume" data-workout-log-target="warmup"></label>

@@ -41,6 +41,18 @@ class User < ApplicationRecord
     goal_periods.active_on(local_date).order(started_on: :desc).first
   end
 
+  def imperial?
+    Units.imperial?(unit_system)
+  end
+
+  def weight_unit
+    Units.weight_unit(unit_system)
+  end
+
+  def length_unit
+    Units.length_unit(unit_system)
+  end
+
   def local_time
     Time.current.in_time_zone(time_zone)
   end

@@ -7,7 +7,7 @@
       <h1><%= @exercise.name %></h1>
       <p>
         <%= exercise_muscle_summary(@exercise) %><% if @exercise.is_compound? %> · Compound<% end %> ·
-        <%= exercise_catalog_label(@exercise) %> movement tracked in <%= @exercise.default_unit %>.
+        <%= exercise_catalog_label(@exercise) %> movement tracked in <%= exercise_unit_label(@exercise) %>.
       </p>
     </div>
     <div class="page-heading__actions">
@@ -40,8 +40,8 @@
       <article class="panel">
         <p class="eyebrow">Estimated 1RM</p>
         <% if @progress %>
-          <strong><%= number_with_precision @progress.current_e1rm, precision: 1, strip_insignificant_zeros: true %> kg</strong>
-          <span>Best <%= number_with_precision @progress.best_e1rm, precision: 1, strip_insignificant_zeros: true %> kg<% if @progress.pr_count.positive? %> · <%= pluralize @progress.pr_count, "PR" %><% end %></span>
+          <strong><%= weight(@progress.current_e1rm, precision: 1) %></strong>
+          <span>Best <%= weight(@progress.best_e1rm, precision: 1) %><% if @progress.pr_count.positive? %> · <%= pluralize @progress.pr_count, "PR" %><% end %></span>
         <% else %>
           <strong>—</strong>
           <span>Needs a logged working set</span>
@@ -60,7 +60,7 @@
 
     <% if (prescription = @history.active_prescription) %>
       <dl class="target-detail">
-        <div><dt>Increment</dt><dd><%= number_with_precision prescription.increment_kg, precision: 2, strip_insignificant_zeros: true %> kg</dd></div>
+        <div><dt>Increment</dt><dd><%= weight(prescription.increment_kg) %></dd></div>
         <div><dt>Progression</dt><dd><%= prescription.progression_model_label %></dd></div>
         <div><dt>Effective since</dt><dd><%= prescription.started_on.strftime("%b %-d, %Y") %></dd></div>
       </dl>
@@ -114,7 +114,7 @@
         <% @history.progression_decisions.each do |decision| %>
           <article class="decision-trail__item decision-trail__item--<%= decision.output["status"] %><%= " is-retracted" if decision.retracted_at? %>">
             <div class="decision-trail__head">
-              <strong><%= decision.output["headline"] %></strong>
+              <strong><%= progression_headline(decision.output) %></strong>
               <span class="date"><%= decision.created_at.to_date.strftime("%b %-d, %Y") %></span>
             </div>
             <p class="muted"><%= decision.output["guidance"] %></p>
@@ -122,9 +122,9 @@
               <span class="pill"><%= decision_status_label(decision.output["status"]) %></span>
               <% if decision.output["current_weight_kg"] && decision.output["next_weight_kg"] %>
                 <span>
-                  <%= number_with_precision decision.output["current_weight_kg"], precision: 2, strip_insignificant_zeros: true %>
+                  <%= weight_amount(decision.output["current_weight_kg"]) %>
                   →
-                  <%= number_with_precision decision.output["next_weight_kg"], precision: 2, strip_insignificant_zeros: true %> kg
+                  <%= weight(decision.output["next_weight_kg"]) %>
                 </span>
               <% end %>
               <span class="confidence"><%= decision.confidence %> confidence · <%= decision.rule_key %></span>
@@ -170,7 +170,7 @@
             </div>
             <% if appearance.any_working_sets? %>
               <div class="appearance__meta">
-                <span>Volume <%= number_with_delimiter appearance.volume_kg %> kg</span>
+                <span>Volume <%= weight(appearance.volume_kg, precision: 0) %></span>
                 <% if appearance.top_set %>
                   <span>Top set <%= set_summary(appearance.top_set) %></span>
                 <% end %>

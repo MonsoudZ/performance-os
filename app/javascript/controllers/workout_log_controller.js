@@ -2,6 +2,8 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["rows", "row", "template", "setIndex", "weight", "reps", "warmup", "volume", "search", "results"]
+  // The inputs carry whatever unit the user reads, so the running total does too.
+  static values = { unit: { type: String, default: "kg" } }
 
   connect() {
     this.nextIndex = this.rowTargets.length
@@ -36,7 +38,7 @@ export default class extends Controller {
       return volume + (weight * reps)
     }, 0)
 
-    this.volumeTarget.textContent = `${Math.round(total).toLocaleString()} kg`
+    this.volumeTarget.textContent = `${Math.round(total).toLocaleString()} ${this.unitValue}`
   }
 
   searchExercises() {

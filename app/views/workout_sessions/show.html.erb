@@ -26,7 +26,7 @@
       </article>
       <article class="panel">
         <p class="eyebrow">Session volume</p>
-        <strong><%= number_with_delimiter @set_entries.reject(&:is_warmup?).sum { |set| set.weight_kg.to_f * set.reps.to_i }.round %> kg</strong>
+        <strong><%= weight(@set_entries.reject(&:is_warmup?).sum { |set| set.weight_kg.to_f * set.reps.to_i }, precision: 0) %></strong>
         <span>Working-set load × reps</span>
       </article>
     </section>
@@ -43,10 +43,10 @@
     <% @decisions.each do |decision| %>
       <article class="panel decision-card decision-card--<%= decision.output["status"] %>">
         <p class="eyebrow"><%= decision.inputs["exercise_name"] %></p>
-        <h2><%= decision.output["headline"] %></h2>
+        <h2><%= progression_headline(decision.output) %></h2>
         <p><%= decision.output["guidance"] %></p>
         <% if decision.output["next_weight_kg"] %>
-          <strong class="next-load"><%= number_with_precision decision.output["next_weight_kg"], precision: 2, strip_insignificant_zeros: true %> kg</strong>
+          <strong class="next-load"><%= weight(decision.output["next_weight_kg"]) %></strong>
         <% end %>
         <span class="confidence"><%= decision.confidence %> confidence · <%= decision.rule_key %></span>
       </article>
@@ -65,7 +65,7 @@
         <div>
           <span>#<%= set.set_index %></span>
           <strong><%= set.exercise.name %></strong>
-          <span><%= set.weight_kg %> kg × <%= set.reps %></span>
+          <span><%= weight(set.weight_kg) %> × <%= set.reps %></span>
           <span><%= set.rir %> RIR</span>
         </div>
       <% end %>

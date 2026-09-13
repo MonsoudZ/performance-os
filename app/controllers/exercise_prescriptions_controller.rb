@@ -1,5 +1,6 @@
 class ExercisePrescriptionsController < ApplicationController
   include TrainingRecomputable
+  include WeightParams
 
   before_action :set_prescription, only: %i[edit update finish]
 
@@ -83,16 +84,19 @@ class ExercisePrescriptionsController < ApplicationController
   end
 
   def prescription_params
-    params.require(:exercise_prescription).permit(
-      :exercise_id,
-      :rep_min,
-      :rep_max,
-      :target_rir_min,
-      :target_rir_max,
-      :increment_kg,
-      :working_sets,
-      :progression_model,
-      :started_on
+    to_canonical_units(
+      params.require(:exercise_prescription).permit(
+        :exercise_id,
+        :rep_min,
+        :rep_max,
+        :target_rir_min,
+        :target_rir_max,
+        :increment_kg,
+        :working_sets,
+        :progression_model,
+        :started_on
+      ),
+      weights: [ :increment_kg ]
     )
   end
 end

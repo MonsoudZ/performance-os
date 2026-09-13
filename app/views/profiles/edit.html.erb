@@ -46,8 +46,8 @@
       </label>
 
       <label>
-        <span>Height (cm)</span>
-        <%= form.number_field :height_cm, step: 0.1, min: 0 %>
+        <span>Height (<%= length_unit %>)</span>
+        <%= form.number_field :height_cm, value: length_field_value(form.object.height_cm), step: 0.1, min: 0 %>
       </label>
 
       <label>

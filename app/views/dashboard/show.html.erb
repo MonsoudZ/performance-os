@@ -227,7 +227,7 @@
               <p class="eyebrow"><%= lift["action"].humanize %></p>
               <h3><%= lift["exercise_name"] %></h3>
             </div>
-            <strong><%= lift["headline"] %></strong>
+            <strong><%= lift_headline(lift) %></strong>
             <p><%= lift["guidance"] %></p>
             <small><%= lift["target"] %><% if lift["working_sets"] %> · <%= pluralize lift["working_sets"], "set" %> today<% end %></small>
           </article>
@@ -285,7 +285,7 @@
             <div class="compact-list__item">
               <strong><%= prescription.exercise.name %></strong>
               <span><%= prescription.target_label %></span>
-              <small>+<%= number_with_precision prescription.increment_kg, precision: 2, strip_insignificant_zeros: true %> kg</small>
+              <small>+<%= weight(prescription.increment_kg) %></small>
             </div>
           <% end %>
         </div>

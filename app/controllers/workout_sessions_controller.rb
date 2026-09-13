@@ -1,4 +1,5 @@
 class WorkoutSessionsController < ApplicationController
+  include WeightParams
   include TrainingRecomputable
 
   def new
@@ -94,11 +95,15 @@ class WorkoutSessionsController < ApplicationController
   end
 
   def workout_session_params
-    params.require(:workout_session).permit(
-      :performed_at,
-      :session_rpe,
-      :notes,
-      set_entries_attributes: [ :id, :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup, :_destroy ]
+    to_canonical_units(
+      params.require(:workout_session).permit(
+        :performed_at,
+        :session_rpe,
+        :notes,
+        set_entries_attributes: [ :id, :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup, :_destroy ]
+      ),
+      weights: [ :weight_kg ],
+      nested: :set_entries_attributes
     )
   end
 end

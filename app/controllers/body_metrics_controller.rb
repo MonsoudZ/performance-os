@@ -1,4 +1,5 @@
 class BodyMetricsController < ApplicationController
+  include WeightParams
   def create
     body_metric = Current.user.body_metrics.new(body_metric_params)
 
@@ -21,6 +22,9 @@ class BodyMetricsController < ApplicationController
   private
 
   def body_metric_params
-    params.require(:body_metric).permit(:measured_on, :weight_kg)
+    to_canonical_units(
+      params.require(:body_metric).permit(:measured_on, :weight_kg),
+      weights: [ :weight_kg ]
+    )
   end
 end
