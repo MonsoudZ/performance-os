@@ -86,11 +86,24 @@ risk they carry, not by size.
   three including models, `ExercisePrescription`, `WorkoutTemplate`, and
   `SetEntry` including the generated 1RM column's precision.
 
-- [ ] **Remaining model files without tests** are mostly thin data holders —
-  `ReadinessScore`, `WeightTrend`, `ExpenditureEstimate`, `MuscleGroup` — or are
-  exercised through their service tests (`Food`, `BodyMetric`, the wearable
-  models). Worth adding only where a rule appears; a test per file for its own
-  sake would be noise.
+- [x] **The remaining models are covered where a rule actually lives.** They are
+  thin, so the tests are about the rules rather than the files: volume landmarks
+  are ordered and every muscle the catalog trains has them, scores and trends are
+  unique per user per day at the index rather than only in a validation, and a
+  trend is stored at the same scale as every other weight.
+
+  The rule worth the most was the one four of them share. `readiness_scores`,
+  `weight_trends`, `expenditure_estimates` and `exercise_muscle_contributions`
+  have no primary key, and Active Record builds every UPDATE and DELETE for a
+  loaded record around one — so `save!`, `update!`, `destroy` and
+  `dependent: :destroy` all emit `WHERE "" IS NULL` and are rejected outright.
+  It fails only on the *second* write for a given key, so it ships looking fine.
+
+  That had already been a live bug in `ExpenditureEstimator`, and writing the
+  test found three more, all on the join table: re-importing a catalog exercise
+  whose muscles changed, deleting a custom exercise, and deleting a muscle group.
+  All three are fixed, and `KeylessTablesTest` now fails the moment a fifth
+  keyless table appears.
 
 ## Views and navigation
 

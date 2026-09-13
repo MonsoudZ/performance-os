@@ -14,7 +14,9 @@ class MuscleGroup < ApplicationRecord
     "abs" => { mev: 6, mav: 16, mrv: 25 }
   }.freeze
 
-  has_many :exercise_muscle_contributions, dependent: :destroy
+  # delete_all for the same reason Exercise uses it: these rows carry no primary
+  # key and cannot be destroyed one at a time.
+  has_many :exercise_muscle_contributions, dependent: :delete_all
   has_many :exercises, through: :exercise_muscle_contributions
 
   validates :name, presence: true, uniqueness: true

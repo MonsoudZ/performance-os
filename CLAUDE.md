@@ -205,9 +205,19 @@ only route back to that checklist once a user has left it.
   this reason.
 - `bundler-audit` only sees gems in `Gemfile.lock`. Default gems like `resolv`
   are invisible to it unless declared in the `Gemfile`.
+- **Four tables carry no primary key** — `readiness_scores`, `weight_trends`,
+  `expenditure_estimates`, `exercise_muscle_contributions` — because they hold
+  derived, naturally keyed state. Active Record builds every UPDATE and DELETE
+  for a loaded record around the primary key, so with none it emits
+  `WHERE "" IS NULL` and Postgres rejects it: `save!`, `update!`, `destroy` and
+  `dependent: :destroy` all fail this way, and only on the *second* write for a
+  given key, so the bug ships looking fine. Reach rows through their unique index
+  with `update_all`/`delete_all` and validate the loaded record first.
+  `KeylessTablesTest` fails when a fifth such table appears.
 - Catalog exercises (`user_id: nil`) survive `db:seed:replant`. Tests must not
   assume an empty `exercises` table — use distinctive names and assert on
-  presence rather than totals.
+  presence rather than totals — and note that a test database prepared with
+  `db:reset` (which seeds) starts with them while `db:test:prepare` does not.
 - `assert_select "sel", "some message"` treats the second argument as a **text
   match**, not a message, and `assert_select "sel", text: "x", "message"` is a
   syntax error because a positional argument cannot follow a hash. Either brace
