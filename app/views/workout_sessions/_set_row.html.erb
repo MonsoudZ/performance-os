@@ -36,7 +36,11 @@
   </label>
   <label class="set-field">
     <span>RIR</span>
-    <%= set_form.number_field :rir, min: 0, step: 0.5, aria: { label: "RIR" } %>
+    <%= set_form.number_field :rir,
+      min: 0,
+      step: measurement_step,
+      aria: { label: "RIR" },
+      data: { workout_log_target: "rir" } %>
   </label>
   <label class="set-field set-field--checkbox">
     <span>Warm-up</span>

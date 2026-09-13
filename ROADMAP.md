@@ -81,15 +81,14 @@ risk they carry, not by size.
   only way to read a decision is through the dashboard's composed summary or the
   AI narrative. A plain "show me this decision, its inputs, its children, and its
   rule version" page would make the audit trail directly inspectable.
-- [ ] **Workout session index.** `workout_sessions` has `new`/`show`/`edit` but no
-  index. Past sessions are only reachable from the exercise history page.
-- [ ] **Turbo's progress bar is silently suppressed.** CSP sets `style-src 'self'`,
-  and Turbo injects an inline `<style>` element for `.turbo-progress-bar`, so the
-  browser refuses it on every page load — the only visible symptom is a console
-  warning and no loading indicator on slow navigations. (Inline `style=`
-  *attributes*, like the volume bars', are fine: `style_src_attr :unsafe_inline`
-  covers those.) Fix by styling `.turbo-progress-bar` in `application.css` and
-  setting `Turbo.setProgressBarDelay`, or by extending the nonce to `style-src`.
+- [x] **Workout session index.** Past sessions were only reachable from the
+  exercise history page; there is now a History page listing them newest first.
+- [x] **Turbo's progress bar works again.** CSP set `style-src 'self'`, so the
+  inline `<style>` Turbo injects for `.turbo-progress-bar` was refused on every
+  page load: no loading indicator, and a console violation. Fixed by noncing
+  `style-src` — Turbo signs that element with the `csp-nonce` meta tag — rather
+  than adding `'unsafe-inline'`, which would have allowed every inline style on
+  the page. The app now loads with zero CSP violations.
 
 - [ ] **Empty-state pass on first run.** A brand-new account with no goal, no
   targets, and no check-in lands on a dashboard that mostly renders placeholders.

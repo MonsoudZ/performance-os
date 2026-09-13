@@ -223,6 +223,38 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert WorkoutSession.exists?(other.id)
   end
 
+  test "lists logged workouts newest first" do
+    exercise = Exercise.create!(name: "Zzz Index Squat", modality: "barbell")
+    older = @user.workout_sessions.create!(performed_at: 3.days.ago)
+    older.set_entries.create!(exercise:, set_index: 1, weight_kg: 100, reps: 5, rir: 1)
+    newer = @user.workout_sessions.create!(performed_at: 1.day.ago)
+    newer.set_entries.create!(exercise:, set_index: 1, weight_kg: 105, reps: 5, rir: 1)
+
+    get workout_sessions_path
+
+    assert_response :success
+    assert_select "h1", "Logged workouts."
+    assert_select ".appearance", 2
+    listed = css_select(".appearance .date").map(&:text)
+    assert_equal listed.sort.reverse, listed, "newest session first"
+  end
+
+  test "the workout list shows an empty state before anything is logged" do
+    get workout_sessions_path
+
+    assert_response :success
+    assert_select ".empty-state", 1
+    assert_select ".appearance", 0
+  end
+
+  test "the workout list does not show another user's sessions" do
+    users(:two).workout_sessions.create!(performed_at: 1.day.ago)
+
+    get workout_sessions_path
+
+    assert_select ".appearance", 0
+  end
+
   private
 
   def set_params(index)

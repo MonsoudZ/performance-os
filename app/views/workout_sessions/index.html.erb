@@ -1,0 +1,51 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Training log</p>
+      <h1>Logged workouts.</h1>
+      <p>Every session you've recorded, newest first. Each one links to the sets it holds and the progression decisions they produced.</p>
+    </div>
+    <div class="page-heading__actions">
+      <%= link_to "Log workout", new_workout_session_path, class: "button button--inline" %>
+    </div>
+  </section>
+
+  <section class="panel">
+    <% if @workout_sessions.any? %>
+      <div class="appearance-list">
+        <% @workout_sessions.each do |session| %>
+          <% working_sets = session.set_entries.reject(&:is_warmup?) %>
+          <article class="appearance">
+            <div class="appearance__head">
+              <%= link_to session.template_name || "Session",
+                workout_session_path(session), class: "text-link" %>
+              <span class="date"><%= session.performed_at.to_date.strftime("%b %-d, %Y") %></span>
+            </div>
+            <div class="appearance__sets">
+              <% working_sets.map(&:exercise).uniq.each do |exercise| %>
+                <span class="appearance__set"><%= link_to exercise.name, exercise_path(exercise) %></span>
+              <% end %>
+            </div>
+            <div class="appearance__meta">
+              <span><%= pluralize working_sets.size, "working set" %></span>
+              <% if working_sets.any? { |set| set.weight_kg.present? } %>
+                <span>Volume <%= weight(working_sets.sum { |set| set.weight_kg.to_f * set.reps.to_i }, precision: 0) %></span>
+              <% end %>
+              <% if session.session_rpe.present? %>
+                <span>Session RPE <%= number_with_precision session.session_rpe, precision: 1, strip_insignificant_zeros: true %></span>
+              <% end %>
+            </div>
+          </article>
+        <% end %>
+      </div>
+      <p class="evidence-note">Showing the most recent <%= @workout_sessions.size %> <%= "session".pluralize(@workout_sessions.size) %>.</p>
+    <% else %>
+      <div class="empty-state">
+        <p>No workouts logged yet.</p>
+        <p><%= link_to "Log your first workout", new_workout_session_path, class: "text-link" %> and the progression engine starts building your history.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

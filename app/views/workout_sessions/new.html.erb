@@ -75,7 +75,7 @@
             <div class="set-exercise"><strong>EXERCISE_NAME</strong><small>Added from catalog</small></div>
             <label class="set-field"><span><%= weight_unit %></span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][weight_kg]" min="0" step="<%= measurement_step %>" aria-label="Weight in <%= weight_unit %>" data-action="input->workout-log#updateVolume" data-workout-log-target="weight"></label>
             <label class="set-field"><span>Reps</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][reps]" min="1" aria-label="Reps" data-action="input->workout-log#updateVolume" data-workout-log-target="reps"></label>
-            <label class="set-field"><span>RIR</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][rir]" min="0" step="0.5" aria-label="RIR"></label>
+            <label class="set-field"><span>RIR</span><input type="number" name="workout_session[set_entries_attributes][NEW_RECORD][rir]" min="0" step="<%= measurement_step %>" aria-label="RIR" data-workout-log-target="rir"></label>
             <label class="set-field set-field--checkbox"><span>Warm-up</span><input type="hidden" name="workout_session[set_entries_attributes][NEW_RECORD][is_warmup]" value="0"><input type="checkbox" name="workout_session[set_entries_attributes][NEW_RECORD][is_warmup]" value="1" aria-label="Warm-up set" data-action="change->workout-log#updateVolume" data-workout-log-target="warmup"></label>
             <div class="set-actions">
               <button type="button" class="icon-button" data-action="workout-log#duplicateSet" aria-label="Add matching set">+</button>

@@ -30,4 +30,23 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     inline_unnonced = css_select("script").reject { |s| s["src"] || s["nonce"].present? }
     assert_empty inline_unnonced, "un-nonced inline scripts would be blocked: #{inline_unnonced.map { |s| s['type'] }}"
   end
+
+  test "styles stay same-origin, with a nonce for Turbo's progress bar" do
+    get root_path
+
+    header = response.headers["Content-Security-Policy"]
+
+    # Turbo signs its progress-bar <style> with the csp-nonce meta tag. Without
+    # this the element is refused and navigations show no loading indicator.
+    style_nonce = header[/style-src 'self' 'nonce-([^']+)'/, 1]
+    assert style_nonce.present?, "expected a style nonce in #{header.inspect}"
+    assert_equal header[/script-src 'self' 'nonce-([^']+)'/, 1], style_nonce,
+      "Turbo reads one nonce from the meta tag, so both directives must accept it"
+    assert_select "meta[name='csp-nonce'][content=?]", style_nonce
+
+    # The nonce must not have smuggled in blanket inline styles.
+    assert_not_includes header, "style-src 'self' 'unsafe-inline'"
+    # Inline style attributes stay allowed — the dashboard score ring needs them.
+    assert_includes header, "style-src-attr 'unsafe-inline'"
+  end
 end

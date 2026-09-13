@@ -37,7 +37,7 @@ Rails.application.routes.draw do
     patch :finish, on: :member
   end
   resources :workout_templates, except: :show
-  resources :workout_sessions, only: %i[new create show edit update destroy]
+  resources :workout_sessions, only: %i[index new create show edit update destroy]
   resources :conditioning_sessions, only: %i[index create destroy]
   resources :coach_narratives, only: :create
   resource :profile, only: %i[edit update]

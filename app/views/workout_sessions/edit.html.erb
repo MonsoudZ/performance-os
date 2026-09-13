@@ -30,7 +30,7 @@
             <div class="set-exercise"><strong><%= set_form.object.exercise.name %></strong></div>
             <label class="set-field"><span><%= weight_unit %></span><%= set_form.number_field :weight_kg, value: weight_field_value(set_form.object.weight_kg), min: 0, step: measurement_step %></label>
             <label class="set-field"><span>Reps</span><%= set_form.number_field :reps, min: 1 %></label>
-            <label class="set-field"><span>RIR</span><%= set_form.number_field :rir, min: 0, step: 0.5 %></label>
+            <label class="set-field"><span>RIR</span><%= set_form.number_field :rir, min: 0, step: measurement_step %></label>
             <label class="set-field set-field--checkbox"><span>Warm-up</span><%= set_form.check_box :is_warmup %></label>
             <label class="set-field set-field--checkbox"><span>Remove</span><%= set_form.check_box :_destroy %></label>
           </div>

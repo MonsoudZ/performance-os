@@ -2,6 +2,15 @@ class WorkoutSessionsController < ApplicationController
   include MeasurementParams
   include TrainingRecomputable
 
+  PER_PAGE = 25
+
+  def index
+    @workout_sessions = Current.user.workout_sessions
+      .includes(set_entries: :exercise)
+      .order(performed_at: :desc)
+      .limit(PER_PAGE)
+  end
+
   def new
     @workout_session = Current.user.workout_sessions.new(performed_at: Time.current)
     @workout_template = requested_workout_template

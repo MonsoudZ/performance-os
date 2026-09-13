@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["rows", "row", "template", "setIndex", "weight", "reps", "warmup", "volume", "search", "results"]
+  static targets = ["rows", "row", "template", "setIndex", "weight", "reps", "rir", "warmup", "volume", "search", "results"]
   // The inputs carry whatever unit the user reads, so the running total does too.
   static values = { unit: { type: String, default: "kg" } }
 
@@ -18,7 +18,7 @@ export default class extends Controller {
       exerciseName: row.dataset.exerciseName,
       weight: row.querySelector("[data-workout-log-target='weight']")?.value,
       reps: row.querySelector("[data-workout-log-target='reps']")?.value,
-      rir: row.querySelector("[aria-label='RIR']")?.value
+      rir: row.querySelector("[data-workout-log-target='rir']")?.value
     })
   }
 
@@ -97,7 +97,7 @@ export default class extends Controller {
     const row = this.rowTargets[this.rowTargets.length - 1]
     row.querySelector("[data-workout-log-target='weight']").value = weight
     row.querySelector("[data-workout-log-target='reps']").value = reps
-    row.querySelector("[aria-label='RIR']").value = rir
+    row.querySelector("[data-workout-log-target='rir']").value = rir
     this.nextIndex += 1
     this.renumberSets()
     this.updateVolume()

@@ -28,6 +28,13 @@ Rails.application.configure do
   # without 'unsafe-inline'. A per-request random nonce is used rather than the
   # session id: auth here is a custom signed cookie, so the Rails session is
   # empty and request.session.id would yield a blank, unusable nonce.
+  #
+  # style-src is nonced for one reason: Turbo injects a <style> element for its
+  # navigation progress bar and reads this nonce off the csp-meta tag to sign it.
+  # Without the nonce the browser refuses that element, so every navigation ran
+  # without a loading indicator and logged a CSP violation. Noncing keeps inline
+  # <style> blocked for everything that cannot present this request's nonce,
+  # which is the property 'unsafe-inline' would have thrown away.
   config.content_security_policy_nonce_generator = ->(_request) { SecureRandom.base64(16) }
-  config.content_security_policy_nonce_directives = %w[script-src]
+  config.content_security_policy_nonce_directives = %w[script-src style-src]
 end
