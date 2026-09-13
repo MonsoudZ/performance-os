@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   EXPERIENCE_LEVELS = %w[beginner intermediate advanced].freeze
+  SEXES = %w[male female unspecified].freeze
   EQUIPMENT_OPTIONS = Exercise::MODALITIES
 
   has_secure_password
@@ -25,10 +26,16 @@ class User < ApplicationRecord
   has_many :coach_narratives, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
+  # The profile's sex select offers "Prefer not to say", which posts an empty
+  # string. The column's check constraint accepts NULL but not "", so without
+  # this the whole profile save fails at the database — taking every other field
+  # on the form down with it.
+  normalizes :sex, with: ->(value) { value.presence }
 
   validates :email_address, presence: true, uniqueness: true
   validates :unit_system, inclusion: { in: %w[metric imperial] }
   validates :experience_level, inclusion: { in: EXPERIENCE_LEVELS }
+  validates :sex, inclusion: { in: SEXES }, allow_nil: true
   validates :training_days_per_week,
     numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 7 }
   validates :available_equipment, presence: true

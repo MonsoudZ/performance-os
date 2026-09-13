@@ -8,8 +8,8 @@ risk they carry, not by size.
 - [x] **`unit_system` is honored across the UI.** Storage stays canonical —
   kilograms and centimetres — so every evaluator, decision and progression
   comparison is unit-agnostic and switching systems changes nothing about a
-  user's data. Conversion happens at two boundaries only: `WeightsHelper` on the
-  way out, `WeightParams` on the way in.
+  user's data. Conversion happens at two boundaries only: `MeasurementsHelper`
+  on the way out, `MeasurementParams` on the way in.
 
   Two things were deliberate. Controllers name their measurement fields
   explicitly instead of the concern inferring them from a `_kg` suffix, because a
@@ -19,10 +19,24 @@ risk they carry, not by size.
   headline, the view composes its own sentence rather than doing string surgery on
   the record, falling back to the stored text when it cannot.
 
-  Remaining: `DailyTrainingOrchestrator` and `DoubleProgressionEvaluator` still
-  write kilograms into `guidance` prose in a few places where no numeric field
-  accompanies it. Those read fine today because the guidance rarely names a load,
-  but a fully unit-neutral output schema would need a `rule_version` bump on both.
+  Conditioning followed: distance and pace were hardcoded to kilometres and
+  `/km`. `WeeklyConditioningSummary` now reports exact metres, `ConditioningDirective`
+  targets metres and writes no unit into its prose at all, and the view composes
+  the progress sentence in the reader's units.
+
+  Remaining: `DoubleProgressionEvaluator` still writes kilograms into two
+  `headline` strings. Both are rebuilt by `progression_headline` for display, so
+  no user reads them, but making the stored output unit-neutral would need a
+  `rule_version` bump.
+
+- [x] **Measurements are stored exactly.** Columns held two decimal places, which
+  is coarser than a unit conversion needs: 45.25 lb was stored as 20.53 kg and
+  read back as 45.3, and re-saving the set persisted the altered value. Weight
+  columns now hold six decimals and length four — the scales are derived, not
+  chosen, from what it takes for a typed value to survive the round trip, and the
+  tests pin that. `Units` does BigDecimal arithmetic throughout, and nothing is
+  padded or truncated to a fixed width: a value renders at the precision it has.
+  Measurement inputs take `step="any"`, so a 1.25 kg micro-plate is enterable.
 
 ## Security
 

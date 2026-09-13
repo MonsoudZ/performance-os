@@ -1,5 +1,5 @@
 class WorkoutSessionsController < ApplicationController
-  include WeightParams
+  include MeasurementParams
   include TrainingRecomputable
 
   def new

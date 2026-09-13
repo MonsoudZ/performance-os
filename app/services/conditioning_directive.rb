@@ -5,7 +5,7 @@
 class ConditioningDirective
   # Per-goal weekly conditioning emphasis and target.
   GOALS = {
-    "marathon"             => { metric: :distance, target: 40,  label: "weekly km",       emphasis: :endurance },
+    "marathon"             => { metric: :distance, target: 40_000, label: "weekly distance", emphasis: :endurance },
     "longevity"            => { metric: :zone2,    target: 150, label: "Zone 2 minutes",  emphasis: :base },
     "athletic_performance" => { metric: :sessions, target: 3,   label: "sessions",         emphasis: :mixed },
     "vertical_jump"        => { metric: :sessions, target: 2,   label: "power sessions",    emphasis: :power },
@@ -52,7 +52,7 @@ class ConditioningDirective
 
   def done
     @done ||= case config[:metric]
-    when :distance then summary.total_distance_km
+    when :distance then summary.total_distance_meters
     when :zone2 then summary.zone2_minutes
     else summary.session_count
     end
@@ -62,8 +62,11 @@ class ConditioningDirective
     done >= config[:target]
   end
 
+  # Deliberately no numbers and no unit. The view renders progress from the
+  # `done`/`target`/`metric` fields below in the reader's units; baking a
+  # sentence here would freeze kilometres into an immutable decision.
   def progress_note
-    "You're at #{done} of #{config[:target]} #{config[:label]} this week."
+    on_track? ? "You've hit this week's target." : "You're behind this week's target."
   end
 
   def recommendation

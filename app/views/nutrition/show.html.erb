@@ -23,7 +23,7 @@
 
       <%= form_with model: @body_metric, class: "stacked-form" do |form| %>
         <div class="form-grid">
-          <label><span>Weight (<%= weight_unit %>)</span><%= form.number_field :weight_kg, value: weight_field_value(form.object.weight_kg), min: 1, step: 0.1, required: true %></label>
+          <label><span>Weight (<%= weight_unit %>)</span><%= form.number_field :weight_kg, value: weight_field_value(form.object.weight_kg), min: 0, step: measurement_step, required: true %></label>
           <label><span>Measured on</span><%= form.date_field :measured_on, required: true %></label>
         </div>
         <%= form.submit "Log weight", class: "button" %>

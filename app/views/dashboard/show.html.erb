@@ -260,10 +260,13 @@
       <div>
         <p class="eyebrow">Conditioning directive</p>
         <h2><%= conditioning["headline"] %></h2>
-        <p><%= conditioning["guidance"] %></p>
+        <p><%= conditioning_progress(conditioning) %> <%= conditioning["guidance"] %></p>
       </div>
       <div class="nutrition-directive__numbers">
-        <div><span><%= conditioning["label"].humanize %></span><strong><%= conditioning["done"] %> / <%= conditioning["target"] %></strong></div>
+        <div>
+          <span><%= conditioning["label"].humanize %></span>
+          <strong><%= conditioning_amount(conditioning["metric"], conditioning["done"]) %> / <%= conditioning_amount(conditioning["metric"], conditioning["target"]) %></strong>
+        </div>
       </div>
       <%= link_to "Log conditioning", conditioning_sessions_path, class: "text-link" %>
     </section>

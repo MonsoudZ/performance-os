@@ -39,4 +39,23 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
     patch profile_path, params: { user: { max_hr: 188 } }
     assert_equal 188, @user.reload.max_hr
   end
+  test "saving the profile with no sex selected succeeds" do
+    # The select offers "Prefer not to say", which posts "". The column's check
+    # constraint takes NULL but not "", so this used to fail at the database and
+    # silently discard every other field on the form — including unit_system.
+    patch profile_path, params: { user: { sex: "", unit_system: "imperial" } }
+
+    @user.reload
+
+    assert_nil @user.sex
+    assert_equal "imperial", @user.unit_system
+  end
+
+  test "rejects an unrecognized sex as a validation error, not a database error" do
+    assert_nothing_raised do
+      patch profile_path, params: { user: { sex: "wombat" } }
+    end
+
+    assert_not_equal "wombat", @user.reload.sex
+  end
 end

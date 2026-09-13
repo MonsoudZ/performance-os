@@ -1,5 +1,5 @@
 class ProfilesController < ApplicationController
-  include WeightParams
+  include MeasurementParams
   def edit
     @user = Current.user
   end

@@ -1,6 +1,6 @@
 class WeeklyConditioningSummary
   Summary = Data.define(
-    :session_count, :total_distance_km, :total_duration_minutes,
+    :session_count, :total_distance_meters, :total_duration_minutes,
     :zone_minutes, :zone2_minutes, :by_activity
   )
 
@@ -14,7 +14,7 @@ class WeeklyConditioningSummary
 
     Summary.new(
       session_count: sessions.size,
-      total_distance_km: (sessions.sum { |s| s.distance_meters.to_i } / 1000.0).round(1),
+      total_distance_meters: sessions.sum { |s| s.distance_meters.to_i },
       total_duration_minutes: (sessions.sum(&:duration_seconds) / 60.0).round,
       zone_minutes: zone_minutes(sessions),
       zone2_minutes: zone_minutes(sessions)["Z2"] || 0,

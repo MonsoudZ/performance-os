@@ -6,12 +6,12 @@ class ConditioningSessionTest < ActiveSupport::TestCase
   test "duration and distance accessors convert to canonical units" do
     session = @user.conditioning_sessions.new(activity_type: "run", performed_at: Time.current)
     session.duration_minutes = 48
-    session.distance_km = 8
+    session.distance_meters = 8_000
 
     assert_equal 2880, session.duration_seconds
     assert_equal 8000, session.distance_meters
     assert_equal 48.0, session.duration_minutes
-    assert_equal 8.0, session.distance_km
+    assert_equal 8_000, session.distance_meters
   end
 
   test "pace per km for distance-based activities" do

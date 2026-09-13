@@ -1,6 +1,6 @@
 class ExercisePrescriptionsController < ApplicationController
   include TrainingRecomputable
-  include WeightParams
+  include MeasurementParams
 
   before_action :set_prescription, only: %i[edit update finish]
 

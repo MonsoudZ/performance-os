@@ -1,5 +1,6 @@
 class ConditioningSessionsController < ApplicationController
   include TrainingRecomputable
+  include MeasurementParams
 
   def index
     load_workspace
@@ -37,8 +38,11 @@ class ConditioningSessionsController < ApplicationController
   end
 
   def conditioning_params
-    params.require(:conditioning_session).permit(
-      :activity_type, :performed_at, :duration_minutes, :distance_km, :avg_hr_bpm, :notes
+    to_canonical_units(
+      params.require(:conditioning_session).permit(
+        :activity_type, :performed_at, :duration_minutes, :distance_meters, :avg_hr_bpm, :notes
+      ),
+      distances: [ :distance_meters ]
     )
   end
 end

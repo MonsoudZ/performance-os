@@ -10,18 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "body_metrics", force: :cascade do |t|
-    t.decimal "body_fat_pct", precision: 4, scale: 1
+    t.decimal "body_fat_pct", precision: 5, scale: 2
     t.datetime "created_at", null: false
     t.date "measured_on", null: false
     t.string "source", default: "manual", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.decimal "weight_kg", precision: 6, scale: 2
+    t.decimal "weight_kg", precision: 10, scale: 6
     t.index ["user_id", "measured_on"], name: "index_body_metrics_on_user_id_and_measured_on"
     t.index ["user_id"], name: "index_body_metrics_on_user_id"
     t.check_constraint "body_fat_pct IS NULL OR body_fat_pct >= 0::numeric AND body_fat_pct <= 100::numeric", name: "body_metrics_body_fat_check"
@@ -43,7 +43,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["coaching_decision_id"], name: "index_coach_narratives_on_coaching_decision_id"
     t.index ["user_id", "created_at"], name: "index_coach_narratives_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_coach_narratives_on_user_id"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'complete'::character varying, 'failed'::character varying]::text[])", name: "coach_narratives_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'complete'::character varying::text, 'failed'::character varying::text])", name: "coach_narratives_status_check"
   end
 
   create_table "coaching_decision_links", force: :cascade do |t|
@@ -55,7 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["child_decision_id"], name: "index_coaching_decision_links_on_child_decision_id"
     t.index ["parent_decision_id", "child_decision_id"], name: "index_coaching_decision_links_unique", unique: true
     t.index ["parent_decision_id"], name: "index_coaching_decision_links_on_parent_decision_id"
-    t.check_constraint "role::text = ANY (ARRAY['readiness'::character varying, 'progression'::character varying, 'nutrition'::character varying, 'weekly_review'::character varying]::text[])", name: "coaching_decision_links_role_check"
+    t.check_constraint "role::text = ANY (ARRAY['readiness'::character varying::text, 'progression'::character varying::text, 'nutrition'::character varying::text, 'weekly_review'::character varying::text])", name: "coaching_decision_links_role_check"
   end
 
   create_table "coaching_decisions", force: :cascade do |t|
@@ -75,7 +75,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["retracted_at"], name: "index_coaching_decisions_on_retracted_at"
     t.index ["user_id", "decision_type", "created_at"], name: "index_decisions_on_user_type_and_created_at"
     t.index ["user_id"], name: "index_coaching_decisions_on_user_id"
-    t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying, 'moderate'::character varying, 'high'::character varying]::text[])", name: "coaching_decisions_confidence_check"
+    t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying::text, 'moderate'::character varying::text, 'high'::character varying::text])", name: "coaching_decisions_confidence_check"
     t.check_constraint "retracted_at IS NULL AND retraction_reason IS NULL OR retracted_at IS NOT NULL AND retraction_reason IS NOT NULL", name: "coaching_decisions_retraction_check"
   end
 
@@ -126,14 +126,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["exercise_id"], name: "index_exercise_muscle_contributions_on_exercise_id"
     t.index ["muscle_group_id"], name: "index_exercise_muscle_contributions_on_muscle_group_id"
     t.check_constraint "fraction > 0::numeric AND fraction <= 1::numeric", name: "exercise_muscle_contributions_fraction_check"
-    t.check_constraint "role::text = ANY (ARRAY['primary'::character varying, 'secondary'::character varying]::text[])", name: "exercise_muscle_contributions_role_check"
+    t.check_constraint "role::text = ANY (ARRAY['primary'::character varying::text, 'secondary'::character varying::text])", name: "exercise_muscle_contributions_role_check"
   end
 
   create_table "exercise_prescriptions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "ended_on"
     t.bigint "exercise_id", null: false
-    t.decimal "increment_kg", precision: 5, scale: 2, null: false
+    t.decimal "increment_kg", precision: 9, scale: 6, null: false
     t.string "progression_model", default: "double_progression", null: false
     t.integer "rep_max", null: false
     t.integer "rep_min", null: false
@@ -148,7 +148,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["user_id"], name: "index_exercise_prescriptions_on_user_id"
     t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "exercise_prescriptions_dates_check"
     t.check_constraint "increment_kg > 0::numeric AND working_sets > 0", name: "exercise_prescriptions_progression_check"
-    t.check_constraint "progression_model::text = ANY (ARRAY['double_progression'::character varying, 'top_set'::character varying]::text[])", name: "exercise_prescriptions_progression_model_check"
+    t.check_constraint "progression_model::text = ANY (ARRAY['double_progression'::character varying::text, 'top_set'::character varying::text])", name: "exercise_prescriptions_progression_model_check"
     t.check_constraint "rep_min > 0 AND rep_max >= rep_min", name: "exercise_prescriptions_rep_range_check"
     t.check_constraint "target_rir_min >= 0::numeric AND target_rir_max >= target_rir_min", name: "exercise_prescriptions_rir_range_check"
   end
@@ -163,8 +163,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.bigint "user_id"
     t.index ["user_id", "name"], name: "index_exercises_on_user_id_and_name", unique: true
     t.index ["user_id"], name: "index_exercises_on_user_id"
-    t.check_constraint "default_unit::text = ANY (ARRAY['kg'::character varying, 'reps'::character varying, 'seconds'::character varying, 'meters'::character varying]::text[])", name: "exercises_default_unit_check"
-    t.check_constraint "modality::text = ANY (ARRAY['barbell'::character varying, 'dumbbell'::character varying, 'machine'::character varying, 'bodyweight'::character varying, 'cable'::character varying, 'other'::character varying]::text[])", name: "exercises_modality_check"
+    t.check_constraint "default_unit::text = ANY (ARRAY['kg'::character varying::text, 'reps'::character varying::text, 'seconds'::character varying::text, 'meters'::character varying::text])", name: "exercises_default_unit_check"
+    t.check_constraint "modality::text = ANY (ARRAY['barbell'::character varying::text, 'dumbbell'::character varying::text, 'machine'::character varying::text, 'bodyweight'::character varying::text, 'cable'::character varying::text, 'other'::character varying::text])", name: "exercises_modality_check"
   end
 
   create_table "expenditure_estimates", id: false, force: :cascade do |t|
@@ -173,11 +173,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.date "estimate_date", null: false
     t.decimal "estimated_tdee", precision: 7, scale: 1, null: false
     t.decimal "intake_kcal", precision: 7, scale: 1
-    t.decimal "trend_weight_kg", precision: 6, scale: 2
+    t.decimal "trend_weight_kg", precision: 10, scale: 6
     t.bigint "user_id", null: false
     t.index ["user_id", "estimate_date"], name: "index_expenditure_estimates_on_user_id_and_estimate_date", unique: true
     t.index ["user_id"], name: "index_expenditure_estimates_on_user_id"
-    t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying, 'moderate'::character varying, 'high'::character varying]::text[])", name: "expenditure_estimates_confidence_check"
+    t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying::text, 'moderate'::character varying::text, 'high'::character varying::text])", name: "expenditure_estimates_confidence_check"
   end
 
   create_table "food_log_entries", force: :cascade do |t|
@@ -198,9 +198,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["food_id"], name: "index_food_log_entries_on_food_id"
     t.index ["user_id", "logged_at"], name: "index_food_log_entries_on_user_id_and_logged_at"
     t.index ["user_id"], name: "index_food_log_entries_on_user_id"
-    t.check_constraint "meal_type::text = ANY (ARRAY['breakfast'::character varying, 'lunch'::character varying, 'dinner'::character varying, 'snack'::character varying]::text[])", name: "food_log_entries_meal_type_check"
+    t.check_constraint "meal_type::text = ANY (ARRAY['breakfast'::character varying::text, 'lunch'::character varying::text, 'dinner'::character varying::text, 'snack'::character varying::text])", name: "food_log_entries_meal_type_check"
     t.check_constraint "quantity_grams > 0::numeric AND kcal >= 0::numeric AND protein_g >= 0::numeric AND carb_g >= 0::numeric AND fat_g >= 0::numeric", name: "food_log_entries_values_check"
-    t.check_constraint "source::text = ANY (ARRAY['manual'::character varying, 'copy'::character varying]::text[])", name: "food_log_entries_source_check"
+    t.check_constraint "source::text = ANY (ARRAY['manual'::character varying::text, 'copy'::character varying::text])", name: "food_log_entries_source_check"
   end
 
   create_table "foods", force: :cascade do |t|
@@ -220,7 +220,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["user_id", "name", "brand"], name: "index_foods_on_user_id_and_name_and_brand"
     t.index ["user_id"], name: "index_foods_on_user_id"
     t.check_constraint "serving_grams > 0::numeric AND kcal >= 0::numeric AND protein_g >= 0::numeric AND carb_g >= 0::numeric AND fat_g >= 0::numeric", name: "foods_nutrition_values_check"
-    t.check_constraint "source::text = ANY (ARRAY['manual'::character varying, 'barcode'::character varying, 'import'::character varying, 'verified'::character varying]::text[])", name: "foods_source_check"
+    t.check_constraint "source::text = ANY (ARRAY['manual'::character varying::text, 'barcode'::character varying::text, 'import'::character varying::text, 'verified'::character varying::text])", name: "foods_source_check"
   end
 
   create_table "goal_periods", force: :cascade do |t|
@@ -234,7 +234,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["user_id"], name: "index_goal_periods_on_active_user", unique: true, where: "(ended_on IS NULL)"
     t.index ["user_id"], name: "index_goal_periods_on_user_id"
     t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "goal_periods_dates_check"
-    t.check_constraint "goal_type::text = ANY (ARRAY['build_muscle'::character varying, 'lose_fat'::character varying, 'increase_strength'::character varying, 'athletic_performance'::character varying, 'vertical_jump'::character varying, 'marathon'::character varying, 'longevity'::character varying]::text[])", name: "goal_periods_goal_type_check"
+    t.check_constraint "goal_type::text = ANY (ARRAY['build_muscle'::character varying::text, 'lose_fat'::character varying::text, 'increase_strength'::character varying::text, 'athletic_performance'::character varying::text, 'vertical_jump'::character varying::text, 'marathon'::character varying::text, 'longevity'::character varying::text])", name: "goal_periods_goal_type_check"
   end
 
   create_table "mesocycles", force: :cascade do |t|
@@ -251,7 +251,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["user_id"], name: "index_mesocycles_on_user_id"
     t.check_constraint "deload_week IS NULL OR deload_week > 0 AND deload_week <= weeks", name: "mesocycles_deload_week_check"
     t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "mesocycles_dates_check"
-    t.check_constraint "focus::text = ANY (ARRAY['hypertrophy'::character varying, 'strength'::character varying, 'power'::character varying]::text[])", name: "mesocycles_focus_check"
+    t.check_constraint "focus::text = ANY (ARRAY['hypertrophy'::character varying::text, 'strength'::character varying::text, 'power'::character varying::text])", name: "mesocycles_focus_check"
     t.check_constraint "weeks > 0 AND weeks <= 16", name: "mesocycles_weeks_check"
   end
 
@@ -296,7 +296,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
 
   create_table "set_entries", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.virtual "estimated_1rm_kg", type: :decimal, precision: 7, scale: 2, as: "(weight_kg * ((1)::numeric + ((reps)::numeric / (30)::numeric)))", stored: true
+    t.virtual "estimated_1rm_kg", type: :decimal, precision: 12, scale: 6, as: "(weight_kg * ((1)::numeric + ((reps)::numeric / (30)::numeric)))", stored: true
     t.bigint "exercise_id", null: false
     t.boolean "is_warmup", default: false, null: false
     t.integer "reps"
@@ -304,7 +304,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.decimal "rpe", precision: 3, scale: 1
     t.integer "set_index", null: false
     t.datetime "updated_at", null: false
-    t.decimal "weight_kg", precision: 6, scale: 2
+    t.decimal "weight_kg", precision: 10, scale: 6
     t.bigint "workout_session_id", null: false
     t.index ["exercise_id", "created_at"], name: "index_set_entries_on_exercise_id_and_created_at"
     t.index ["exercise_id"], name: "index_set_entries_on_exercise_id"
@@ -464,7 +464,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.string "experience_level", default: "intermediate", null: false
-    t.decimal "height_cm", precision: 5, scale: 1
+    t.decimal "height_cm", precision: 8, scale: 4
     t.integer "max_hr"
     t.string "password_digest", null: false
     t.string "sex"
@@ -473,11 +473,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.string "unit_system", default: "metric", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
-    t.check_constraint "experience_level::text = ANY (ARRAY['beginner'::character varying, 'intermediate'::character varying, 'advanced'::character varying]::text[])", name: "users_experience_level_check"
+    t.check_constraint "experience_level::text = ANY (ARRAY['beginner'::character varying::text, 'intermediate'::character varying::text, 'advanced'::character varying::text])", name: "users_experience_level_check"
     t.check_constraint "max_hr IS NULL OR max_hr > 0", name: "users_max_hr_check"
-    t.check_constraint "sex::text = ANY (ARRAY['male'::character varying, 'female'::character varying, 'unspecified'::character varying]::text[])", name: "users_sex_check"
+    t.check_constraint "sex::text = ANY (ARRAY['male'::character varying::text, 'female'::character varying::text, 'unspecified'::character varying::text])", name: "users_sex_check"
     t.check_constraint "training_days_per_week >= 1 AND training_days_per_week <= 7", name: "users_training_days_check"
-    t.check_constraint "unit_system::text = ANY (ARRAY['metric'::character varying, 'imperial'::character varying]::text[])", name: "users_unit_system_check"
+    t.check_constraint "unit_system::text = ANY (ARRAY['metric'::character varying::text, 'imperial'::character varying::text])", name: "users_unit_system_check"
   end
 
   create_table "wearable_devices", force: :cascade do |t|
@@ -511,14 +511,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_120000) do
     t.index ["user_id"], name: "index_wearable_samples_on_user_id"
     t.index ["wearable_device_id", "external_id"], name: "index_wearable_samples_on_wearable_device_id_and_external_id", unique: true
     t.index ["wearable_device_id"], name: "index_wearable_samples_on_wearable_device_id"
-    t.check_constraint "metric_type::text = ANY (ARRAY['hrv_sdnn_ms'::character varying, 'resting_hr_bpm'::character varying, 'sleep_asleep'::character varying]::text[])", name: "wearable_samples_metric_type_check"
+    t.check_constraint "metric_type::text = ANY (ARRAY['hrv_sdnn_ms'::character varying::text, 'resting_hr_bpm'::character varying::text, 'sleep_asleep'::character varying::text])", name: "wearable_samples_metric_type_check"
     t.check_constraint "value IS NULL OR value >= 0::numeric", name: "wearable_samples_value_check"
   end
 
   create_table "weight_trends", id: false, force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.decimal "ewma_kg", precision: 6, scale: 2, null: false
-    t.decimal "raw_kg", precision: 6, scale: 2
+    t.decimal "ewma_kg", precision: 10, scale: 6, null: false
+    t.decimal "raw_kg", precision: 10, scale: 6
     t.date "trend_date", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false

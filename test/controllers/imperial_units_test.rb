@@ -87,16 +87,22 @@ class ImperialUnitsTest < ActionDispatch::IntegrationTest
   end
 
   test "the training-target form asks for pounds and shows the stored value in pounds" do
-    get edit_exercise_prescription_path(prescribe(increment_kg: 2.27))
+    prescription = prescribe(increment_kg: Units.weight_to_kg(5, "imperial"))
+
+    get edit_exercise_prescription_path(prescription)
 
     assert_response :success
     assert_select "label", text: /Load increment \(lb\)/
-    assert_select "input[name='exercise_prescription[increment_kg]'][value='5.0']"
+    assert_select "input[name='exercise_prescription[increment_kg]'][value='5']", { count: 1 },
+      "5 lb reads back as 5, not 5.0 or 4.9"
   end
 
   test "the exercise page reports history in pounds" do
     session = @user.workout_sessions.create!(performed_at: 1.day.ago)
-    session.set_entries.create!(exercise: @exercise, set_index: 1, weight_kg: 102.06, reps: 5, rir: 1)
+    session.set_entries.create!(
+      exercise: @exercise, set_index: 1,
+      weight_kg: Units.weight_to_kg(225, "imperial"), reps: 5, rir: 1
+    )
 
     get exercise_path(@exercise)
 

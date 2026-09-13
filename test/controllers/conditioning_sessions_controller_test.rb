@@ -16,7 +16,7 @@ class ConditioningSessionsControllerTest < ActionDispatch::IntegrationTest
   test "logs a session with entered units converted to canonical" do
     assert_difference "ConditioningSession.count", 1 do
       post conditioning_sessions_path, params: {
-        conditioning_session: { activity_type: "run", performed_at: Time.current, duration_minutes: 45, distance_km: 8, avg_hr_bpm: 150 }
+        conditioning_session: { activity_type: "run", performed_at: Time.current, duration_minutes: 45, distance_meters: 8, avg_hr_bpm: 150 }
       }
     end
 

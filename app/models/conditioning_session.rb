@@ -27,16 +27,6 @@ class ConditioningSession < ApplicationRecord
     self.duration_seconds = value.present? ? (value.to_f * 60).round : nil
   end
 
-  def distance_km
-    return if distance_meters.nil?
-
-    (distance_meters / 1000.0).round(2)
-  end
-
-  def distance_km=(value)
-    self.distance_meters = value.present? ? (value.to_f * 1000).round : nil
-  end
-
   def distance_based?
     DISTANCE_BASED.include?(activity_type)
   end

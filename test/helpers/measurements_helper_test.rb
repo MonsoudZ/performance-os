@@ -1,7 +1,7 @@
 require "test_helper"
 
-class WeightsHelperTest < ActionView::TestCase
-  include WeightsHelper
+class MeasurementsHelperTest < ActionView::TestCase
+  include MeasurementsHelper
 
   teardown { Current.session = nil }
 
@@ -17,8 +17,8 @@ class WeightsHelperTest < ActionView::TestCase
     sign_in_as_unit_system(users(:two))
 
     assert_equal "lb", weight_unit
-    assert_equal "220.5 lb", weight(100)
-    assert_equal "220.5", weight_amount(100)
+    assert_equal "220.4623 lb", weight(100)
+    assert_equal "220.4623", weight_amount(100)
   end
 
   test "falls back to kilograms with no signed-in user" do
@@ -39,16 +39,16 @@ class WeightsHelperTest < ActionView::TestCase
   test "form field values are converted into the unit the label claims" do
     sign_in_as_unit_system(users(:two))
 
-    assert_in_delta 220.5, weight_field_value(100), 0.05
-    assert_equal 1.0, weight_field_step
-    assert_in_delta 70.9, length_field_value(180), 0.05
+    assert_equal "220.4623", weight_field_value(100)
+    assert_equal "any", measurement_step, "a pinned step would forbid real entries"
+    assert_equal "70.8661", length_field_value(180)
   end
 
   test "converts height for an imperial user" do
     sign_in_as_unit_system(users(:two))
 
     assert_equal "in", length_unit
-    assert_equal "70.9", length_amount(180)
+    assert_equal "70.8661", length_amount(180)
   end
 
   test "rebuilds a progression headline in the reader's units" do
@@ -61,7 +61,7 @@ class WeightsHelperTest < ActionView::TestCase
       "next_weight_kg" => 102.5
     }
 
-    assert_equal "Add 5.5 lb next time", progression_headline(increase)
+    assert_equal "Add 5.5116 lb next time", progression_headline(increase)
   end
 
   test "rebuilds a deload headline in the reader's units" do
@@ -69,7 +69,7 @@ class WeightsHelperTest < ActionView::TestCase
 
     deload = { "status" => "deload", "headline" => "Deload to 90 kg", "next_weight_kg" => 90.0 }
 
-    assert_equal "Deload to 198.4 lb", progression_headline(deload)
+    assert_equal "Deload to 198.416 lb", progression_headline(deload)
   end
 
   test "keeps the stored headline when a decision carries no weights" do
@@ -86,9 +86,9 @@ class WeightsHelperTest < ActionView::TestCase
   test "rebuilds daily-plan lift headlines in the reader's units" do
     sign_in_as_unit_system(users(:two))
 
-    assert_equal "226 lb",
+    assert_equal "225.9738 lb",
       lift_headline({ "action" => "increase", "headline" => "102.5 kg", "next_weight_kg" => 102.5 })
-    assert_equal "226 lb if warm-ups are crisp",
+    assert_equal "225.9738 lb if warm-ups are crisp",
       lift_headline({ "action" => "conditional_increase", "headline" => "102.5 kg if warm-ups are crisp", "next_weight_kg" => 102.5 })
   end
 

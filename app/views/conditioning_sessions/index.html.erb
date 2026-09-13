@@ -20,7 +20,7 @@
 
     <div class="workout-summary">
       <div><span>Sessions</span><strong><%= @summary.session_count %></strong></div>
-      <div><span>Distance</span><strong><%= @summary.total_distance_km %> km</strong></div>
+      <div><span>Distance</span><strong><%= distance(@summary.total_distance_meters) %></strong></div>
       <div><span>Time</span><strong><%= format_duration(@summary.total_duration_minutes) %></strong></div>
       <div><span>Zone 2</span><strong><%= @summary.zone2_minutes %> min</strong></div>
     </div>
@@ -62,8 +62,8 @@
           <span>Activity</span>
           <%= form.select :activity_type, ConditioningSession::ACTIVITY_TYPES.map { |type| [ type.humanize, type ] } %>
         </label>
-        <label><span>Duration (min)</span><%= form.number_field :duration_minutes, min: 1, step: 0.5, required: true %></label>
-        <label><span>Distance (km)</span><%= form.number_field :distance_km, min: 0, step: 0.1 %></label>
+        <label><span>Duration (min)</span><%= form.number_field :duration_minutes, min: 0, step: measurement_step, required: true %></label>
+        <label><span>Distance (<%= distance_unit %>)</span><%= form.number_field :distance_meters, value: distance_field_value(@conditioning_session.distance_meters), min: 0, step: measurement_step %></label>
         <label><span>Avg HR (bpm)</span><%= form.number_field :avg_hr_bpm, min: 1, max: 250 %></label>
         <label><span>Performed at</span><%= form.datetime_local_field :performed_at, required: true %></label>
       </div>
@@ -88,7 +88,7 @@
             <span>
               <%= session.performed_at.strftime("%b %-d") %> ·
               <%= format_duration((session.duration_seconds / 60.0).round) %>
-              <% if session.distance_km %> · <%= session.distance_km %> km · <%= format_pace(session.pace_seconds_per_km) %><% end %>
+              <% if session.distance_meters %> · <%= distance(session.distance_meters) %> · <%= pace(session.pace_seconds_per_km) %><% end %>
               <% if session.avg_hr_bpm %> · <%= session.avg_hr_bpm %> bpm<% end %>
             </span>
             <small>

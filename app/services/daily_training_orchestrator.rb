@@ -2,7 +2,9 @@ class DailyTrainingOrchestrator
   RULE_KEY = "daily_training_orchestrator.v1"
   # 1.1.0 adds next_weight_kg to each lift directive so the UI can render the
   # load in the reader's units instead of parsing it back out of the headline.
-  RULE_VERSION = "1.1.0"
+  # 1.2.0 snapshots conditioning distance as canonical metres rather than
+  # pre-rounded kilometres.
+  RULE_VERSION = "1.2.0"
 
   def initialize(user, plan_date: nil)
     @user = user
@@ -122,7 +124,7 @@ class DailyTrainingOrchestrator
   def conditioning_identity
     {
       "sessions" => conditioning_summary.session_count,
-      "distance_km" => conditioning_summary.total_distance_km,
+      "distance_meters" => conditioning_summary.total_distance_meters,
       "zone2_minutes" => conditioning_summary.zone2_minutes
     }
   end

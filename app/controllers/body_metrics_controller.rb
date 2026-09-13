@@ -1,5 +1,5 @@
 class BodyMetricsController < ApplicationController
-  include WeightParams
+  include MeasurementParams
   def create
     body_metric = Current.user.body_metrics.new(body_metric_params)
 

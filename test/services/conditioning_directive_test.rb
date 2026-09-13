@@ -5,8 +5,8 @@ class ConditioningDirectiveTest < ActiveSupport::TestCase
     directive = call("marathon", "push", km: 10.0)
 
     assert_equal "distance", directive["metric"]
-    assert_equal 40, directive["target"]
-    assert_equal 10.0, directive["done"]
+    assert_equal 40_000, directive["target"]
+    assert_equal 10_000, directive["done"]
     assert_equal "quality", directive["focus"]
     assert_match(/long run|tempo/i, directive["headline"])
   end
@@ -31,7 +31,8 @@ class ConditioningDirectiveTest < ActiveSupport::TestCase
     directive = call("increase_strength", "steady", zone2: 10)
 
     assert_equal "steady", directive["focus"]
-    assert_match(/Zone 2/i, directive["guidance"])
+    assert_match(/Zone 2/i, directive["headline"])
+    assert_equal "Zone 2 minutes", directive["label"]
   end
 
   test "no goal falls back to a base Zone 2 default" do
@@ -45,7 +46,7 @@ class ConditioningDirectiveTest < ActiveSupport::TestCase
 
   def call(goal_type, readiness_status, sessions: 0, km: 0.0, zone2: 0)
     goal = goal_type && GoalPeriod.new(goal_type: goal_type)
-    summary = Struct.new(:session_count, :total_distance_km, :zone2_minutes).new(sessions, km, zone2)
+    summary = Struct.new(:session_count, :total_distance_meters, :zone2_minutes).new(sessions, (km * 1000).round, zone2)
     ConditioningDirective.new(goal: goal, readiness_status: readiness_status, summary: summary).call
   end
 end
