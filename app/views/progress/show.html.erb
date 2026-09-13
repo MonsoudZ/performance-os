@@ -40,7 +40,10 @@
       </div>
       <p class="evidence-note">Ticks mark minimum-effective (MEV), adaptive-target (MAV), and maximum-recoverable (MRV) weekly sets. Secondary muscles count as half a set.</p>
     <% else %>
-      <div class="empty-state"><p>Log a workout this week to see volume per muscle.</p></div>
+      <div class="empty-state">
+        <p>Nothing logged this week yet, so there is no volume to count.</p>
+        <p><%= link_to "Log a workout", new_workout_session_path, class: "text-link" %> and each working set lands against the muscles it trains.</p>
+      </div>
     <% end %>
   </section>
 
@@ -71,7 +74,10 @@
         <% end %>
       </div>
     <% else %>
-      <div class="empty-state"><p>Log working sets to start tracking estimated-1RM trends.</p></div>
+      <div class="empty-state">
+        <p>No estimated-1RM trend yet — it needs at least two sessions of the same lift.</p>
+        <p><%= link_to "Log a workout", new_workout_session_path, class: "text-link" %> to start one.</p>
+      </div>
     <% end %>
   </section>
 

@@ -170,6 +170,56 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".withdrawn-note", 0
   end
 
+  test "a brand-new account is told what setup is still outstanding" do
+    get root_path
+
+    assert_response :success
+    assert_select ".setup-panel", 1
+    assert_select ".setup-step", 3
+    assert_select ".setup-panel h2", text: "3 steps to your first plan."
+    # The steps are ordered, so the first card is the one to do next.
+    assert_equal [ "Set your training goal", "Add a training target", "Do your first check-in" ],
+      css_select(".setup-step strong").map(&:text)
+    # Nothing else links back to onboarding once a user has left it.
+    assert_select "a[href=?]", onboarding_path
+  end
+
+  test "the setup panel drops steps as they are done" do
+    @user.goal_periods.create!(goal_type: "build_muscle", started_on: Date.current)
+
+    get root_path
+
+    assert_select ".setup-step", 2
+    assert_select ".setup-panel h2", text: "2 steps to your first plan."
+    assert_equal "Add a training target", css_select(".setup-step strong").first.text
+  end
+
+  test "the setup panel disappears once the engine has what it needs" do
+    @user.goal_periods.create!(goal_type: "build_muscle", started_on: Date.current)
+    exercise = Exercise.create!(name: "Zzz Setup Squat", modality: "barbell")
+    @user.exercise_prescriptions.create!(
+      exercise: exercise, rep_min: 6, rep_max: 8,
+      target_rir_min: 1, target_rir_max: 2, increment_kg: 2.5,
+      working_sets: 3, started_on: Date.current
+    )
+
+    get root_path
+
+    assert_response :success
+    assert_select ".setup-panel", 0
+  end
+
+  test "a set-up account is not nagged about an unpaired watch" do
+    @user.goal_periods.create!(goal_type: "build_muscle", started_on: Date.current)
+    @user.daily_readiness_inputs.create!(
+      metric_date: @user.local_date, sleep_quality: 4, soreness: 2, fatigue: 2, stress: 2
+    )
+
+    get root_path
+
+    assert_select ".setup-panel", 0
+  end
+
   def daily_training_decision(headline: "Run the plan as written")
     @user.coaching_decisions.create!(
       decision_type: "daily_training",

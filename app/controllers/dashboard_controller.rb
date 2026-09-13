@@ -2,6 +2,9 @@ class DashboardController < ApplicationController
   def show
     @user = Current.user
     today = @user.local_date
+    # Nothing links back to onboarding once a user leaves it, so the dashboard
+    # carries what is left of setup until there is nothing left.
+    @setup = OnboardingProgress.new(@user)
     @today_input = @user.daily_readiness_inputs.find_by(metric_date: today)
     # Prefill the check-in with any objective metrics the watch already synced
     # today, so the form only asks for the subjective taps.

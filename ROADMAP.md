@@ -116,9 +116,16 @@ risk they carry, not by size.
   than adding `'unsafe-inline'`, which would have allowed every inline style on
   the page. The app now loads with zero CSP violations.
 
-- [ ] **Empty-state pass on first run.** A brand-new account with no goal, no
-  targets, and no check-in lands on a dashboard that mostly renders placeholders.
-  Onboarding covers the first step but not the gap between steps two and five.
+- [x] **First-run pass done.** Walking a freshly registered account through every
+  page turned up a structural problem rather than a copy one: registration
+  redirects to `/onboarding` once and *nothing ever links back to it*, so a user
+  who skipped had no way to find out what was missing. The dashboard now carries
+  the outstanding steps until setup is done, reading from `OnboardingProgress` —
+  one object, so the checklist and the dashboard cannot disagree about what is
+  left.
+
+  The dead-end empty states (both on progress, plus conditioning and nutrition)
+  now name the action that fills them instead of describing the absence.
 
 ## Product
 

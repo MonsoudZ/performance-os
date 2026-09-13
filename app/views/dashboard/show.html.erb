@@ -79,6 +79,30 @@
     </div>
   </section>
 
+  <% unless @setup.complete? %>
+    <section class="panel setup-panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Finish setting up</p>
+          <h2><%= pluralize @setup.remaining.size, "step" %> to your first plan.</h2>
+        </div>
+        <%= link_to "Full checklist", onboarding_path, class: "text-link" %>
+      </div>
+
+      <p class="setup-panel__lede">The engine only makes a call once it has something to read.</p>
+
+      <div class="setup-steps">
+        <% @setup.remaining.each do |step| %>
+          <div class="setup-step">
+            <strong><%= step.title %></strong>
+            <p><%= step.prompt %></p>
+            <%= link_to step.cta, step.path, class: "button button--inline button--secondary" %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
   <section class="workspace">
     <article class="panel check-in">
       <div class="panel__header">

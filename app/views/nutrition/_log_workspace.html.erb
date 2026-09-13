@@ -157,6 +157,9 @@
     <% else %>
       <div class="empty-state">
         <p>No food logged today.</p>
+        <% if @yesterday_entry_count.zero? %>
+          <p>Search for a food above to add your first entry — the engine needs intake before it can check energy or protein.</p>
+        <% end %>
         <% if @yesterday_entry_count.positive? %>
           <%= button_to "Copy yesterday’s #{@yesterday_entry_count} entries",
             copy_yesterday_food_log_entries_path,

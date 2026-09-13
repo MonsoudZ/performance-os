@@ -137,6 +137,14 @@ rather than doing string surgery on stored text.
   inline `style=` attributes are allowed. If something renders but does not work,
   check the console for a CSP violation before anything else.
 
+## Empty states
+
+An empty state names the action that fills it and links to it. "No workouts
+logged yet" is a description; a user who reads it still has to work out where to
+go. What a new account is missing is answered in one place — `OnboardingProgress`
+— which both `/onboarding` and the dashboard read, because the dashboard is the
+only route back to that checklist once a user has left it.
+
 ## Things that are easy to get wrong
 
 - Any URL a client supplies and the server later requests is an SSRF vector.
@@ -148,8 +156,11 @@ rather than doing string surgery on stored text.
   assume an empty `exercises` table — use distinctive names and assert on
   presence rather than totals.
 - `assert_select "sel", "some message"` treats the second argument as a **text
-  match**, not a message. Pass `{ count: 1 }` as the second argument and the
-  message third.
+  match**, not a message, and `assert_select "sel", text: "x", "message"` is a
+  syntax error because a positional argument cannot follow a hash. Either brace
+  the hash — `assert_select "sel", { text: "x" }, "message"` — or put the
+  rationale in a comment above the assertion. The same applies to `assert_text`,
+  where two positional strings are read as `(type, text)`.
 - Several classes uppercase their text in CSS (`.eyebrow`, `.confidence`, table
   headers). Capybara matches *rendered* text, so a system test asserting
   "Session complete" fails against "SESSION COMPLETE". Assert on a heading or

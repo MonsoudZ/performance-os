@@ -11,55 +11,31 @@
 
   <section class="panel">
     <ol class="onboarding">
-      <li class="onboarding-step <%= "onboarding-step--done" if @goal %>">
-        <span class="onboarding-step__mark"><%= @goal ? "✓" : "1" %></span>
-        <div>
-          <strong>Set your training goal</strong>
-          <% if @goal %>
-            <p>You're training for <%= @goal.goal_type.humanize.downcase %>. <%= link_to "Change", goal_periods_path, class: "text-link" %></p>
-          <% else %>
-            <p>Your goal drives calorie, protein, and training targets. <%= link_to "Set a goal", goal_periods_path, class: "text-link" %></p>
-          <% end %>
-        </div>
-      </li>
+      <% @progress.steps.each_with_index do |step, index| %>
+        <li class="onboarding-step <%= "onboarding-step--done" if step.done? %>">
+          <span class="onboarding-step__mark"><%= step.done? ? "✓" : (step.optional? ? "★" : index + 1) %></span>
+          <div>
+            <strong>
+              <%= step.title %><% if step.optional? %> <small>(optional)</small><% end %>
+            </strong>
+            <p><%= step.prompt %> <%= link_to step.cta, step.path, class: "text-link" %></p>
 
-      <li class="onboarding-step <%= "onboarding-step--done" if @has_target %>">
-        <span class="onboarding-step__mark"><%= @has_target ? "✓" : "2" %></span>
-        <div>
-          <strong>Add a training target</strong>
-          <% if @has_target %>
-            <p>Tell the engine what to progress. <%= link_to "Manage targets", exercise_prescriptions_path, class: "text-link" %></p>
-          <% elsif @goal %>
-            <p>Generate a balanced program from your goal — log weights as you go, and edit anything. Or build it yourself.</p>
-            <%= button_to "Generate my program", program_path, class: "button" %>
-            <p><%= link_to "Add targets manually instead", new_exercise_prescription_path, class: "text-link" %></p>
-          <% else %>
-            <p>Set a goal first — it drives the generated program. <%= link_to "Add a target manually", new_exercise_prescription_path, class: "text-link" %></p>
-          <% end %>
-        </div>
-      </li>
-
-      <li class="onboarding-step <%= "onboarding-step--done" if @has_checkin %>">
-        <span class="onboarding-step__mark"><%= @has_checkin ? "✓" : "3" %></span>
-        <div>
-          <strong>Do your first check-in</strong>
-          <p>Sixty seconds of recovery inputs generates today's plan. <%= link_to "Check in on the dashboard", root_path, class: "text-link" %></p>
-        </div>
-      </li>
-
-      <li class="onboarding-step <%= "onboarding-step--done" if @has_device %>">
-        <span class="onboarding-step__mark"><%= @has_device ? "✓" : "★" %></span>
-        <div>
-          <strong>Pair your watch <small>(optional)</small></strong>
-          <p>Auto-fill HRV, resting HR, and sleep from HealthKit. <%= link_to "Manage devices", wearable_devices_path, class: "text-link" %></p>
-        </div>
-      </li>
+            <% if step.key == :target && !step.done? && @progress.steps.first.done? %>
+              <p>Or generate a balanced program from your goal — log weights as you go, and edit anything.</p>
+              <%= button_to "Generate my program", program_path, class: "button" %>
+            <% end %>
+          </div>
+        </li>
+      <% end %>
     </ol>
 
-    <% if @complete %>
+    <% if @progress.complete? %>
       <%= link_to "You're set — go to today's plan", root_path, class: "button" %>
     <% else %>
       <%= link_to "Skip for now", root_path, class: "text-link" %>
+      <p class="evidence-note">
+        Nothing is lost by skipping. Today's plan keeps a short version of this list until setup is done.
+      </p>
     <% end %>
   </section>
 </main>
