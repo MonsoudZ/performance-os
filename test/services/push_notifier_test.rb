@@ -3,7 +3,7 @@ require "test_helper"
 class PushNotifierTest < ActiveSupport::TestCase
   setup do
     @user = users(:one)
-    @subscription = @user.push_subscriptions.create!(endpoint: "https://push.example/abc", p256dh_key: "p", auth_key: "a")
+    @subscription = @user.push_subscriptions.create!(endpoint: "https://fcm.googleapis.com/fcm/send/abc", p256dh_key: "p", auth_key: "a")
     @original_vapid = Rails.application.config.x.vapid
   end
 

@@ -37,6 +37,14 @@ gem "json", "~> 2.19", ">= 2.19.9"
 # Send Web Push notifications (daily check-in reminders) [https://github.com/pushpad/web-push]
 gem "web-push", "~> 3.0"
 
+# resolv is a default gem, so it does not appear in the lockfile on its own and
+# bundler-audit cannot see it. Declaring it both pulls the patched version for
+# CVE-2026-80212 (unbounded memory growth from hostile DNS responses) and
+# CVE-2026-80213 (a hostname that passes validation resolving to another name),
+# and puts it under the audit in CI from now on. Web Push resolves endpoints the
+# client supplied, which is exactly the exposure those two describe.
+gem "resolv", ">= 0.7.2"
+
 # Official Anthropic SDK — powers the AI coach narrative that explains the
 # auditable coaching-decision DAG in plain language [https://github.com/anthropics/anthropic-sdk-ruby]
 gem "anthropic", "~> 1.9"

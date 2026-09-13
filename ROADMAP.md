@@ -52,11 +52,18 @@ risk they carry, not by size.
   coaching decision. 2.19.9 carries the CVE fix, so the pin costs no security.
   Revisit when Rails supports json 3.
 
-- [ ] **Re-check `resolv` against CVE-2026-80212 / CVE-2026-80213.** Two
-  vulnerabilities were disclosed 2026-08-27 in the `resolv` gem bundled with Ruby.
-  `bundler-audit` only covers gems in `Gemfile.lock`, and `resolv` is a default gem
-  that does not appear there, so nothing in CI is watching it. Confirm the Ruby
-  4.0.6 build in use ships a patched `resolv`, or pin a patched version explicitly.
+- [x] **`resolv` patched and under audit.** Ruby 4.0.6 predates the 2026-08-27
+  advisory, so it bundles a vulnerable `resolv`. Declaring `resolv >= 0.7.2` in the
+  Gemfile pulls the fix for CVE-2026-80212 and CVE-2026-80213 and puts a default
+  gem under `bundler-audit`, which only ever sees what is in the lockfile.
+
+- [x] **Push endpoints are allow-listed.** `push_subscriptions.endpoint` was
+  stored unvalidated and the hourly reminder job POSTs to it from the server, so
+  any signed-in user could aim it at cloud metadata or an internal service — a
+  blind SSRF. Endpoints must now be HTTPS on a vendor push host, extendable via
+  `WEB_PUSH_ALLOWED_HOSTS`. Filtering by IP range was rejected deliberately: it
+  does not survive a hostname that resolves elsewhere after the check, which is
+  CVE-2026-80213 exactly.
 
 ## Test coverage
 
@@ -112,10 +119,7 @@ risk they carry, not by size.
 
 ## Developer experience
 
-- [ ] **Add a `CLAUDE.md`.** The conventions here are unusually consistent — an
-  evaluator owns a `RULE_KEY`/`RULE_VERSION`, snapshots its inputs, short-circuits
-  when they are unchanged, and never mutates a prior decision. Writing that down
-  keeps new code (and agents) on the rails.
-- [ ] **Document the decision types.** There is no single place listing the five
-  `decision_type` values, the four link `role` values, and which service owns
-  each. It has to be reassembled from check constraints and service constants.
+- [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute
+  pipeline, the units boundary and its two invariants, and a table of the five
+  `decision_type` values and four link roles with the service that owns each —
+  which previously had to be reassembled from check constraints.

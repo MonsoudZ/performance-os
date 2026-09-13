@@ -6,8 +6,13 @@ class PushSubscriptionsController < ApplicationController
       p256dh_key: subscription_params[:p256dh_key],
       auth_key: subscription_params[:auth_key]
     )
-    subscription.save!
-    head :created
+    if subscription.save
+      head :created
+    else
+      # A rejected endpoint is a bad request, not a server error: the browser
+      # supplied it, so let it see that rather than raising.
+      render json: { errors: subscription.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
   def destroy

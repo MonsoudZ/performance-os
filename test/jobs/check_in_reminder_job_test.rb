@@ -4,7 +4,7 @@ class CheckInReminderJobTest < ActiveSupport::TestCase
   setup do
     @user = users(:one)
     @user.update!(time_zone: "UTC")
-    @user.push_subscriptions.create!(endpoint: "https://push.example/abc", p256dh_key: "p", auth_key: "a")
+    @user.push_subscriptions.create!(endpoint: "https://fcm.googleapis.com/fcm/send/abc", p256dh_key: "p", auth_key: "a")
     @reminder_time = Time.utc(2026, 6, 11, CheckInReminderJob::REMINDER_HOUR, 0)
   end
 
