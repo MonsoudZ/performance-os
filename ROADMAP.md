@@ -12,25 +12,20 @@ risk they carry, not by size.
   and the body-metrics form. Decide the boundary (store kg everywhere, convert at
   the view and at form submission), add a helper pair, and sweep the views. An
   imperial user currently gets kilograms labelled as their own units.
+
 ## Security
 
-- [ ] **Clear the dependency backlog — CI is red on this today.** `bin/bundler-audit`
-  reports **87 advisories across 9 gems**; the lockfile has not been refreshed since
-  June. In severity order:
+- [x] **Dependency backlog cleared.** `bundler-audit` reported 24 advisories across
+  9 gems (nokogiri is counted once per platform variant, so the raw line count
+  looks far larger). All updated, including Rails 8.1.3 → 8.1.3.1 for the Active
+  Storage arbitrary-file-read / RCE (CVE-2026-66066).
 
-  | Gem | Advisories | Fix |
-  | --- | --- | --- |
-  | `activestorage` | 1 — arbitrary file read / RCE in variant processing (CVE-2026-66066) | `>= 8.1.3.1` |
-  | `nokogiri` | 72 | latest |
-  | `crass` | 4 | latest |
-  | `loofah` | 3 | latest |
-  | `concurrent-ruby` | 3, one High (CVE-2026-54904) | `>= 1.3.7` |
-  | `websocket-driver` | 1 High — DoS via malformed Host header (CVE-2026-61666) | `>= 0.8.2` |
-  | `rails-html-sanitizer`, `mail`, `json` | 1 each | latest |
-
-  The Active Storage one is the sharp edge: it needs a Rails point release
-  (8.1.3 → 8.1.3.1), so it wants its own commit and a full test run rather than
-  riding along with anything else.
+  `json` is now pinned to `~> 2.19, >= 2.19.9` rather than taking 3.0: json 3.0
+  made `JSON.parse` accept its options as keywords, while
+  `ActiveSupport::JSON.decode` still passes them positionally, so every jsonb
+  attribute raised `ArgumentError` on deserialize — which in this app is every
+  coaching decision. 2.19.9 carries the CVE fix, so the pin costs no security.
+  Revisit when Rails supports json 3.
 
 - [ ] **Re-check `resolv` against CVE-2026-80212 / CVE-2026-80213.** Two
   vulnerabilities were disclosed 2026-08-27 in the `resolv` gem bundled with Ruby.

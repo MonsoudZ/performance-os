@@ -27,6 +27,13 @@ gem "solid_cache", "~> 1.0"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
+# Held below 3.0. json 3.0 made JSON.parse take its options as keywords, while
+# ActiveSupport::JSON.decode still passes them positionally, so every jsonb
+# attribute raises ArgumentError on deserialize. 2.19.9 carries the fix for
+# CVE-2026-54696, so the pin costs no security. Revisit when Rails supports
+# json 3.
+gem "json", "~> 2.19", ">= 2.19.9"
+
 # Send Web Push notifications (daily check-in reminders) [https://github.com/pushpad/web-push]
 gem "web-push", "~> 3.0"
 
