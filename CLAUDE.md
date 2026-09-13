@@ -70,8 +70,12 @@ Each one follows the same shape, and new ones should:
    `inputs` or `output` changes, and say why in a comment above it.
 2. Snapshot everything the rule saw into `inputs` — ids, not associations.
 3. Be **idempotent**: compare the current input snapshot against the latest
-   decision and return that one unchanged if nothing moved. The recompute
-   pipeline re-runs evaluators freely and relies on this.
+   decision — scoped to `active_evidence`, so a withdrawn one is never a match —
+   and return that one unchanged if nothing moved. The recompute pipeline re-runs
+   evaluators freely and relies on this. Two things make the comparison work:
+   round-trip the snapshot through `JSON.parse(...to_json)` so it has the shapes
+   Postgres hands back, and make sure `inputs` really does hold everything the
+   rule read, or a re-run can short-circuit onto a conclusion that has moved on.
 4. Set `confidence` from how much evidence actually existed, not from how
    confident the wording sounds.
 

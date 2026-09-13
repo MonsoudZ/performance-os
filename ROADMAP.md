@@ -213,6 +213,21 @@ risk they carry, not by size.
   a sentence, and one shared partial renders a decision so the three places
   cannot drift apart.
 
+- [x] **Every evaluator is idempotent now.** `DoubleProgressionEvaluator` was the
+  one that was not: it wrote a fresh decision on every run, so a retried job or a
+  second save left a lift's trail full of identical entries differing only by
+  timestamp. Worse, it compounded — the daily plan snapshots
+  `progression_decision_ids`, so each duplicate progression decision minted a
+  duplicate plan behind it.
+
+  It compares the input snapshot against the live decision for that lift and
+  returns it unchanged, like the other four. Two details made that sound rather
+  than merely quiet: the snapshot now records `prior_decision_ids`, the earlier
+  decisions the stall rule reads to turn a third hold into a deload — they were
+  always part of what the rule saw and never part of what it recorded — and a
+  re-run no longer counts the session's own earlier verdict as evidence against
+  itself. `rule_version` is 3.0.0.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

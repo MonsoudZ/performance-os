@@ -1,11 +1,17 @@
 class DoubleProgressionEvaluator
   RULE_KEY = "double_progression.v1"
+  # 3.0.0: `inputs` gains "prior_decision_ids" — the earlier decisions the stall
+  # rule reads to turn a third hold at the same load into a deload. They were
+  # always part of what the rule saw and never part of what it recorded, which
+  # left the snapshot unable to answer why a deload was called, and left this
+  # evaluator unable to tell whether a re-run would reach the same conclusion.
+  #
   # 2.0.0: the rep range, effort target and set count are composed by
   # TrainingTargets rather than read off the prescription, because a training
   # block now owns its scheme instead of having it applied to every target. The
   # snapshot gains a "targets" key recording what was actually in force and where
   # it came from, which the prescription alone no longer answers.
-  RULE_VERSION = "2.0.0"
+  RULE_VERSION = "3.0.0"
   STALL_SESSION_COUNT = 3
   DELOAD_PERCENT = 0.10
 
@@ -18,7 +24,7 @@ class DoubleProgressionEvaluator
       prescription = prescription_for(exercise)
       next unless prescription
 
-      create_decision(exercise, prescription, sets)
+      decision_for(exercise, prescription, sets)
     end
   end
 
@@ -51,31 +57,63 @@ class DoubleProgressionEvaluator
       .first
   end
 
-  def create_decision(exercise, prescription, sets)
+  # Idempotent, like every other evaluator: the recompute pipeline re-runs these
+  # freely — a retried job, a second save — and a rule that wrote a new decision
+  # each time would leave a lift's history full of identical entries that only
+  # differ by timestamp.
+  def decision_for(exercise, prescription, sets)
     targets = training_targets.targets_for(prescription)
     evaluated_sets = sets.sort_by(&:set_index).first(targets.working_sets)
-    outcome = outcome_for(exercise, prescription, targets, evaluated_sets)
+    priors = prior_decisions(exercise, prescription)
+    inputs = serialized_inputs(exercise, prescription, targets, evaluated_sets, priors)
+
+    current = current_decisions[exercise.id]
+    return current if current&.inputs == inputs
 
     CoachingDecision.create!(
       user: workout_session.user,
       decision_type: "double_progression",
       rule_key: RULE_KEY,
       rule_version: RULE_VERSION,
-      inputs: {
-        "workout_session_id" => workout_session.id,
-        "exercise_id" => exercise.id,
-        "exercise_name" => exercise.name,
-        "prescription" => prescription_snapshot(prescription),
-        "targets" => targets_snapshot(targets),
-        "sets" => set_snapshots(evaluated_sets)
-      },
-      output: outcome,
+      inputs: inputs,
+      output: outcome_for(exercise, prescription, targets, evaluated_sets, priors),
       citations: [],
       confidence: confidence_for(targets, evaluated_sets)
     )
   end
 
-  def outcome_for(exercise, prescription, targets, sets)
+  # Round-tripped through JSON so the comparison above is against the same shapes
+  # Postgres hands back: a BigDecimal column and a Date read back as a string and
+  # a float, and an unparsed snapshot would never match.
+  def serialized_inputs(exercise, prescription, targets, sets, priors)
+    JSON.parse({
+      "workout_session_id" => workout_session.id,
+      "exercise_id" => exercise.id,
+      "exercise_name" => exercise.name,
+      "prescription" => prescription_snapshot(prescription),
+      "targets" => targets_snapshot(targets),
+      "sets" => set_snapshots(sets),
+      "prior_decision_ids" => priors.map(&:id)
+    }.to_json)
+  end
+
+  # The live decisions this session has already produced, one per exercise,
+  # newest first. Loaded once rather than per lift.
+  #
+  # Scoped to this rule version: a decision written by an older version answered
+  # a different question, so it is never a match for this one even if its inputs
+  # happen to look the same.
+  def current_decisions
+    @current_decisions ||= workout_session.user.coaching_decisions
+      .active_evidence
+      .of_type("double_progression")
+      .where(rule_key: RULE_KEY, rule_version: RULE_VERSION)
+      .for_input("workout_session_id", workout_session.id)
+      .latest_first
+      .each_with_object({}) { |decision, memo| memo[decision.inputs["exercise_id"]] ||= decision }
+  end
+
+  def outcome_for(exercise, prescription, targets, sets, priors)
     return insufficient_outcome(targets, sets) if sets.size < targets.working_sets
 
     current_weight = progression_load(prescription, sets)
@@ -97,7 +135,7 @@ class DoubleProgressionEvaluator
         "current_weight_kg" => current_weight.to_f,
         "next_weight_kg" => current_weight.to_f
       }
-      stalled?(exercise, prescription, hold["current_weight_kg"]) ?
+      stalled?(priors, hold["current_weight_kg"]) ?
         deload_outcome(prescription, hold["current_weight_kg"]) :
         hold
     end
@@ -169,8 +207,11 @@ class DoubleProgressionEvaluator
     sets.map(&:weight_kg).uniq.one?
   end
 
-  def stalled?(exercise, prescription, current_weight)
-    prior_decisions = workout_session.user.coaching_decisions
+  # The most recent sessions this lift was judged on, one decision per session,
+  # excluding this one — a re-run of this session must not count its own earlier
+  # verdict as evidence against itself.
+  def prior_decisions(exercise, prescription)
+    workout_session.user.coaching_decisions
       .active_evidence
       .of_type("double_progression")
       .where(rule_key: RULE_KEY)
@@ -178,11 +219,14 @@ class DoubleProgressionEvaluator
       .for_prescription(prescription.id)
       .latest_first
       .to_a
+      .reject { |decision| decision.inputs["workout_session_id"] == workout_session.id }
       .uniq { |decision| decision.inputs["workout_session_id"] }
       .first(STALL_SESSION_COUNT - 1)
+  end
 
-    prior_decisions.size == STALL_SESSION_COUNT - 1 &&
-      prior_decisions.all? do |decision|
+  def stalled?(priors, current_weight)
+    priors.size == STALL_SESSION_COUNT - 1 &&
+      priors.all? do |decision|
         decision.output["status"] == "hold" &&
           decision.output["current_weight_kg"].to_f.round(2) == current_weight.to_f.round(2)
       end

@@ -50,6 +50,23 @@ class WorkoutProgressionRecomputeJobTest < ActiveSupport::TestCase
     assert_not_equal plan.id, fresh_plan.id
   end
 
+  test "running the recompute twice writes nothing the second time" do
+    workout = @user.workout_sessions.create!(performed_at: 3.days.ago)
+    3.times do |i|
+      workout.set_entries.create!(exercise: @exercise, set_index: i + 1, weight_kg: 100, reps: 8, rir: 1)
+    end
+    create_readiness_decision
+
+    WorkoutProgressionRecomputeJob.perform_now(workout)
+
+    # A retried job, a double-submitted form. The progression decision's id is
+    # part of the daily plan's own snapshot, so a duplicate here used to mint a
+    # duplicate plan as well — the churn compounded.
+    assert_no_difference "CoachingDecision.count" do
+      WorkoutProgressionRecomputeJob.perform_now(workout)
+    end
+  end
+
   private
 
   def create_readiness_decision
