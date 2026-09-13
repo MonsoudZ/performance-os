@@ -137,3 +137,7 @@ rather than doing string surgery on stored text.
 - `assert_select "sel", "some message"` treats the second argument as a **text
   match**, not a message. Pass `{ count: 1 }` as the second argument and the
   message third.
+- Several classes uppercase their text in CSS (`.eyebrow`, `.confidence`, table
+  headers). Capybara matches *rendered* text, so a system test asserting
+  "Session complete" fails against "SESSION COMPLETE". Assert on a heading or
+  body copy the stylesheet leaves alone, or use a regexp.

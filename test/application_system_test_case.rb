@@ -62,4 +62,11 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     field.set("")
     field.set(value.to_s)
   end
+
+  # Runs a script in every document this page loads from now on, before any of
+  # the page's own scripts. The only way to stand in for a browser API that a
+  # Stimulus controller reads during `connect`.
+  def stub_browser_api(script)
+    page.driver.browser.evaluate_on_new_document(script)
+  end
 end

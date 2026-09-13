@@ -13,6 +13,16 @@
   box-sizing: border-box;
 }
 
+/* Any class that sets `display` outranks the user agent's [hidden] rule, so an
+   element hidden with the attribute silently stays on screen. The template
+   editor hides a removed row this way — it is flagged for destruction rather
+   than deleted, so Rails can destroy the record through nested attributes — and
+   .template-editor__row's own `display: grid` was keeping it visible until save.
+   Make the attribute authoritative everywhere instead of patching one class. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   color: var(--ink);
