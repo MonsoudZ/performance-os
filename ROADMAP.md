@@ -75,15 +75,22 @@ risk they carry, not by size.
   imperial round trip, and the no-target empty state. Wired into `bin/ci` and
   into CI, which uploads screenshots on failure.
 
-- [ ] **Extend system coverage past the logger.** The remaining JavaScript is
-  `template_editor` (drag-free reordering of template rows) and `push` (the
-  notification permission dance, which needs a mocked Notification API). The
-  daily check-in and onboarding are server-rendered but are the paths a new
-  account walks first, so they are worth a browser test each.
-- [ ] **Thin model coverage.** `test/models/` covers 7 of 27 models. The ones
-  carrying invariants worth pinning are `CoachingDecision` (retraction rules and
-  the JSONB scopes), `ExercisePrescription` (effective-dating), and `Mesocycle`
-  (phase and deload-week math, partially covered).
+- [x] **System coverage extended past the logger.** `template_editor` and `push`
+  are covered, as is the check-in through to the rendered plan — 20 browser tests
+  in total. Every Stimulus controller now has tests. The template editor's suite
+  found a live bug: a removed row stayed on screen because a class setting
+  `display` outranks the user agent's `[hidden]` rule.
+- [x] **The invariant-carrying models are covered.** `CoachingDecision`
+  (retraction, `active_evidence`, the JSONB scopes, link roles and the
+  restrict-on-delete that stops cited evidence disappearing), `DateRanged` and its
+  three including models, `ExercisePrescription`, `WorkoutTemplate`, and
+  `SetEntry` including the generated 1RM column's precision.
+
+- [ ] **Remaining model files without tests** are mostly thin data holders —
+  `ReadinessScore`, `WeightTrend`, `ExpenditureEstimate`, `MuscleGroup` — or are
+  exercised through their service tests (`Food`, `BodyMetric`, the wearable
+  models). Worth adding only where a rule appears; a test per file for its own
+  sake would be noise.
 
 ## Views and navigation
 
