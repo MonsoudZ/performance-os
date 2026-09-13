@@ -32,7 +32,7 @@ Rails.application.routes.draw do
       patch :apply_scheme
     end
   end
-  resources :exercises, only: %i[new create]
+  resources :exercises, only: %i[index show new create]
   resources :exercise_prescriptions, only: %i[index new create edit update] do
     patch :finish, on: :member
   end

@@ -42,6 +42,27 @@ class StrengthProgressionTest < ActiveSupport::TestCase
     assert_in_delta 140.0, progress.best_e1rm, 0.1
   end
 
+  test "scopes to a single exercise when one is given" do
+    bench = Exercise.create!(name: "Bench", modality: "barbell")
+    log(2.days.ago, weight: 100, reps: 5)
+    bench_session = @user.workout_sessions.create!(performed_at: 1.day.ago)
+    bench_session.set_entries.create!(exercise: bench, set_index: 1, weight_kg: 80, reps: 5, rir: 1)
+
+    assert_equal %w[Bench Squat], StrengthProgression.new(@user).call.map { |item| item.exercise.name }
+
+    scoped = StrengthProgression.new(@user, exercise: bench).call
+
+    assert_equal 1, scoped.size
+    assert_equal "Bench", scoped.first.exercise.name
+  end
+
+  test "returns nothing for an exercise the user has never logged" do
+    unlogged = Exercise.create!(name: "Pendlay Row", modality: "barbell")
+    log(1.day.ago, weight: 100, reps: 5)
+
+    assert_empty StrengthProgression.new(@user, exercise: unlogged).call
+  end
+
   private
 
   def log(performed_at, weight:, reps:)

@@ -1,0 +1,67 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Workout setup</p>
+      <h1>Exercise library.</h1>
+      <p>Every movement you can prescribe and log — the shared catalog plus anything you’ve added.</p>
+    </div>
+    <div class="page-heading__actions">
+      <%= link_to "Add custom exercise", new_exercise_path, class: "button button--inline" %>
+    </div>
+  </section>
+
+  <section class="panel">
+    <%= form_with url: exercises_path, method: :get, class: "library-filters" do |form| %>
+      <label class="library-filters__search">
+        <span class="sr-only">Search exercises</span>
+        <%= form.search_field :q, value: @query, placeholder: "Search by name", autocomplete: "off" %>
+      </label>
+      <label class="library-filters__modality">
+        <span class="sr-only">Filter by modality</span>
+        <%= form.select :modality,
+          Exercise::MODALITIES.map { |modality| [ modality.humanize, modality ] },
+          { include_blank: "All equipment", selected: @modality } %>
+      </label>
+      <%= form.submit "Filter", class: "button button--inline button--secondary" %>
+      <% if @query.present? || @modality %>
+        <%= link_to "Clear", exercises_path, class: "text-link" %>
+      <% end %>
+    <% end %>
+
+    <p class="evidence-note">
+      <%= pluralize @exercises.size, "exercise" %><% if @query.present? %> matching “<%= @query %>”<% end %><% if @modality %> · <%= @modality.humanize %><% end %>.
+    </p>
+
+    <% if @exercises.any? %>
+      <div class="library-grid">
+        <% @exercises.each do |exercise| %>
+          <%= link_to exercise_path(exercise), class: "library-card" do %>
+            <p class="eyebrow"><%= exercise.modality.humanize %> · <%= exercise_catalog_label(exercise) %></p>
+            <h2><%= exercise.name %></h2>
+            <p class="library-card__muscles"><%= exercise_muscle_summary(exercise) %></p>
+            <div class="library-card__meta">
+              <% if @prescribed_exercise_ids.include?(exercise.id) %>
+                <span class="pill pill--active">Active target</span>
+              <% end %>
+              <% if exercise.is_compound? %>
+                <span class="pill">Compound</span>
+              <% end %>
+              <% if (performed_on = @last_performed[exercise.id]) %>
+                <span class="library-card__last">Last trained <%= performed_on.strftime("%b %-d") %></span>
+              <% else %>
+                <span class="library-card__last muted">Never logged</span>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>No exercises match that filter.</p>
+        <p><%= link_to "Clear the filter", exercises_path, class: "text-link" %> or <%= link_to "add a custom exercise", new_exercise_path, class: "text-link" %>.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

@@ -21,7 +21,7 @@
         <% @prescriptions.each do |prescription| %>
           <article class="prescription-card">
             <p class="eyebrow"><%= prescription.exercise.modality %></p>
-            <h2><%= prescription.exercise.name %></h2>
+            <h2><%= link_to prescription.exercise.name, exercise_path(prescription.exercise) %></h2>
             <strong><%= prescription.target_label %></strong>
             <dl>
               <div><dt>Increment</dt><dd><%= number_with_precision prescription.increment_kg, precision: 2, strip_insignificant_zeros: true %> kg</dd></div>

@@ -1,0 +1,189 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow"><%= link_to "Exercise library", exercises_path, class: "text-link" %> · <%= @exercise.modality.humanize %></p>
+      <h1><%= @exercise.name %></h1>
+      <p>
+        <%= exercise_muscle_summary(@exercise) %><% if @exercise.is_compound? %> · Compound<% end %> ·
+        <%= exercise_catalog_label(@exercise) %> movement tracked in <%= @exercise.default_unit %>.
+      </p>
+    </div>
+    <div class="page-heading__actions">
+      <% if @history.active_prescription %>
+        <%= link_to "Edit target", edit_exercise_prescription_path(@history.active_prescription), class: "button button--inline button--secondary" %>
+      <% else %>
+        <%= link_to "Set a target", new_exercise_prescription_path, class: "button button--inline button--secondary" %>
+      <% end %>
+      <%= link_to "Log workout", new_workout_session_path, class: "button button--inline" %>
+    </div>
+  </section>
+
+  <% if @history.ever_logged? %>
+    <section class="lift-stats">
+      <article class="panel">
+        <p class="eyebrow">Sessions</p>
+        <strong><%= @history.session_count %></strong>
+        <span><%= pluralize @history.total_working_sets, "working set" %> logged</span>
+      </article>
+      <article class="panel">
+        <p class="eyebrow">Heaviest set</p>
+        <% if (heaviest = @history.heaviest_set) %>
+          <strong><%= set_summary(heaviest) %></strong>
+          <span><%= heaviest.workout_session.performed_at.to_date.strftime("%b %-d, %Y") %></span>
+        <% else %>
+          <strong>—</strong>
+          <span>No loaded sets yet</span>
+        <% end %>
+      </article>
+      <article class="panel">
+        <p class="eyebrow">Estimated 1RM</p>
+        <% if @progress %>
+          <strong><%= number_with_precision @progress.current_e1rm, precision: 1, strip_insignificant_zeros: true %> kg</strong>
+          <span>Best <%= number_with_precision @progress.best_e1rm, precision: 1, strip_insignificant_zeros: true %> kg<% if @progress.pr_count.positive? %> · <%= pluralize @progress.pr_count, "PR" %><% end %></span>
+        <% else %>
+          <strong>—</strong>
+          <span>Needs a logged working set</span>
+        <% end %>
+      </article>
+    </section>
+  <% end %>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Current target</p>
+        <h2><%= @history.active_prescription&.target_label || "No active target" %></h2>
+      </div>
+    </div>
+
+    <% if (prescription = @history.active_prescription) %>
+      <dl class="target-detail">
+        <div><dt>Increment</dt><dd><%= number_with_precision prescription.increment_kg, precision: 2, strip_insignificant_zeros: true %> kg</dd></div>
+        <div><dt>Progression</dt><dd><%= prescription.progression_model_label %></dd></div>
+        <div><dt>Effective since</dt><dd><%= prescription.started_on.strftime("%b %-d, %Y") %></dd></div>
+      </dl>
+    <% else %>
+      <div class="empty-state">
+        <p>This lift has no training target, so the progression engine won’t evaluate it.</p>
+        <p><%= link_to "Set a target", new_exercise_prescription_path, class: "text-link" %> to start tracking rep, RIR, and load progression.</p>
+      </div>
+    <% end %>
+
+    <% if @history.past_prescriptions.any? %>
+      <details class="target-history">
+        <summary><%= pluralize @history.past_prescriptions.size, "retired target" %></summary>
+        <div class="compact-list">
+          <% @history.past_prescriptions.each do |past| %>
+            <div class="compact-list__item">
+              <strong><%= past.target_label %></strong>
+              <small><%= past.started_on.strftime("%b %-d, %Y") %> – <%= past.ended_on.strftime("%b %-d, %Y") %></small>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
+  </section>
+
+  <% if @progress && @progress.points.size >= 2 %>
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Strength trend</p>
+          <h2>Estimated 1RM over <%= pluralize @progress.points.size, "session" %></h2>
+        </div>
+      </div>
+      <div class="progress-card__chart"><%= e1rm_sparkline(@progress.points, width: 640, height: 120) %></div>
+      <p class="evidence-note">
+        Epley estimate from the best working set of each session. Filled points are PRs<% if @progress.last_pr_on %>; the most recent was <%= @progress.last_pr_on.strftime("%b %-d, %Y") %><% end %>.
+      </p>
+    </section>
+  <% end %>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Audit trail</p>
+        <h2>Progression decisions</h2>
+      </div>
+    </div>
+
+    <% if @history.progression_decisions.any? %>
+      <div class="decision-trail">
+        <% @history.progression_decisions.each do |decision| %>
+          <article class="decision-trail__item decision-trail__item--<%= decision.output["status"] %><%= " is-retracted" if decision.retracted_at? %>">
+            <div class="decision-trail__head">
+              <strong><%= decision.output["headline"] %></strong>
+              <span class="date"><%= decision.created_at.to_date.strftime("%b %-d, %Y") %></span>
+            </div>
+            <p class="muted"><%= decision.output["guidance"] %></p>
+            <div class="decision-trail__meta">
+              <span class="pill"><%= decision_status_label(decision.output["status"]) %></span>
+              <% if decision.output["current_weight_kg"] && decision.output["next_weight_kg"] %>
+                <span>
+                  <%= number_with_precision decision.output["current_weight_kg"], precision: 2, strip_insignificant_zeros: true %>
+                  →
+                  <%= number_with_precision decision.output["next_weight_kg"], precision: 2, strip_insignificant_zeros: true %> kg
+                </span>
+              <% end %>
+              <span class="confidence"><%= decision.confidence %> confidence · <%= decision.rule_key %></span>
+            </div>
+            <% if decision.retracted_at? %>
+              <p class="decision-trail__retracted">Retracted <%= decision.retracted_at.to_date.strftime("%b %-d, %Y") %> — <%= decision.retraction_reason.humanize %></p>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+      <p class="evidence-note">Retracted decisions stay listed. A recommendation that was withdrawn is part of the record, not a gap in it.</p>
+    <% else %>
+      <div class="empty-state">
+        <p>No progression decisions yet.</p>
+        <p>Log working sets against an active target and the engine writes one per session.</p>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">History</p>
+        <h2>Logged sessions</h2>
+      </div>
+    </div>
+
+    <% if @history.ever_logged? %>
+      <div class="appearance-list">
+        <% @history.appearances.each do |appearance| %>
+          <article class="appearance">
+            <div class="appearance__head">
+              <%= link_to appearance.workout_session.template_name || "Session",
+                workout_session_path(appearance.workout_session), class: "text-link" %>
+              <span class="date"><%= appearance.performed_at.to_date.strftime("%b %-d, %Y") %></span>
+            </div>
+            <div class="appearance__sets">
+              <% appearance.sets.each do |set| %>
+                <span class="appearance__set<%= " appearance__set--warmup" if set.is_warmup? %>">
+                  <%= set_summary(set) %><% if set.rir.present? %> · <%= number_with_precision set.rir, precision: 1, strip_insignificant_zeros: true %> RIR<% end %><% if set.is_warmup? %> · warm-up<% end %>
+                </span>
+              <% end %>
+            </div>
+            <% if appearance.any_working_sets? %>
+              <div class="appearance__meta">
+                <span>Volume <%= number_with_delimiter appearance.volume_kg %> kg</span>
+                <% if appearance.top_set %>
+                  <span>Top set <%= set_summary(appearance.top_set) %></span>
+                <% end %>
+              </div>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>You haven’t logged this exercise yet.</p>
+        <p><%= link_to "Log a workout", new_workout_session_path, class: "text-link" %> to start its history.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

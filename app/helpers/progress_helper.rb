@@ -7,11 +7,14 @@ module ProgressHelper
     values = points.map(&:e1rm)
     min, max = values.minmax
     span = (max - min).zero? ? 1.0 : (max - min)
-    step = points.size > 1 ? width.to_f / (points.size - 1) : 0
     pad = 4
+    # Inset both axes so the first and last PR markers are not clipped by the
+    # viewBox edge.
+    plot_width = width - (2 * pad)
+    step = points.size > 1 ? plot_width.to_f / (points.size - 1) : 0
 
     coords = points.each_with_index.map do |point, index|
-      x = (index * step).round(2)
+      x = (pad + (index * step)).round(2)
       y = (height - pad - ((point.e1rm - min) / span * (height - 2 * pad))).round(2)
       [ x, y, point.pr ]
     end

@@ -2,8 +2,11 @@ class StrengthProgression
   Point = Data.define(:date, :e1rm, :pr)
   ExerciseProgress = Data.define(:exercise, :points, :current_e1rm, :best_e1rm, :pr_count, :last_pr_on)
 
-  def initialize(user)
+  # Pass `exercise:` to scope the rollup to a single lift — the exercise detail
+  # page needs one card, not every card.
+  def initialize(user, exercise: nil)
     @user = user
+    @exercise = exercise
   end
 
   def call
@@ -24,11 +27,14 @@ class StrengthProgression
 
   # Best estimated 1RM (Epley, stored column) per session per exercise.
   def session_bests
-    SetEntry
+    scope = SetEntry
       .joins(:workout_session)
       .where(workout_sessions: { user_id: user.id })
       .where(is_warmup: false)
       .where.not(estimated_1rm_kg: nil)
+    scope = scope.where(exercise_id: @exercise.id) if @exercise
+
+    scope
       .group(:exercise_id, "workout_sessions.performed_at")
       .maximum(:estimated_1rm_kg)
       .map { |(exercise_id, performed_at), e1rm| { exercise_id:, performed_at:, e1rm: e1rm.to_f } }

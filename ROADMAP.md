@@ -12,11 +12,31 @@ risk they carry, not by size.
   and the body-metrics form. Decide the boundary (store kg everywhere, convert at
   the view and at form submission), add a helper pair, and sweep the views. An
   imperial user currently gets kilograms labelled as their own units.
+## Security
+
+- [ ] **Clear the dependency backlog — CI is red on this today.** `bin/bundler-audit`
+  reports **87 advisories across 9 gems**; the lockfile has not been refreshed since
+  June. In severity order:
+
+  | Gem | Advisories | Fix |
+  | --- | --- | --- |
+  | `activestorage` | 1 — arbitrary file read / RCE in variant processing (CVE-2026-66066) | `>= 8.1.3.1` |
+  | `nokogiri` | 72 | latest |
+  | `crass` | 4 | latest |
+  | `loofah` | 3 | latest |
+  | `concurrent-ruby` | 3, one High (CVE-2026-54904) | `>= 1.3.7` |
+  | `websocket-driver` | 1 High — DoS via malformed Host header (CVE-2026-61666) | `>= 0.8.2` |
+  | `rails-html-sanitizer`, `mail`, `json` | 1 each | latest |
+
+  The Active Storage one is the sharp edge: it needs a Rails point release
+  (8.1.3 → 8.1.3.1), so it wants its own commit and a full test run rather than
+  riding along with anything else.
+
 - [ ] **Re-check `resolv` against CVE-2026-80212 / CVE-2026-80213.** Two
   vulnerabilities were disclosed 2026-08-27 in the `resolv` gem bundled with Ruby.
-  `bundler-audit` runs in CI but only covers gems in `Gemfile.lock`, and `resolv`
-  is a default gem that does not appear there. Confirm the Ruby 4.0.6 build in use
-  ships a patched `resolv`, or pin a patched version explicitly.
+  `bundler-audit` only covers gems in `Gemfile.lock`, and `resolv` is a default gem
+  that does not appear there, so nothing in CI is watching it. Confirm the Ruby
+  4.0.6 build in use ships a patched `resolv`, or pin a patched version explicitly.
 
 ## Test coverage
 
@@ -43,6 +63,14 @@ risk they carry, not by size.
   rule version" page would make the audit trail directly inspectable.
 - [ ] **Workout session index.** `workout_sessions` has `new`/`show`/`edit` but no
   index. Past sessions are only reachable from the exercise history page.
+- [ ] **Turbo's progress bar is silently suppressed.** CSP sets `style-src 'self'`,
+  and Turbo injects an inline `<style>` element for `.turbo-progress-bar`, so the
+  browser refuses it on every page load — the only visible symptom is a console
+  warning and no loading indicator on slow navigations. (Inline `style=`
+  *attributes*, like the volume bars', are fine: `style_src_attr :unsafe_inline`
+  covers those.) Fix by styling `.turbo-progress-bar` in `application.css` and
+  setting `Turbo.setProgressBarDelay`, or by extending the nonce to `style-src`.
+
 - [ ] **Empty-state pass on first run.** A brand-new account with no goal, no
   targets, and no check-in lands on a dashboard that mostly renders placeholders.
   Onboarding covers the first step but not the gap between steps two and five.

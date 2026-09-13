@@ -57,7 +57,7 @@
         <% @progress.each do |item| %>
           <article class="progress-card">
             <div class="progress-card__head">
-              <strong><%= item.exercise.name %></strong>
+              <strong><%= link_to item.exercise.name, exercise_path(item.exercise) %></strong>
               <span><%= number_with_precision item.current_e1rm, precision: 1, strip_insignificant_zeros: true %> kg</span>
             </div>
             <div class="progress-card__chart"><%= e1rm_sparkline(item.points) %></div>

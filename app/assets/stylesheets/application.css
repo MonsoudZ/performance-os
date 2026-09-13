@@ -38,12 +38,14 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 32px;
   padding: 24px 0;
   border-bottom: 1px solid var(--line);
 }
 
 .brand {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 10px;
   color: var(--ink);
@@ -71,15 +73,20 @@ input {
   text-transform: uppercase;
 }
 
+/* The link set has outgrown one row on narrower desktops: let it wrap and keep
+   it right-aligned rather than squeezing the brand. */
 .nav-links {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 22px;
+  justify-content: flex-end;
+  gap: 12px 20px;
 }
 
 .nav-links a,
 .nav-links__button {
   padding: 0;
+  white-space: nowrap;
   color: var(--muted);
   background: none;
   border: 0;
@@ -871,19 +878,36 @@ h1 {
   margin-bottom: 24px;
 }
 
-.workout-completion article {
+.lift-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.workout-completion article,
+.lift-stats article {
   display: grid;
   gap: 8px;
 }
 
-.workout-completion strong {
+.workout-completion strong,
+.lift-stats strong {
   color: var(--green);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 3.4rem;
   font-weight: 400;
 }
 
-.workout-completion span {
+/* The lift page shows loads and dates, not two-digit counts, so it needs a
+   smaller figure than the session summary's. Must follow the shared rule above. */
+.lift-stats strong {
+  font-size: 2.4rem;
+  overflow-wrap: anywhere;
+}
+
+.workout-completion span,
+.lift-stats span {
   color: var(--muted);
 }
 
@@ -1513,7 +1537,8 @@ h1 {
   .workout-summary,
   .exercise-picker__results,
   .recent-foods,
-  .workout-completion {
+  .workout-completion,
+  .lift-stats {
     grid-template-columns: 1fr;
   }
 
@@ -2071,4 +2096,238 @@ h1 {
 .checkbox-option input {
   width: 18px;
   height: 18px;
+}
+
+/* Exercise library ------------------------------------------------------- */
+
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.library-filters__search {
+  flex: 1 1 260px;
+}
+
+.library-filters__search input,
+.library-filters__modality select {
+  width: 100%;
+  padding: 12px 14px;
+  color: inherit;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.library-card {
+  display: block;
+  padding: 24px;
+  color: inherit;
+  background: var(--paper);
+  border: 1px solid transparent;
+  border-radius: 18px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.library-card:hover,
+.library-card:focus-visible {
+  border-color: var(--green);
+  transform: translateY(-2px);
+}
+
+.library-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.library-card__muscles {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.library-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.library-card__last {
+  font-size: 0.78rem;
+}
+
+.pill {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.pill--active {
+  color: var(--green);
+  background: var(--lime);
+  border-color: transparent;
+}
+
+/* Exercise detail -------------------------------------------------------- */
+
+.target-detail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0;
+}
+
+.target-detail dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.target-detail dd {
+  margin: 6px 0 0;
+  font-weight: 700;
+}
+
+.target-history {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.target-history summary {
+  color: var(--green);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.decision-trail {
+  display: grid;
+  gap: 14px;
+}
+
+.decision-trail__item {
+  padding: 20px 24px;
+  background: var(--paper);
+  border-left: 4px solid var(--line);
+  border-radius: 0 18px 18px 0;
+}
+
+.decision-trail__item--increase {
+  border-left-color: var(--green);
+}
+
+.decision-trail__item--deload {
+  border-left-color: var(--orange);
+}
+
+.decision-trail__item.is-retracted {
+  opacity: 0.62;
+}
+
+.decision-trail__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.decision-trail__head strong {
+  letter-spacing: -0.01em;
+}
+
+.decision-trail__item p {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.decision-trail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.decision-trail__retracted {
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.appearance-list {
+  display: grid;
+  gap: 2px;
+}
+
+.appearance {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+
+.appearance__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.appearance__sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.appearance__set {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 650;
+  background: var(--paper);
+  border-radius: 999px;
+}
+
+.appearance__set--warmup {
+  color: var(--muted);
+  font-weight: 500;
+  background: transparent;
+  border: 1px dashed var(--line);
+}
+
+.appearance__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 860px) {
+  .library-grid,
+  .target-detail {
+    grid-template-columns: 1fr;
+  }
 }
