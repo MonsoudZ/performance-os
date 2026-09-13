@@ -10,7 +10,10 @@
 # adds the now-possible replacements.
 class ProgramGenerator
   # Goal type -> block focus, which selects the rep/RIR/set scheme (and the
-  # starting mesocycle) from Mesocycle::SCHEMES.
+  # starting mesocycle) from Mesocycle::SCHEMES. Since a block owns its scheme,
+  # this one mapping decides the rep range of every lift the program writes, so
+  # FOCUS_REASONS below says out loud why a goal landed where it did rather than
+  # leaving the user to infer it from the numbers.
   FOCUS_BY_GOAL = {
     "build_muscle" => "hypertrophy",
     "lose_fat" => "hypertrophy",
@@ -21,6 +24,19 @@ class ProgramGenerator
     "vertical_jump" => "power"
   }.freeze
   DEFAULT_FOCUS = "hypertrophy"
+
+  # Why each goal picks the focus it picks, phrased to finish the sentence
+  # "… because <reason>".
+  FOCUS_REASONS = {
+    "build_muscle" => "building muscle is driven by hard sets in a moderate rep range",
+    "lose_fat" => "holding muscle through a deficit takes the same moderate-rep work that built it",
+    "longevity" => "moderate reps give the most training effect for the least joint cost",
+    "marathon" => "lifting supports the running rather than competing with it, so it stays moderate",
+    "increase_strength" => "strength is specific to heavy loads and low reps",
+    "athletic_performance" => "athletic output is about how fast a load moves, not how long you can hold it",
+    "vertical_jump" => "jumping is a power quality, so the work is light, fast and low-volume"
+  }.freeze
+  DEFAULT_FOCUS_REASON = "moderate rep ranges suit most goals until there is a reason to specialize"
 
   # Major muscle groups a balanced full-body starting program should cover, in
   # priority order. One primary lift is chosen per group.
@@ -42,10 +58,14 @@ class ProgramGenerator
   HIGH_FREQUENCY_DAYS = 5
   BIG_ROCK_COUNT = 6
 
-  Result = Struct.new(:created, :retired, :focus, :goal, keyword_init: true) do
+  Result = Struct.new(:created, :retired, :focus, :focus_reason, :goal, :block, keyword_init: true) do
     def created_any? = created.any?
     def retired_any? = retired.any?
     def changed_any? = created_any? || retired_any?
+
+    # Set only when the generator opened a block itself; nil when the user was
+    # already mid-block and it left theirs alone.
+    def started_block? = block.present?
   end
 
   def initialize(user, effective_on: nil, prune_unavailable: false)
@@ -56,16 +76,17 @@ class ProgramGenerator
 
   def call
     goal = user.active_goal
-    return Result.new(created: [], retired: [], focus: nil, goal: nil) unless goal
+    return Result.new(created: [], retired: [], focus: nil, focus_reason: nil, goal: nil, block: nil) unless goal
 
     focus = FOCUS_BY_GOAL.fetch(goal.goal_type, DEFAULT_FOCUS)
     scheme = Mesocycle::SCHEMES.fetch(focus)
     created = []
     retired = []
+    block = nil
 
     ApplicationRecord.transaction do
       retired = prune_unavailable_lifts if prune_unavailable?
-      ensure_starting_block(focus)
+      block = ensure_starting_block(focus)
       selected_exercises.each do |exercise|
         next if already_training?(exercise)
 
@@ -73,7 +94,14 @@ class ProgramGenerator
       end
     end
 
-    Result.new(created: created, retired: retired, focus: focus, goal: goal)
+    Result.new(
+      created: created,
+      retired: retired,
+      focus: focus,
+      focus_reason: FOCUS_REASONS.fetch(goal.goal_type, DEFAULT_FOCUS_REASON),
+      goal: goal,
+      block: block
+    )
   end
 
   private
@@ -130,6 +158,9 @@ class ProgramGenerator
     user.exercise_prescriptions.active.exists?(exercise_id: exercise.id)
   end
 
+  # The numbers written here are the target's own baseline, not the operative
+  # scheme — the block composes that. They match on day one and are what the
+  # lift falls back to once the block ends.
   def create_prescription(exercise, scheme)
     variant = exercise.is_compound? ? scheme[:compound] : scheme[:isolation]
     user.exercise_prescriptions.create!(

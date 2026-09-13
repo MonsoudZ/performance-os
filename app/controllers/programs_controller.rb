@@ -10,8 +10,7 @@ class ProgramsController < ApplicationController
       redirect_to goal_periods_path, alert: "Set a training goal first — it drives the program."
     elsif result.created_any?
       recompute_training_plan
-      redirect_to exercise_prescriptions_path,
-        notice: "Built a #{result.focus} starting program: #{result.created.size} #{'lift'.pluralize(result.created.size)} you can tweak below."
+      redirect_to exercise_prescriptions_path, notice: build_notice(result)
     else
       redirect_to exercise_prescriptions_path,
         notice: "Your program already covers the main lifts — nothing to add."
@@ -34,6 +33,20 @@ class ProgramsController < ApplicationController
   end
 
   private
+
+  # The focus is not a label on the program — it picks the rep range every lift
+  # will run, so the notice says which one, why the goal chose it, and that a
+  # block is now the thing setting it.
+  def build_notice(result)
+    sentences = [
+      "Built a #{result.focus} starting program because #{result.focus_reason}: " \
+        "#{result.created.size} #{'lift'.pluralize(result.created.size)} you can tweak below."
+    ]
+    if result.started_block?
+      sentences << "A 4-week #{result.focus} block now sets their rep ranges; end it and each target keeps its own."
+    end
+    sentences.join(" ")
+  end
 
   def refresh_notice(result)
     parts = []

@@ -429,6 +429,31 @@ h1 {
   line-height: 1.5;
 }
 
+/* Three focuses explained side by side under the select, because the focus now
+   decides every target's rep range rather than only the volume ramp. */
+.focus-guide {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.focus-guide div {
+  display: grid;
+  gap: 2px;
+}
+
+.focus-guide dt {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.focus-guide dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
 .nutrition-directive {
   display: grid;
   grid-template-columns: 1fr auto auto;

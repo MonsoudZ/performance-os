@@ -116,4 +116,24 @@ class MesocyclesControllerTest < ActionDispatch::IntegrationTest
       increment_kg: 2.5, working_sets: 3, started_on: Date.current
     )
   end
+
+  test "the focus select says what each focus will do to the rep ranges" do
+    get mesocycles_path
+
+    assert_response :success
+    # Picking a focus used to only change the volume ramp; it now sets every
+    # target's rep range, so the form has to say what each one means.
+    assert_select ".focus-guide div", Mesocycle::FOCUSES.size
+    assert_select ".focus-guide dd", text: /Compounds 3–5 reps/
+    assert_select ".focus-guide dd", text: /Compounds 6–10 reps/
+  end
+
+  test "a suggested next block names the focus it is suggesting" do
+    @user.mesocycles.create!(name: "Block 1", started_on: Date.current - 60.days, weeks: 6, focus: "power")
+
+    get mesocycles_path
+
+    assert_response :success
+    assert_select ".evidence-note", text: /another power block of the same length/
+  end
 end

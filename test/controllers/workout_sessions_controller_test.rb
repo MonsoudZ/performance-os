@@ -370,4 +370,16 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
       [ i.to_s, attributes ]
     end
   end
+
+  test "the delete button on a session looks like the destructive action it is" do
+    workout = @user.workout_sessions.create!(performed_at: Time.current)
+
+    get workout_session_path(workout)
+
+    assert_response :success
+    # It carried nav-links__button, a topbar class that renders muted text with
+    # no background — a destructive action that looked like a caption.
+    assert_select "form[action=?] button.text-button--danger", workout_session_path(workout)
+    assert_select ".page-heading__actions .nav-links__button", 0
+  end
 end

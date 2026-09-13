@@ -15,6 +15,16 @@
     </div>
   </section>
 
+  <% block = todays_training_targets.mesocycle %>
+  <% if block && @prescriptions.any? %>
+    <p class="evidence-note">
+      The <%= link_to "#{block.focus} block", mesocycles_path, class: "text-link" %> is setting reps, effort and
+      baseline sets — <%= block.scheme_summary %>. <%= block.focus_emphasis %>
+      Each target keeps its own numbers underneath and goes back to them when the block ends;
+      edit one to opt it out sooner.
+    </p>
+  <% end %>
+
   <section class="panel">
     <% if @prescriptions.any? %>
       <div class="prescription-grid">

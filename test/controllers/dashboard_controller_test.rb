@@ -237,4 +237,22 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       confidence: "high"
     )
   end
+
+  test "revoking a device is styled and confirmed like the destructive action it is" do
+    WearableDevice.issue_for!(user: @user, platform: "ios_healthkit", external_id: "device-1", name: "Watch")
+
+    get root_path
+
+    assert_response :success
+    assert_select "button.text-button--danger", text: "Revoke device"
+    assert_select "form[data-turbo-confirm]", minimum: 1
+  end
+
+  test "the wearable copy names everything a paired device now sends" do
+    get root_path
+
+    assert_response :success
+    # Ingestion widened past readiness; the pitch for pairing had not.
+    assert_select ".wearable-status p", text: /workouts, weigh-ins, steps and energy/
+  end
 end

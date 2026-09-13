@@ -224,11 +224,13 @@
         </p>
       <% else %>
         <h2>Connect HealthKit in the iPhone app.</h2>
-        <p>Sleep, HRV, and resting heart rate will fill the objective side of readiness. Seven prior days unlock personal HRV and heart-rate baselines.</p>
+        <p>Sleep, HRV and resting heart rate fill the objective side of readiness; workouts, weigh-ins, steps and energy arrive with them and feed conditioning, the weight trend and expenditure. Seven prior days unlock personal HRV and heart-rate baselines.</p>
       <% end %>
     </div>
     <% if @wearable_device %>
-      <%= button_to "Revoke device", wearable_device_path(@wearable_device), method: :delete, class: "nav-links__button" %>
+      <%= button_to "Revoke device", wearable_device_path(@wearable_device), method: :delete,
+        form: { data: { turbo_confirm: "Revoke this device? It will stop syncing until you pair it again." } },
+        class: "text-button text-button--danger" %>
     <% else %>
       <span class="confidence">Native pairing required · manual check-in remains available</span>
     <% end %>

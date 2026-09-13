@@ -53,7 +53,10 @@
     </div>
 
     <% if @suggestion && !@active %>
-      <p class="evidence-note">Suggested from your last block — adjust the dates and length, then start.</p>
+      <p class="evidence-note">
+        Suggested from your last block: another <%= @suggestion.focus %> block of the same length.
+        Adjust anything below, then start.
+      </p>
     <% end %>
 
     <% if @mesocycle.errors.any? %>
@@ -66,6 +69,14 @@
         <span>Focus</span>
         <%= form.select :focus, Mesocycle::FOCUSES.keys.map { |focus| [ focus.humanize, focus ] } %>
       </label>
+      <dl class="focus-guide">
+        <% Mesocycle::FOCUSES.each do |focus, emphasis| %>
+          <div>
+            <dt><%= focus.humanize %></dt>
+            <dd><%= emphasis.split("—", 2).last.strip %> <%= Mesocycle::SCHEMES.fetch(focus)[:compound].then { |c| "Compounds #{c[:rep_min]}–#{c[:rep_max]} reps." } %></dd>
+          </div>
+        <% end %>
+      </dl>
       <div class="form-grid">
         <label><span>Start date</span><%= form.date_field :started_on, required: true %></label>
         <label><span>Length (weeks)</span><%= form.number_field :weeks, min: 1, max: 16, required: true %></label>

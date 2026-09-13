@@ -12,7 +12,7 @@
       <%= link_to "Edit", edit_workout_session_path(@workout_session), class: "button button--inline" %>
       <%= button_to "Delete", workout_session_path(@workout_session), method: :delete,
         form: { data: { turbo_confirm: "Delete this workout and its logged sets?" } },
-        class: "nav-links__button" %>
+        class: "text-button text-button--danger" %>
       <%= link_to "Log another", new_workout_session_path, class: "button button--inline" %>
     </div>
   </section>
