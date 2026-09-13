@@ -14,6 +14,14 @@ class DashboardController < ApplicationController
       .latest_first
       .first
     @decision_links = @decision&.child_links&.includes(:child_decision)&.order(:role, :id) || []
+    # A plan withdrawn earlier today means the guidance the user already read has
+    # changed underneath them. Saying so is the other half of an auditable
+    # decision: they should not have to notice the difference themselves.
+    @withdrawn_plans = @user.coaching_decisions
+      .withdrawn
+      .of_type("daily_training")
+      .for_input("plan_date", today.iso8601)
+      .latest_first
     @recent_workouts = @user.workout_sessions.includes(:set_entries).order(performed_at: :desc).limit(3)
     @active_prescriptions = @user.exercise_prescriptions.active_on(today).includes(:exercise).order("exercises.name")
     @today_templates = @user.workout_templates

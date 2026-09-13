@@ -118,4 +118,73 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   ensure
     Rails.application.config.x.anthropic[:api_key] = original_key
   end
+  test "the dashboard says when an earlier version of today's plan was withdrawn" do
+    withdrawn = daily_training_decision
+    withdrawn.retract!(reason: "workout_session_corrected")
+    daily_training_decision
+
+    get root_path
+
+    assert_response :success
+    assert_select ".withdrawn-note", { count: 1 },
+      "a plan that changed under the user has to say so"
+    assert_select ".withdrawn-note", text: /earlier version of today's plan was withdrawn/
+    assert_select ".withdrawn-note", text: /the workout behind it was corrected/
+  end
+
+  test "the dashboard stays quiet when nothing was withdrawn" do
+    daily_training_decision
+
+    get root_path
+
+    assert_response :success
+    assert_select ".withdrawn-note", 0
+  end
+
+  test "a withdrawn plan is never shown as the current one" do
+    withdrawn = daily_training_decision(headline: "Withdrawn headline")
+    withdrawn.retract!(reason: "workout_session_deleted")
+
+    get root_path
+
+    assert_response :success
+    assert_select "h2", { text: "Withdrawn headline", count: 0 },
+      "the plan itself is gone, not merely annotated"
+    assert_select ".withdrawn-note", 0, "with no current plan there is nothing to contrast it against"
+  end
+
+  test "another user's withdrawn plan does not leak onto this dashboard" do
+    theirs = users(:two).coaching_decisions.create!(
+      decision_type: "daily_training",
+      rule_key: DailyTrainingOrchestrator::RULE_KEY,
+      rule_version: DailyTrainingOrchestrator::RULE_VERSION,
+      inputs: { "plan_date" => @user.local_date.iso8601 },
+      output: { "headline" => "Theirs", "guidance" => "Theirs", "lifts" => [] },
+      citations: [], confidence: "high"
+    )
+    theirs.retract!(reason: "workout_session_deleted")
+    daily_training_decision
+
+    get root_path
+
+    assert_select ".withdrawn-note", 0
+  end
+
+  def daily_training_decision(headline: "Run the plan as written")
+    @user.coaching_decisions.create!(
+      decision_type: "daily_training",
+      rule_key: DailyTrainingOrchestrator::RULE_KEY,
+      rule_version: DailyTrainingOrchestrator::RULE_VERSION,
+      inputs: { "plan_date" => @user.local_date.iso8601 },
+      output: {
+        "status" => "push",
+        "headline" => headline,
+        "guidance" => "Guidance text.",
+        "readiness_score" => 77,
+        "lifts" => []
+      },
+      citations: [],
+      confidence: "high"
+    )
+  end
 end

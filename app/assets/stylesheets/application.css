@@ -2341,3 +2341,22 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Withdrawn decisions ----------------------------------------------------- */
+
+.withdrawn-note {
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  color: var(--ink);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  background: rgba(255, 118, 72, 0.12);
+  border-left: 3px solid var(--orange);
+  border-radius: 0 12px 12px 0;
+}
+
+.decision-trail__exercise {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}

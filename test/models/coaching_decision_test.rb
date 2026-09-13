@@ -59,6 +59,33 @@ class CoachingDecisionTest < ActiveSupport::TestCase
     assert_includes decision.errors.attribute_names, :retraction_reason
   end
 
+  test "withdrawn is the complement of active_evidence" do
+    kept = create
+    retracted = create
+    retracted.retract!(reason: "workout_session_deleted")
+
+    assert_equal [ retracted ], @user.coaching_decisions.withdrawn.to_a
+    assert_equal [ kept ], @user.coaching_decisions.active_evidence.to_a
+  end
+
+  test "a retraction reason reads as a sentence a user can follow" do
+    decision = create
+    decision.retract!(reason: "workout_session_corrected")
+
+    assert_equal "the workout behind it was corrected", decision.retraction_explanation
+  end
+
+  test "an unrecognized retraction reason still renders readably" do
+    decision = create
+    decision.retract!(reason: "some_future_reason")
+
+    assert_equal "some future reason", decision.retraction_explanation
+  end
+
+  test "a decision that was never retracted has no explanation" do
+    assert_nil create.retraction_explanation
+  end
+
   test "active_evidence excludes retracted decisions" do
     kept = create
     retracted = create

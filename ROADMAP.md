@@ -125,9 +125,13 @@ risk they carry, not by size.
   applied to prescriptions imperatively via `ApplyBlockScheme`. Making the block
   the owner of the scheme would remove the "apply" step and let a block change
   recompose the plan the way every other input does.
-- [ ] **Surface retracted decisions.** Retraction is implemented and filtered out
-  of every lookup, but nothing shows a user that a recommendation was withdrawn or
-  why. That is exactly the transparency the product promises.
+- [x] **Withdrawn decisions are surfaced.** Retraction was implemented, tested and
+  filtered out of every lookup, but only the exercise page showed it. Now the
+  workout session that caused a withdrawal lists what it no longer recommends,
+  and the dashboard says when an earlier version of today's plan was withdrawn
+  and why. `CoachingDecision#retraction_explanation` turns the rule's reason into
+  a sentence, and one shared partial renders a decision so the three places
+  cannot drift apart.
 
 ## Developer experience
 

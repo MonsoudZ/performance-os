@@ -112,30 +112,10 @@
     <% if @history.progression_decisions.any? %>
       <div class="decision-trail">
         <% @history.progression_decisions.each do |decision| %>
-          <article class="decision-trail__item decision-trail__item--<%= decision.output["status"] %><%= " is-retracted" if decision.retracted_at? %>">
-            <div class="decision-trail__head">
-              <strong><%= progression_headline(decision.output) %></strong>
-              <span class="date"><%= decision.created_at.to_date.strftime("%b %-d, %Y") %></span>
-            </div>
-            <p class="muted"><%= decision.output["guidance"] %></p>
-            <div class="decision-trail__meta">
-              <span class="pill"><%= decision_status_label(decision.output["status"]) %></span>
-              <% if decision.output["current_weight_kg"] && decision.output["next_weight_kg"] %>
-                <span>
-                  <%= weight_amount(decision.output["current_weight_kg"]) %>
-                  →
-                  <%= weight(decision.output["next_weight_kg"]) %>
-                </span>
-              <% end %>
-              <span class="confidence"><%= decision.confidence %> confidence · <%= decision.rule_key %></span>
-            </div>
-            <% if decision.retracted_at? %>
-              <p class="decision-trail__retracted">Retracted <%= decision.retracted_at.to_date.strftime("%b %-d, %Y") %> — <%= decision.retraction_reason.humanize %></p>
-            <% end %>
-          </article>
+          <%= render "coaching_decisions/progression", decision: decision %>
         <% end %>
       </div>
-      <p class="evidence-note">Retracted decisions stay listed. A recommendation that was withdrawn is part of the record, not a gap in it.</p>
+      <p class="evidence-note">Withdrawn recommendations stay listed. One the engine took back is part of the record, not a gap in it.</p>
     <% else %>
       <div class="empty-state">
         <p>No progression decisions yet.</p>

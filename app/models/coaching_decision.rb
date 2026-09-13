@@ -18,6 +18,10 @@ class CoachingDecision < ApplicationRecord
   validates :retraction_reason, presence: true, if: :retracted_at?
 
   scope :active_evidence, -> { where(retracted_at: nil) }
+  # The complement. Nothing may feed a new decision from here — this exists so
+  # the UI can show a user what was withdrawn and why, which is the other half of
+  # the promise that a recommendation is traceable.
+  scope :withdrawn, -> { where.not(retracted_at: nil) }
   scope :of_type, ->(decision_type) { where(decision_type:) }
   scope :latest_first, -> { order(created_at: :desc) }
 
@@ -30,5 +34,18 @@ class CoachingDecision < ApplicationRecord
 
   def retract!(reason:)
     update!(retracted_at: Time.current, retraction_reason: reason) unless retracted_at?
+  end
+
+  # Why the recommendation was withdrawn, in the user's terms rather than the
+  # rule's. Falls back to the raw reason so a new one is still readable.
+  RETRACTION_EXPLANATIONS = {
+    "workout_session_corrected" => "the workout behind it was corrected",
+    "workout_session_deleted" => "the workout behind it was deleted"
+  }.freeze
+
+  def retraction_explanation
+    return if retraction_reason.blank?
+
+    RETRACTION_EXPLANATIONS.fetch(retraction_reason) { retraction_reason.humanize.downcase }
   end
 end

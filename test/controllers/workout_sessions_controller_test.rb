@@ -255,6 +255,87 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".appearance", 0
   end
 
+  test "the session shows what it no longer recommends after a correction" do
+    exercise = Exercise.create!(name: "Zzz Withdrawn Squat", modality: "barbell")
+    session = @user.workout_sessions.create!(performed_at: 1.day.ago)
+    session.set_entries.create!(exercise:, set_index: 1, weight_kg: 100, reps: 8, rir: 1)
+    withdrawn = progression_decision(session, exercise, headline: "Add 2.5 kg next time")
+    withdrawn.retract!(reason: "workout_session_corrected")
+    progression_decision(session, exercise, headline: "Keep the load", status: "hold")
+
+    get workout_session_path(session)
+
+    assert_response :success
+    assert_select ".decision-trail__item.is-retracted", 1
+    assert_select ".decision-trail__retracted", text: /Withdrawn .* because the workout behind it was corrected/
+    assert_select ".decision-trail__exercise", { text: "Zzz Withdrawn Squat" },
+      "a session covers several lifts, so a withdrawn recommendation has to name its own"
+  end
+
+  test "a session with nothing withdrawn does not show the section" do
+    exercise = Exercise.create!(name: "Zzz Clean Squat", modality: "barbell")
+    session = @user.workout_sessions.create!(performed_at: 1.day.ago)
+    session.set_entries.create!(exercise:, set_index: 1, weight_kg: 100, reps: 8, rir: 1)
+    progression_decision(session, exercise)
+
+    get workout_session_path(session)
+
+    assert_response :success
+    assert_select ".decision-trail__item", 0
+  end
+
+  test "correcting a workout withdraws what it recommended and says so on the page" do
+    exercise = Exercise.create!(name: "Zzz Corrected Squat", modality: "barbell")
+    prescribe(exercise)
+    session = @user.workout_sessions.create!(performed_at: Time.current)
+    entry = session.set_entries.create!(exercise:, set_index: 1, weight_kg: 100, reps: 8, rir: 1)
+    progression_decision(session, exercise)
+
+    patch workout_session_path(session), params: {
+      workout_session: {
+        performed_at: session.performed_at,
+        set_entries_attributes: { "0" => { id: entry.id, weight_kg: 90, reps: 5, rir: 3 } }
+      }
+    }
+
+    follow_redirect!
+
+    assert_response :success
+    assert_select ".decision-trail__item.is-retracted", minimum: 1
+    assert_equal 1, @user.coaching_decisions.withdrawn.count
+  end
+
+  def progression_decision(session, exercise, headline: "Add 2.5 kg next time", status: "increase")
+    CoachingDecision.create!(
+      user: @user,
+      decision_type: "double_progression",
+      rule_key: DoubleProgressionEvaluator::RULE_KEY,
+      rule_version: DoubleProgressionEvaluator::RULE_VERSION,
+      inputs: {
+        "workout_session_id" => session.id,
+        "exercise_id" => exercise.id,
+        "exercise_name" => exercise.name
+      },
+      output: {
+        "status" => status,
+        "headline" => headline,
+        "guidance" => "Guidance text.",
+        "current_weight_kg" => 100.0,
+        "next_weight_kg" => status == "increase" ? 102.5 : 100.0
+      },
+      citations: [],
+      confidence: "high"
+    )
+  end
+
+  def prescribe(exercise)
+    @user.exercise_prescriptions.create!(
+      exercise: exercise, rep_min: 6, rep_max: 8,
+      target_rir_min: 1, target_rir_max: 2, increment_kg: 2.5,
+      working_sets: 3, started_on: Date.current
+    )
+  end
+
   private
 
   def set_params(index)

@@ -53,6 +53,28 @@
     <% end %>
   </section>
 
+  <% if @withdrawn_decisions.any? %>
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Withdrawn</p>
+          <h2>Recommendations this session no longer makes</h2>
+        </div>
+      </div>
+
+      <div class="decision-trail">
+        <% @withdrawn_decisions.each do |decision| %>
+          <%= render "coaching_decisions/progression", decision: decision, show_exercise: true %>
+        <% end %>
+      </div>
+
+      <p class="evidence-note">
+        Correcting or deleting a workout withdraws what it previously recommended. The withdrawn
+        version stays here so a recommendation you already acted on never disappears from the record.
+      </p>
+    </section>
+  <% end %>
+
   <section class="panel">
     <div class="panel__header">
       <div>

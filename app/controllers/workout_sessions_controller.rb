@@ -36,13 +36,11 @@ class WorkoutSessionsController < ApplicationController
     @set_entries = @workout_session.set_entries.sort_by(&:set_index)
     # Editing re-evaluates progression and writes a fresh decision, so show only
     # the latest decision per exercise.
-    @decisions = Current.user.coaching_decisions
-      .active_evidence
-      .of_type("double_progression")
-      .for_input("workout_session_id", @workout_session.id)
-      .latest_first
-      .to_a
-      .uniq { |decision| decision.inputs["exercise_id"] }
+    @decisions = session_decisions.active_evidence.to_a.uniq { |decision| decision.inputs["exercise_id"] }
+    # Correcting or deleting a workout withdraws what it previously recommended.
+    # Showing those keeps the change visible instead of letting guidance quietly
+    # differ from what the user acted on.
+    @withdrawn_decisions = session_decisions.withdrawn.to_a
   end
 
   def edit
@@ -78,6 +76,13 @@ class WorkoutSessionsController < ApplicationController
   end
 
   private
+
+  def session_decisions
+    Current.user.coaching_decisions
+      .of_type("double_progression")
+      .for_input("workout_session_id", @workout_session.id)
+      .latest_first
+  end
 
   def prepare_workout_log
     log_date = Current.user.local_date_at(@workout_session.performed_at || Time.current)

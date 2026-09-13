@@ -45,9 +45,16 @@ Those five types and four roles are also enforced by check constraints; adding
 one means a migration.
 
 To correct a decision, **retract** it (`decision.retract!(reason:)`) and write a
-new one. Retracted decisions stay in the table and stay visible in the audit
-trail on the exercise page — a withdrawn recommendation is part of the record.
-Every lookup that feeds a new decision must scope to `active_evidence`.
+new one. Retracted decisions stay in the table and stay visible to the user — a
+withdrawn recommendation is part of the record. Every lookup that feeds a new
+decision must scope to `active_evidence`; the `withdrawn` scope is its complement
+and exists only so the UI can show what was taken back.
+
+Say "withdrawn" to users and "retracted" in code. A new retraction reason needs
+an entry in `CoachingDecision::RETRACTION_EXPLANATIONS` so it reads as a sentence
+rather than a rule name, and decisions render through
+`coaching_decisions/_progression` so the exercise page, the workout session and
+the dashboard cannot drift apart.
 
 ### Writing an evaluator
 

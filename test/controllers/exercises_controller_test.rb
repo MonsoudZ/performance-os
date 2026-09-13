@@ -107,7 +107,7 @@ class ExercisesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".decision-trail__item", 0
   end
 
-  test "labels a retracted decision in the trail" do
+  test "labels a withdrawn decision in the trail and says why" do
     squat = Exercise.create!(name: "Zzz Audited Squat", modality: "barbell")
     CoachingDecision.create!(
       user: @user,
@@ -118,13 +118,14 @@ class ExercisesControllerTest < ActionDispatch::IntegrationTest
       output: { "status" => "increase", "headline" => "Add 2.5 kg", "guidance" => "Earned." },
       citations: [],
       confidence: "high"
-    ).retract!(reason: "workout_deleted")
+    ).retract!(reason: "workout_session_deleted")
 
     get exercise_path(squat)
 
     assert_response :success
     assert_select ".decision-trail__item.is-retracted", 1
-    assert_select ".decision-trail__retracted", text: /Workout deleted/
+    assert_select ".decision-trail__retracted",
+      text: /Withdrawn .* because the workout behind it was deleted/
   end
 
   test "does not show another user's exercise" do

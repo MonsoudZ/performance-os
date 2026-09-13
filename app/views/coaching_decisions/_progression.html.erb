@@ -1,0 +1,29 @@
+<%# One progression decision in an audit trail, withdrawn or not.
+    Shared by the exercise page, which shows a lift's whole chain, and the
+    workout session page, which shows what one session produced. %>
+<article class="decision-trail__item decision-trail__item--<%= decision.output["status"] %><%= " is-retracted" if decision.retracted_at? %>">
+  <div class="decision-trail__head">
+    <strong><%= progression_headline(decision.output) %></strong>
+    <span class="date"><%= decision.created_at.to_date.strftime("%b %-d, %Y") %></span>
+  </div>
+  <% if local_assigns[:show_exercise] && decision.inputs["exercise_name"].present? %>
+    <p class="decision-trail__exercise"><%= decision.inputs["exercise_name"] %></p>
+  <% end %>
+  <p class="muted"><%= decision.output["guidance"] %></p>
+  <div class="decision-trail__meta">
+    <span class="pill"><%= decision_status_label(decision.output["status"]) %></span>
+    <% if decision.output["current_weight_kg"] && decision.output["next_weight_kg"] %>
+      <span>
+        <%= weight_amount(decision.output["current_weight_kg"]) %>
+        →
+        <%= weight(decision.output["next_weight_kg"]) %>
+      </span>
+    <% end %>
+    <span class="confidence"><%= decision.confidence %> confidence · <%= decision.rule_key %></span>
+  </div>
+  <% if decision.retracted_at? %>
+    <p class="decision-trail__retracted">
+      Withdrawn <%= decision.retracted_at.to_date.strftime("%b %-d, %Y") %> because <%= decision.retraction_explanation %>.
+    </p>
+  <% end %>
+</article>

@@ -151,6 +151,14 @@
             </div>
           <% end %>
         </div>
+        <% if @withdrawn_plans.any? %>
+          <p class="withdrawn-note">
+            <%= pluralize @withdrawn_plans.size, "earlier version" %> of today's plan
+            <%= @withdrawn_plans.size == 1 ? "was" : "were" %> withdrawn because
+            <%= @withdrawn_plans.first.retraction_explanation %>. What you see above is the current one.
+          </p>
+        <% end %>
+
         <div class="principles__footer">
           <span>Composed, not recomputed</span>
           <strong><%= pluralize @decision_links.size, "child decision" %></strong>
