@@ -88,6 +88,7 @@ class NutritionTargetResolver
   def target_source
     return "weekly_adjustment" if nutrition_adjustment
     return "goal_params" if goal&.params&.key?("target_kcal") || goal&.params&.key?("target_protein_g")
+    return "wearable_expenditure" if expenditure&.basis == "wearable_energy"
     return "adaptive_expenditure" if expenditure
 
     "body_weight_default"

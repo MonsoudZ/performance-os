@@ -137,6 +137,35 @@ rather than doing string surgery on stored text.
   inline `style=` attributes are allowed. If something renders but does not work,
   check the console for a CSP violation before anything else.
 
+## Wearable ingestion
+
+Samples arrive at `POST /api/v1/wearable_sync` authenticated by a per-device
+bearer token, land in `wearable_samples`, and are turned into records by
+`WearableDayMaterializer` — one job per affected local day, then one pass of the
+evaluator pipeline over the result. `WearableSample::METRIC_UNITS` is the list of
+what the server accepts and the unit each metric must arrive in; the server
+converts nothing and the check constraint enforces the same list, so adding a
+metric means a migration.
+
+Three rules are easy to break:
+
+- **The device's unit is canonical.** A sample whose `unit` disagrees with its
+  `metric_type` is rejected rather than converted — only the device knows what it
+  measured, so a mismatch means the payload is wrong.
+- **Ingestion is insert-only, except for daily totals.** HealthKit UUIDs name
+  immutable samples, so replaying a batch is safe. Steps and energy
+  (`WearableSample::DAILY_TOTAL_METRICS`) are summed on the device and keyed by
+  date instead, because they are still accruing when first sent; those, and only
+  those, may be corrected in place.
+- **A materialized record is created once and then left alone**, so a session the
+  user corrected by hand survives the next sync. The exception is the day's
+  weigh-in, which is derived from that day's samples and re-derives when more
+  arrive.
+
+A day that synced only steps must not produce a readiness check-in — an
+unanswered day on the record as an answered one gets scored, and a score built
+from nothing is worse than no score.
+
 ## Empty states
 
 An empty state names the action that fills it and links to it. "No workouts

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -89,8 +89,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_050000) do
     t.datetime "performed_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "wearable_sample_id"
     t.index ["user_id", "performed_at"], name: "index_conditioning_sessions_on_user_id_and_performed_at"
     t.index ["user_id"], name: "index_conditioning_sessions_on_user_id"
+    t.index ["wearable_sample_id"], name: "index_conditioning_sessions_on_wearable_sample_id", unique: true, where: "(wearable_sample_id IS NOT NULL)"
     t.check_constraint "avg_hr_bpm IS NULL OR avg_hr_bpm > 0", name: "conditioning_hr_check"
     t.check_constraint "distance_meters IS NULL OR distance_meters >= 0", name: "conditioning_distance_check"
     t.check_constraint "duration_seconds > 0", name: "conditioning_duration_check"
@@ -168,6 +170,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_050000) do
   end
 
   create_table "expenditure_estimates", id: false, force: :cascade do |t|
+    t.string "basis", default: "energy_balance", null: false
     t.datetime "computed_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.string "confidence"
     t.date "estimate_date", null: false
@@ -177,6 +180,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_050000) do
     t.bigint "user_id", null: false
     t.index ["user_id", "estimate_date"], name: "index_expenditure_estimates_on_user_id_and_estimate_date", unique: true
     t.index ["user_id"], name: "index_expenditure_estimates_on_user_id"
+    t.check_constraint "basis::text = ANY (ARRAY['energy_balance'::character varying, 'wearable_energy'::character varying]::text[])", name: "expenditure_estimates_basis_check"
     t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying::text, 'moderate'::character varying::text, 'high'::character varying::text])", name: "expenditure_estimates_confidence_check"
   end
 
@@ -505,13 +509,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_050000) do
     t.string "unit", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.decimal "value", precision: 10, scale: 3
+    t.decimal "value", precision: 14, scale: 6
     t.bigint "wearable_device_id", null: false
     t.index ["user_id", "metric_type", "started_at"], name: "idx_on_user_id_metric_type_started_at_c4f798ed12"
     t.index ["user_id"], name: "index_wearable_samples_on_user_id"
     t.index ["wearable_device_id", "external_id"], name: "index_wearable_samples_on_wearable_device_id_and_external_id", unique: true
     t.index ["wearable_device_id"], name: "index_wearable_samples_on_wearable_device_id"
-    t.check_constraint "metric_type::text = ANY (ARRAY['hrv_sdnn_ms'::character varying::text, 'resting_hr_bpm'::character varying::text, 'sleep_asleep'::character varying::text])", name: "wearable_samples_metric_type_check"
+    t.check_constraint "metric_type::text = ANY (ARRAY['hrv_sdnn_ms'::character varying, 'resting_hr_bpm'::character varying, 'sleep_asleep'::character varying, 'workout'::character varying, 'step_count'::character varying, 'active_energy_kcal'::character varying, 'basal_energy_kcal'::character varying, 'body_mass_kg'::character varying]::text[])", name: "wearable_samples_metric_type_check"
     t.check_constraint "value IS NULL OR value >= 0::numeric", name: "wearable_samples_value_check"
   end
 
@@ -572,6 +576,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_050000) do
   add_foreign_key "coaching_decision_links", "coaching_decisions", column: "parent_decision_id", on_delete: :cascade
   add_foreign_key "coaching_decisions", "users"
   add_foreign_key "conditioning_sessions", "users"
+  add_foreign_key "conditioning_sessions", "wearable_samples"
   add_foreign_key "daily_readiness_inputs", "users"
   add_foreign_key "exercise_muscle_contributions", "exercises"
   add_foreign_key "exercise_muscle_contributions", "muscle_groups"

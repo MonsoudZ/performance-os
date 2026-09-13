@@ -7,6 +7,10 @@ class ConditioningSession < ApplicationRecord
   ZONE_CEILINGS = { "Z1" => 0.60, "Z2" => 0.70, "Z3" => 0.80, "Z4" => 0.90, "Z5" => 1.01 }.freeze
 
   belongs_to :user
+  # Set when the session came off a watch rather than being logged by hand. It is
+  # also the idempotency key: the same HealthKit workout can only ever produce
+  # one session.
+  belongs_to :wearable_sample, optional: true
 
   validates :activity_type, inclusion: { in: ACTIVITY_TYPES }
   validates :performed_at, presence: true
@@ -15,6 +19,11 @@ class ConditioningSession < ApplicationRecord
   validates :avg_hr_bpm, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   scope :performed_between, ->(range) { where(performed_at: range) }
+  scope :synced, -> { where.not(wearable_sample_id: nil) }
+
+  def synced?
+    wearable_sample_id.present?
+  end
 
   # Enter-friendly accessors over the canonical seconds/meters columns.
   def duration_minutes

@@ -34,6 +34,8 @@ module Api
           :started_at,
           :ended_at,
           :value,
+          # Untyped by design: `workout` carries the shape of the session here and
+          # nothing else needs columns of its own for it.
           { metadata: {} }
         ]).to_h
       end

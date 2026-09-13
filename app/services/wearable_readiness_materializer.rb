@@ -1,11 +1,22 @@
+# Folds a day's objective samples into that day's readiness check-in and scores
+# it. The rest of the plan is recomputed by the caller, once, after every
+# materializer for the day has run.
 class WearableReadinessMaterializer
+  # The metrics this materializer is built out of. A day that synced only steps
+  # or a weigh-in has nothing to say about readiness, and inventing a blank
+  # check-in for it would put an unanswered day on the record as an answered one.
+  READINESS_METRICS = %w[hrv_sdnn_ms resting_hr_bpm sleep_asleep].freeze
+
   def initialize(user, metric_date:)
     @user = user
     @metric_date = metric_date
   end
 
   def call
-    readiness_input = user.daily_readiness_inputs.find_or_initialize_by(metric_date: metric_date)
+    readiness_input = user.daily_readiness_inputs.find_by(metric_date: metric_date)
+    return if readiness_input.nil? && READINESS_METRICS.none? { |metric| samples(metric).exists? }
+
+    readiness_input ||= user.daily_readiness_inputs.new(metric_date: metric_date)
     readiness_input.assign_attributes(
       hrv_sdnn_ms: median_value("hrv_sdnn_ms"),
       resting_hr: median_value("resting_hr_bpm")&.round,
@@ -15,8 +26,6 @@ class WearableReadinessMaterializer
     readiness_input.save!
 
     score, decision = ReadinessEvaluator.new(readiness_input).call
-    NutritionEvaluator.new(user, nutrition_date: metric_date).call
-    DailyTrainingOrchestrator.new(user, plan_date: metric_date).call if metric_date == user.local_date
 
     [ readiness_input, score, decision ]
   end
@@ -26,8 +35,8 @@ class WearableReadinessMaterializer
   attr_reader :user, :metric_date
 
   def samples(metric_type)
-    relation = user.wearable_samples.where(metric_type: metric_type)
-    if metric_type == "sleep_asleep"
+    relation = user.wearable_samples.of_metric(metric_type)
+    if WearableSample.end_dated?(metric_type)
       relation.where(ended_at: user.local_day_range(metric_date))
     else
       relation.where(started_at: user.local_day_range(metric_date))

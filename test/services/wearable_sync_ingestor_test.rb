@@ -70,7 +70,7 @@ class WearableSyncIngestorTest < ActiveSupport::TestCase
   end
 
   test "defers materialization to a job per affected date instead of running inline" do
-    assert_enqueued_with(job: WearableReadinessMaterializeJob, args: [ @user, Date.new(2026, 6, 10) ]) do
+    assert_enqueued_with(job: WearableDayMaterializeJob, args: [ @user, Date.new(2026, 6, 10) ]) do
       assert_no_difference "CoachingDecision.count" do
         WearableSyncIngestor.new(@device, samples: [ hrv_sample(value: 50) ]).call
       end
@@ -81,9 +81,88 @@ class WearableSyncIngestorTest < ActiveSupport::TestCase
     samples = [ hrv_sample(value: 52.5) ]
     WearableSyncIngestor.new(@device, samples: samples).call
 
-    assert_no_enqueued_jobs(only: WearableReadinessMaterializeJob) do
+    assert_no_enqueued_jobs(only: WearableDayMaterializeJob) do
       WearableSyncIngestor.new(@device, samples: samples).call
     end
+  end
+
+  test "derives a workout's duration from its interval when the device omits it" do
+    WearableSyncIngestor.new(@device, samples: [
+      workout_sample(value: nil, started: "2026-06-10T13:00:00Z", ended: "2026-06-10T13:42:30Z")
+    ]).call
+
+    assert_equal 2_550.0, @device.wearable_samples.find_by(external_id: "workout-1").value.to_f
+  end
+
+  test "keeps a workout's own elapsed time over the wall-clock span" do
+    WearableSyncIngestor.new(@device, samples: [
+      # A run paused at a traffic light spans 42m30s but only ran for 40m.
+      workout_sample(value: 2_400, started: "2026-06-10T13:00:00Z", ended: "2026-06-10T13:42:30Z")
+    ]).call
+
+    assert_equal 2_400.0, @device.wearable_samples.find_by(external_id: "workout-1").value.to_f
+  end
+
+  test "stores a body mass sample at a scale that survives the round trip to pounds" do
+    WearableSyncIngestor.new(@device, samples: [
+      body_mass_sample(value: "81.646627")
+    ]).call
+
+    sample = @device.wearable_samples.find_by(external_id: "mass-1")
+    assert_equal BigDecimal("81.646627"), sample.value
+    assert_equal "kg", sample.unit
+  end
+
+  test "rejects a sample whose metric type the server does not know" do
+    assert_no_difference "WearableSample.count" do
+      assert_raises(ActiveRecord::RecordInvalid) do
+        WearableSyncIngestor.new(@device, samples: [
+          hrv_sample(value: 50).merge("metric_type" => "blood_glucose_mgdl")
+        ]).call
+      end
+    end
+  end
+
+  test "a resent daily total corrects the day rather than being dropped as a duplicate" do
+    WearableSyncIngestor.new(@device, samples: [ steps_sample(value: 4_000) ]).call
+
+    result = WearableSyncIngestor.new(@device, samples: [ steps_sample(value: 11_500) ]).call
+
+    assert_equal 0, result[:inserted]
+    assert_equal 1, result[:refreshed]
+    assert_equal 0, result[:duplicates]
+    # Without this a day first synced at lunchtime would be stuck at lunchtime.
+    assert_equal 11_500.0, @device.wearable_samples.find_by(external_id: "step_count:2026-06-10").value.to_f
+  end
+
+  test "an unchanged daily total is a duplicate, not a correction" do
+    WearableSyncIngestor.new(@device, samples: [ steps_sample(value: 11_500) ]).call
+
+    result = WearableSyncIngestor.new(@device, samples: [ steps_sample(value: 11_500) ]).call
+
+    assert_equal 0, result[:refreshed]
+    assert_equal 1, result[:duplicates]
+  end
+
+  test "a replay cannot change what an existing sample measured" do
+    WearableSyncIngestor.new(@device, samples: [ steps_sample(value: 11_500) ]).call
+
+    result = WearableSyncIngestor.new(@device, samples: [
+      steps_sample(value: 999).merge("metric_type" => "active_energy_kcal")
+    ]).call
+
+    assert_equal 0, result[:refreshed]
+    sample = @device.wearable_samples.find_by(external_id: "step_count:2026-06-10")
+    assert_equal "step_count", sample.metric_type
+    assert_equal 11_500.0, sample.value.to_f
+  end
+
+  test "a sample that is not a daily total is never rewritten" do
+    WearableSyncIngestor.new(@device, samples: [ hrv_sample(value: 52.5) ]).call
+
+    WearableSyncIngestor.new(@device, samples: [ hrv_sample(value: 99) ]).call
+
+    assert_equal 52.5, @device.wearable_samples.find_by(external_id: "hrv-1").value.to_f
   end
 
   private
@@ -93,6 +172,36 @@ class WearableSyncIngestorTest < ActiveSupport::TestCase
       "external_id" => "hrv-1",
       "metric_type" => "hrv_sdnn_ms",
       "started_at" => started,
+      "value" => value
+    }
+  end
+
+  def workout_sample(value:, started:, ended:)
+    {
+      "external_id" => "workout-1",
+      "metric_type" => "workout",
+      "started_at" => started,
+      "ended_at" => ended,
+      "value" => value,
+      "metadata" => { "activity_type" => "run", "distance_meters" => "8000" }
+    }
+  end
+
+  def body_mass_sample(value:, started: "2026-06-10T13:00:00Z")
+    {
+      "external_id" => "mass-1",
+      "metric_type" => "body_mass_kg",
+      "started_at" => started,
+      "value" => value
+    }
+  end
+
+  def steps_sample(value:, day: "2026-06-10")
+    {
+      "external_id" => "step_count:#{day}",
+      "metric_type" => "step_count",
+      "started_at" => "#{day}T06:00:00Z",
+      "ended_at" => "#{day}T23:59:59Z",
       "value" => value
     }
   end

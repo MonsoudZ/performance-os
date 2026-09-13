@@ -84,7 +84,10 @@
       <div class="compact-list">
         <% @sessions.each do |session| %>
           <div class="compact-list__item">
-            <strong><%= session.activity_type.humanize %><% if session.hr_zone %> · <%= session.hr_zone %><% end %></strong>
+            <strong>
+              <%= session.activity_type.humanize %><% if session.hr_zone %> · <%= session.hr_zone %><% end %>
+              <% if session.synced? %><span class="pill">Synced</span><% end %>
+            </strong>
             <span>
               <%= session.performed_at.strftime("%b %-d") %> ·
               <%= format_duration((session.duration_seconds / 60.0).round) %>
@@ -101,7 +104,7 @@
     <% else %>
       <div class="empty-state">
         <p>No conditioning logged yet.</p>
-        <p>Runs, rides, rows and walks feed the weekly zone-2 target above. Add one with the form.</p>
+        <p>Runs, rides, rows and walks feed the weekly zone-2 target above. Add one with the form, or pair a watch and they arrive on their own.</p>
       </div>
     <% end %>
   </section>

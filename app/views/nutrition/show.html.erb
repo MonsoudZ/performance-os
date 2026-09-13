@@ -34,7 +34,7 @@
           <% @weight_trends.reverse_each do |trend| %>
             <div>
               <span><%= trend.trend_date.strftime("%b %-d") %></span>
-              <strong><%= number_with_precision trend.ewma_kg, precision: 2 %></strong>
+              <strong><%= weight_amount trend.ewma_kg, precision: 2 %></strong>
             </div>
           <% end %>
         </div>
@@ -44,7 +44,10 @@
         <div class="compact-list">
           <% @recent_body_metrics.each do |metric| %>
             <div class="compact-list__item">
-              <strong><%= weight(metric.weight_kg) %></strong>
+              <strong>
+                <%= weight(metric.weight_kg) %>
+                <% if metric.source == "healthkit" %><span class="pill">Synced</span><% end %>
+              </strong>
               <span><%= metric.measured_on.strftime("%b %-d, %Y") %></span>
               <small>
                 <%= button_to "Remove", body_metric_path(metric), method: :delete,
@@ -59,10 +62,25 @@
       <p class="evidence-note">
         <% if @expenditure %>
           Adaptive expenditure: <strong><%= @expenditure.estimated_tdee.round %> kcal</strong> · <%= @expenditure.confidence %> confidence
+          <%= expenditure_basis_note(@expenditure) %>
         <% else %>
           Adaptive expenditure unlocks after 7 logged intake days and at least 7 days of weight-trend evidence.
         <% end %>
       </p>
+
+      <% if @activity.any? %>
+        <p class="evidence-note">
+          Your watch reported
+          <% if @activity.steps %><strong><%= number_with_delimiter @activity.steps %></strong> steps<% end %>
+          <% if @activity.steps && @activity.total_energy_kcal %> and <% end %>
+          <% if @activity.total_energy_kcal %>
+            <strong><%= number_with_delimiter @activity.total_energy_kcal %> kcal</strong> burned
+            (<%= number_with_delimiter @activity.active_energy_kcal %> active,
+            <%= number_with_delimiter @activity.basal_energy_kcal %> resting)
+          <% end %>
+          today. Today is still being lived, so it counts towards expenditure tomorrow.
+        </p>
+      <% end %>
     </article>
 
     <article class="panel">

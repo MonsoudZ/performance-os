@@ -74,7 +74,10 @@ recompute; open pages morph themselves when the new decision lands.
 - **Body composition** — weight and body-fat entries materialized into an EWMA
   weight trend.
 - **Wearables** — an iOS HealthKit ingestion arm (see `native/ios/`) feeding HRV,
-  resting HR, and sleep into readiness.
+  resting HR and sleep into readiness, workouts into conditioning, body mass into
+  the weight trend, and steps and energy into expenditure. Nothing it sends
+  becomes a new kind of record: each metric turns into the thing a user could
+  have logged by hand, so every rule downstream works unchanged.
 - **Web Push** — hourly check-in reminders via a Solid Queue recurring task.
 - **PWA** — manifest, service worker, and a mobile bottom tab bar.
 

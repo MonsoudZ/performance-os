@@ -11,17 +11,21 @@ class WearableSyncIngestor
 
     affected_dates = Set.new
     inserted = 0
+    refreshed = 0
 
     ApplicationRecord.transaction do
       samples.each do |attributes|
         sample = device.wearable_samples.find_or_initialize_by(external_id: attributes.fetch("external_id"))
-        next if sample.persisted?
+        new_record = sample.new_record?
+        next unless new_record || refreshable?(sample, attributes)
 
         sample.assign_attributes(normalized_attributes(attributes))
         sample.user = device.user
+        next unless new_record || sample.changed?
+
         sample.save!
-        inserted += 1
-        affected_dates << metric_date_for(sample)
+        new_record ? inserted += 1 : refreshed += 1
+        affected_dates << device.user.local_date_at(sample.dated_at)
       end
       device.update!(last_synced_at: Time.current)
     end
@@ -29,12 +33,13 @@ class WearableSyncIngestor
     # Defer the evaluator pipeline so the device's request returns immediately;
     # the dashboard fills in over the stream once each date is materialized.
     affected_dates.sort.each do |metric_date|
-      WearableReadinessMaterializeJob.perform_later(device.user, metric_date)
+      WearableDayMaterializeJob.perform_later(device.user, metric_date)
     end
 
     {
       inserted: inserted,
-      duplicates: samples.size - inserted,
+      refreshed: refreshed,
+      duplicates: samples.size - inserted - refreshed,
       materialized_dates: affected_dates.sort
     }
   end
@@ -43,6 +48,16 @@ class WearableSyncIngestor
 
   attr_reader :device, :samples
 
+  # Replaying a batch is safe because a HealthKit UUID names one immutable
+  # sample. Daily totals are the exception — they are keyed by date and were
+  # still accruing when they were first sent — so those, and only those, are
+  # allowed to be corrected in place. The stored metric type decides, not the
+  # claimed one, so a replay cannot turn a night of sleep into a step count.
+  def refreshable?(sample, attributes)
+    WearableSample.daily_total?(sample.metric_type) &&
+      sample.metric_type == attributes["metric_type"]
+  end
+
   def normalized_attributes(attributes)
     metric_type = attributes.fetch("metric_type")
     {
@@ -50,22 +65,24 @@ class WearableSyncIngestor
       started_at: Time.iso8601(attributes.fetch("started_at")),
       ended_at: attributes["ended_at"].present? ? Time.iso8601(attributes["ended_at"]) : nil,
       value: normalized_value(metric_type, attributes),
-      unit: WearableSample::METRIC_UNITS.fetch(metric_type),
+      # An unknown metric type has no canonical unit, so leave it blank and let
+      # the model's inclusion validation reject the sample by name.
+      unit: WearableSample::METRIC_UNITS[metric_type],
       metadata: attributes.fetch("metadata", {})
     }
   end
 
+  # Sleep segments and workouts are intervals, so their value is recoverable from
+  # the timestamps. Devices that send it anyway are believed — a workout's own
+  # elapsed time excludes pauses that the start-to-end span does not.
   def normalized_value(metric_type, attributes)
-    return attributes["value"] unless metric_type == "sleep_asleep"
+    return attributes["value"] unless WearableSample.duration_metric?(metric_type)
     return attributes["value"] if attributes["value"].present?
 
-    started_at = Time.iso8601(attributes.fetch("started_at"))
-    ended_at = Time.iso8601(attributes.fetch("ended_at"))
-    ((ended_at - started_at) / 60).round(3)
-  end
-
-  def metric_date_for(sample)
-    timestamp = sample.metric_type == "sleep_asleep" ? sample.ended_at || sample.started_at : sample.started_at
-    device.user.local_date_at(timestamp)
+    seconds = Time.iso8601(attributes.fetch("ended_at")) - Time.iso8601(attributes.fetch("started_at"))
+    case WearableSample::DURATION_METRICS.fetch(metric_type)
+    when :minutes then (seconds / 60).round(3)
+    when :seconds then seconds.round
+    end
   end
 end

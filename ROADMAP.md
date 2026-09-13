@@ -129,11 +129,33 @@ risk they carry, not by size.
 
 ## Product
 
-- [ ] **Widen wearable ingestion.** `wearable_samples.metric_type` is
-  check-constrained to `hrv_sdnn_ms`, `resting_hr_bpm`, and `sleep_asleep`.
-  Workouts, step count, active energy, and body mass are all available from
-  HealthKit and all feed things the app already models — `ConditioningSession`,
-  `ExpenditureEstimator`, and `BodyMetric` respectively.
+- [x] **Wearable ingestion widened.** Workouts, body mass, steps, active energy
+  and basal energy now sync alongside HRV, resting heart rate and sleep. Each one
+  becomes a record the app already reads rather than a new kind of thing: a
+  workout becomes a `ConditioningSession` (and so feeds the weekly conditioning
+  target), a weigh-in becomes a `BodyMetric` (and so feeds the weight trend,
+  expenditure and calorie targets), and energy gives `ExpenditureEstimator` a
+  second way to answer.
+
+  That second way is deliberately subordinate. Energy balance — intake against
+  what the user's weight actually did — is measured outcome and stays primary;
+  the device's basal-plus-active figure is a model, so it is only used while
+  there is not yet a week of real evidence, never rises above low confidence, and
+  is recorded on the row as `basis`. It counts complete local days only: a TDEE
+  read off a day at breakfast would have set that day's calorie target at a few
+  hundred kilocalories.
+
+  Steps and energy were the one thing that could not be insert-only. They accrue
+  all day, so the device sums them per local day and the server treats a repeat
+  send as a correction — otherwise a day first synced at lunchtime stayed at its
+  lunchtime total forever. Everything else still keys on an immutable HealthKit
+  UUID.
+
+  Two bugs fell out of building it. `ExpenditureEstimator` wrote through `save!`
+  to a table with no primary key, so the second estimate for any date raised
+  `PG::SyntaxError` — it reaches rows through the unique index now, the way
+  `WeightTrendMaterializer` always did. And the nutrition page printed the weight
+  trend in bare kilograms under a form labelled in pounds.
 - [ ] **Let a mesocycle carry its own targets.** Blocks currently modulate volume
   through `accumulation_set_bonus` and deload weeks, but rep and RIR schemes are
   applied to prescriptions imperatively via `ApplyBlockScheme`. Making the block

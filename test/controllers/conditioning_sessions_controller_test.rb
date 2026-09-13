@@ -72,4 +72,25 @@ class ConditioningSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 188, @user.reload.max_hr
     assert_redirected_to conditioning_sessions_path
   end
+
+  test "a session that arrived from a watch says so" do
+    device, = WearableDevice.issue_for!(
+      user: @user, platform: "ios_healthkit", external_id: "device-1", name: "Watch"
+    )
+    sample = device.wearable_samples.create!(
+      user: @user, external_id: "workout-1", metric_type: "workout",
+      started_at: 2.hours.ago, ended_at: 1.hour.ago, value: 2_400, unit: "seconds"
+    )
+    @user.conditioning_sessions.create!(
+      wearable_sample: sample, performed_at: 2.hours.ago, activity_type: "run", duration_seconds: 2_400
+    )
+    @user.conditioning_sessions.create!(
+      performed_at: 3.hours.ago, activity_type: "row", duration_seconds: 1_200
+    )
+
+    get conditioning_sessions_path
+
+    assert_response :success
+    assert_select ".compact-list__item strong .pill", 1
+  end
 end
