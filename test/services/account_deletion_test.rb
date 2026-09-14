@@ -54,9 +54,15 @@ class AccountDeletionTest < ActiveSupport::TestCase
     # The restrict is what stops evidence disappearing from under a live
     # recommendation; erasure has to lift it rather than be blocked by it. The
     # savepoint keeps the expected violation from poisoning the test transaction.
-    assert_raises(ActiveRecord::InvalidForeignKey) do
+    #
+    # StatementInvalid rather than its InvalidForeignKey subclass: Postgres 16
+    # reports this as a foreign-key violation and 18 as a restrict violation,
+    # which Rails wraps differently, and the point here is the guard, not the
+    # server's choice of SQLSTATE.
+    error = assert_raises(ActiveRecord::StatementInvalid) do
       ApplicationRecord.transaction(requires_new: true) { child.delete }
     end
+    assert_match(/violates|restrict/i, error.message)
 
     assert_difference "CoachingDecision.count", -2 do
       AccountDeletion.new(@user).call
