@@ -42,6 +42,8 @@ Rails.application.routes.draw do
   resources :coach_narratives, only: :create
   resources :coaching_decisions, only: :show
   resource :profile, only: %i[edit update destroy]
+  resources :active_sessions, only: :destroy
+  delete "active_sessions", to: "active_sessions#destroy_others", as: :other_active_sessions
   resource :account_export, only: :show, controller: "account_exports"
   post "push_subscriptions", to: "push_subscriptions#create"
   delete "push_subscriptions", to: "push_subscriptions#destroy"

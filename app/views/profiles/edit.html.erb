@@ -107,6 +107,47 @@
   <section class="panel">
     <div class="panel__header">
       <div>
+        <p class="eyebrow">Where you're signed in</p>
+        <h2><%= pluralize @sessions.size, "device" %>.</h2>
+      </div>
+      <% if @sessions.size > 1 %>
+        <%= button_to "Sign out everywhere else", other_active_sessions_path, method: :delete,
+          class: "button button--inline button--secondary" %>
+      <% end %>
+    </div>
+
+    <p class="evidence-note">
+      A device stays signed in for <%= pluralize Session::IDLE_TIMEOUT.in_days.to_i, "day" %> after you
+      last use it, and asks for your password again after
+      <%= pluralize Session::ABSOLUTE_LIFETIME.in_days.to_i, "day" %> whatever happens. If you do not
+      recognize one of these, sign it out and then change your password — signing a device out does not
+      change it, and whoever was there knows the old one.
+    </p>
+
+    <ul class="session-list">
+      <% @sessions.each do |device| %>
+        <li class="session-list__item">
+          <div>
+            <p class="session-list__device">
+              <%= device.device_label %>
+              <% if device == Current.session %><span class="step">This device</span><% end %>
+            </p>
+            <p class="session-list__meta">
+              <%= device.ip_address.presence || "Unknown address" %> ·
+              last used <%= time_ago_in_words device.last_active_at %> ago ·
+              signed in <%= time_ago_in_words device.created_at %> ago
+            </p>
+          </div>
+          <%= button_to "Sign out", active_session_path(device), method: :delete,
+            class: "text-button text-button--danger" %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
         <p class="eyebrow">Your data</p>
         <h2>Take a copy.</h2>
       </div>

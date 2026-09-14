@@ -207,6 +207,32 @@ A day that synced only steps must not produce a readiness check-in — an
 unanswered day on the record as an answered one gets scored, and a score built
 from nothing is worse than no score.
 
+## Staying signed in
+
+A session used to be permanent in both places that matter — a twenty-year cookie
+and a row with no clock — so a session on a lost phone lived forever and nothing
+in the app could see it, let alone end it. It now has two clocks and a page.
+
+- **Two clocks, because neither covers the other.** `Session::IDLE_TIMEOUT` ends
+  a session nobody has used; `Session::ABSOLUTE_LIFETIME` ends one somebody is
+  using, which idle expiry can never reach. `active` and `expired` must stay
+  exact complements — a test asserts they partition the table — or the nightly
+  sweep deletes rows the request path would have honoured.
+- **`last_active_at` is written at most once an hour** (`ACTIVITY_PRECISION`).
+  Writing it on every request would add a write to every page load to sharpen a
+  thirty-day window by minutes. It is its own column rather than `updated_at`,
+  which moves for reasons that have nothing to do with the user being there.
+- **An expired session is deleted on the way in**, not just ignored, so it stops
+  appearing in the user's list as a device they can't sign out of.
+  `ExpiredSessionSweepJob` only exists for users who never come back to make
+  that request.
+- **The list is the real protection.** Idle and absolute expiry are backstops;
+  what actually stops a stolen session is the user seeing a device they don't
+  recognize on `/profile/edit` and ending it. `ActiveSessionsController` scopes
+  every lookup to `Current.user.sessions`, so another account's id is a 404.
+- Revoking the current session from that list is just signing out, and has to
+  clear the cookie as well as the row.
+
 ## Email confirmation
 
 New accounts are created unconfirmed and signed in anyway. Confirmation gates one

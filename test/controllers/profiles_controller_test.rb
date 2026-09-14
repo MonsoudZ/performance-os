@@ -59,6 +59,46 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
     assert_not_equal "wombat", @user.reload.sex
   end
 
+  test "the profile page lists where the account is signed in" do
+    phone = @user.sessions.create!(
+      user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1",
+      ip_address: "203.0.113.7"
+    )
+
+    get edit_profile_path
+
+    assert_response :success
+    assert_select ".session-list__item", count: 2
+    assert_select ".session-list__device", text: /Safari on iPhone/
+    assert_select ".session-list__meta", text: /203\.0\.113\.7/
+    # The device asking is marked, so "sign out everywhere else" is unambiguous.
+    assert_select ".session-list__device .step", { text: "This device", count: 1 },
+      "the current session should be the only one labelled"
+    assert_select "form[action=?][method=post]", active_session_path(phone)
+    assert_select "form[action=?]", other_active_sessions_path
+  end
+
+  # A session that expired since the nightly sweep is already dead, so listing
+  # it would offer the user a device they cannot actually sign out of.
+  test "the signed-in list leaves out sessions that have already expired" do
+    stale = @user.sessions.create!(user_agent: "curl/8.4.0")
+    stale.update_column(:last_active_at, Session::IDLE_TIMEOUT.ago - 1.day)
+
+    get edit_profile_path
+
+    assert_response :success
+    assert_select ".session-list__item", count: 1
+    assert_select ".session-list__device", { text: /curl/, count: 0 }
+  end
+
+  test "the only device signed in is not offered a sign-out-everywhere-else button" do
+    get edit_profile_path
+
+    assert_response :success
+    assert_select ".session-list__item", count: 1
+    assert_select "form[action=?]", other_active_sessions_path, count: 0
+  end
+
   test "the profile page offers account deletion behind a password" do
     get edit_profile_path
 

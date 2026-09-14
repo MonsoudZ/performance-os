@@ -2,6 +2,9 @@ class ProfilesController < ApplicationController
   include MeasurementParams
   def edit
     @user = Current.user
+    # Filtered as well as swept: the daily sweep runs at 4am, and a session that
+    # expired since then is already dead and must not be listed as live.
+    @sessions = Current.user.sessions.active.recently_used_first
   end
 
   def update

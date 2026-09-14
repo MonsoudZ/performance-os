@@ -4,3 +4,8 @@ production:
     class: CheckInReminderJob
     schedule: "every hour"
     # No-ops for users outside their local reminder hour or already checked in.
+  expired_session_sweep:
+    class: ExpiredSessionSweepJob
+    schedule: "every day at 4am"
+    # Expiry is enforced per request; this only clears rows nobody will return
+    # to make that request for.

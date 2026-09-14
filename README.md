@@ -90,6 +90,9 @@ recompute; open pages morph themselves when the new decision lands.
   at most three accounts, counted against the inbox an address actually reaches
   rather than the string, and each account gets twenty coach questions per local
   day — the one action here that costs money per press.
+- **Signed-in devices** — sessions expire on an idle and an absolute clock, and
+  the profile page lists every device an account is signed in on with a way to
+  end any of them, or all but the one you are holding.
 - **Web Push** — hourly check-in reminders via a Solid Queue recurring task.
 - **PWA** — manifest, service worker, and a mobile bottom tab bar.
 

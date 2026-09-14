@@ -374,6 +374,32 @@ risk they carry, not by size.
   non-transactionally so its threads can see each other, and fails if the lock is
   ever removed.
 
+- [x] **Sessions expire, and a user can see where they are signed in.** `Session`
+  was `belongs_to :user` and nothing else, the cookie was `permanent` — twenty
+  years — and the row recorded only when it was created. A session on a lost
+  phone lived forever, and nothing in the app could see it, let alone end it.
+  Password reset was already revoking sessions, which was the right instinct
+  with nothing else behind it.
+
+  Two clocks now, because neither covers what the other does. Thirty days idle
+  ends a session nobody is using, which is the lost-phone case. A hundred and
+  eighty days absolute ends one somebody *is* using, which idle expiry can never
+  reach. `active` and `expired` are exact complements and a test asserts they
+  partition the table, because a sweep that disagrees with the request path
+  either deletes live sessions or leaves dead ones.
+
+  Activity is its own column, written at most once an hour. `updated_at` moves
+  for reasons that have nothing to do with the user being there, and writing on
+  every request would add a write to every page load to sharpen a thirty-day
+  window by minutes.
+
+  The expiry is the backstop; the list is the actual protection. `/profile/edit`
+  names each device — browser and platform, address, when it was last used —
+  marks the one you are reading it on, and offers both one-at-a-time sign-out and
+  "everywhere else", which is the button someone reaches for when a name in that
+  list is wrong. An unrecognized user agent is shown verbatim rather than as
+  "Unknown", since the raw string is worth more to the person deciding.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

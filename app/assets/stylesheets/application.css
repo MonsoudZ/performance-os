@@ -2492,3 +2492,39 @@ h1 {
   justify-self: start;
   margin-top: 4px;
 }
+
+/* Where you're signed in. One row per device: what it is on the left, the way
+   to end it on the right, stacking on a narrow screen. */
+.session-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.session-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.session-list__device {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-weight: 600;
+}
+
+.session-list__meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
