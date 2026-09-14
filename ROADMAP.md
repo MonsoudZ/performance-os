@@ -248,6 +248,22 @@ risk they carry, not by size.
   it, asserts nothing of anyone else's moves, and asserts a failure mid-cascade
   leaves the account whole.
 
+- [x] **The job pipeline survives its own edge cases.** `ApplicationJob` was the
+  untouched Rails stub, with `retry_on` and `discard_on` both commented out, and
+  eight of the nine jobs take an Active Record object as an argument.
+
+  That made account deletion leave wreckage: anything still queued for the user
+  raised `ActiveJob::DeserializationError` on deserialize and sat in
+  `solid_queue_failed_executions` forever. Those jobs are discarded now — there
+  is nothing left to recompute, so they are finished rather than failed — and
+  logged, because a live account losing records would be a different problem.
+
+  The other half matters more day to day. With no `retry_on`, one deadlock
+  permanently failed a recompute and the user's plan silently stopped updating,
+  with nothing on screen to say so. Transient contention now retries five times
+  with backoff, which is safe precisely because every evaluator is idempotent.
+  The retry list is deliberately narrow: a `StatementInvalid` is usually a bug.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

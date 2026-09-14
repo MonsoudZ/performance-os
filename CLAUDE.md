@@ -94,6 +94,18 @@ controller → TrainingRecomputable / NutritionRecomputable
 If you add a controller action that changes something an evaluator reads, call
 the matching `recompute_*` helper.
 
+`ApplicationJob` decides what happens when one of these fails, and both rules
+depend on what the jobs are:
+
+- **Transient database contention is retried** (`ApplicationJob::RETRYABLE_DATABASE_ERRORS`,
+  five attempts with backoff), which is only safe because the evaluators are
+  idempotent. Keep that list narrow: a `StatementInvalid` is usually a bug, and
+  retrying one five times only delays finding it.
+- **A job whose record no longer exists is discarded, not failed.** Every job
+  here takes Active Record objects, so deleting an account raises on deserialize
+  for anything still queued. It is logged — if it shows up for a live account,
+  records are disappearing some other way.
+
 ## Training targets and blocks
 
 An `ExercisePrescription` stores a baseline; a `Mesocycle` owns the scheme. What
