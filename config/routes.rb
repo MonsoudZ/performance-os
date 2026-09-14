@@ -39,6 +39,7 @@ Rails.application.routes.draw do
   resources :coach_narratives, only: :create
   resources :coaching_decisions, only: :show
   resource :profile, only: %i[edit update destroy]
+  resource :account_export, only: :show, controller: "account_exports"
   post "push_subscriptions", to: "push_subscriptions#create"
   delete "push_subscriptions", to: "push_subscriptions#destroy"
 

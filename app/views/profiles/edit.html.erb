@@ -71,6 +71,24 @@
     <% end %>
   </section>
 
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Your data</p>
+        <h2>Take a copy.</h2>
+      </div>
+      <%= link_to "Export everything", account_export_path, class: "button button--inline button--secondary" %>
+    </div>
+
+    <p class="evidence-note">
+      One JSON file holding everything this account has: every workout and set, every weigh-in, food
+      entry and conditioning session, every coaching decision and the evidence it cites, and your
+      profile. Weights are in kilograms and distances in metres — the units the app stores, whichever
+      it shows you — so the numbers are the ones that were recorded rather than a rounded rendering.
+      Passwords and device tokens are not included.
+    </p>
+  </section>
+
   <section class="panel panel--danger">
     <div class="panel__header">
       <div>
@@ -81,8 +99,8 @@
 
     <p class="evidence-note">
       This erases everything: every workout and set you have logged, every weigh-in and food entry,
-      every coaching decision and the evidence behind it, and any paired device. It cannot be undone
-      and there is no export, so take anything you want to keep first.
+      every coaching decision and the evidence behind it, and any paired device. It cannot be undone,
+      so <%= link_to "take a copy first", account_export_path, class: "text-link" %> if you want one.
     </p>
 
     <%= form_with url: profile_path, method: :delete, class: "stacked-form",

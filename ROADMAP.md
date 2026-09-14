@@ -264,6 +264,24 @@ risk they carry, not by size.
   with backoff, which is safe precisely because every evaluator is idempotent.
   The retry list is deliberately narrow: a `StatementInvalid` is usually a bug.
 
+- [x] **An account can be exported.** The delete-account copy used to say "there
+  is no export, so take anything you want to keep first", which documented a gap
+  rather than filling it. One JSON file now holds everything: profile, every
+  workout and set, weigh-ins, food, conditioning, wearable samples, and every
+  coaching decision with the evidence it cites.
+
+  Its spec is the complement of deletion — whatever erasure destroys, the export
+  hands back — and that symmetry is asserted rather than described: both run off
+  one shared `AccountFixture`, so an association added to `User` and forgotten in
+  either fails a test. Two departures are deliberate and tested. Credentials are
+  never exported, though deletion removes them. Catalog exercises the account
+  trained on *are* exported, though deletion leaves them, because without them an
+  exported set is a weight against an integer.
+
+  Generated in the request rather than queued, since no object storage is
+  configured to put a file in. A few years of training is single-digit megabytes;
+  the comment on the controller says what would change that answer.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

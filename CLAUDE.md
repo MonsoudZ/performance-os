@@ -207,7 +207,26 @@ A day that synced only steps must not produce a readiness check-in — an
 unanswered day on the record as an answered one gets scored, and a score built
 from nothing is worse than no score.
 
-## Deleting an account
+## Exporting and deleting an account
+
+`AccountExport` and `AccountDeletion` are complements: whatever erasure destroys,
+the export hands back first. Both are driven by `AccountFixture::ACCOUNT_MODELS`
+and `populate_account`, one shared test fixture that builds an account which has
+used every part of the app — so **adding a `has_many` to `User` means adding it
+to that fixture**, and leaving it out of either service fails a test rather than
+going unnoticed.
+
+The export departs from that symmetry twice, deliberately:
+
+- **Credentials are never exported** (`AccountExport::EXCLUDED_COLUMNS`), though
+  deletion removes them. A test asserts none of them appears anywhere in the file.
+- **Referenced catalog exercises are exported**, though they belong to nobody and
+  deletion leaves them alone — without them an exported set is a weight against
+  an integer.
+
+Values are exported in stored units, like decision prose, because the file is a
+record rather than a rendering; the header says so and names the reader's own
+unit system.
 
 `AccountDeletion` is the only thing that calls `user.destroy`, and two rules
 stand behind it:
@@ -222,8 +241,8 @@ stand behind it:
   the *association* whether it is empty, and the objects that lifted them still
   hold loaded, stale collections that say otherwise.
 
-Adding a `has_many` to `User` means placing it in that order and extending
-`AccountDeletionTest`'s fixture, which populates every association on purpose.
+Adding a `has_many` to `User` means placing it in that order as well as adding it
+to `AccountFixture`.
 
 ## Empty states
 

@@ -3,6 +3,7 @@ require_relative "../config/environment"
 require "rails/test_help"
 require "webmock/minitest"
 require_relative "test_helpers/session_test_helper"
+require_relative "test_helpers/account_fixture"
 
 # Outbound HTTP must be stubbed in tests; a stray real request fails loudly.
 WebMock.disable_net_connect!(allow_localhost: true)

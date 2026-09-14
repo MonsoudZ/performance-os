@@ -81,8 +81,8 @@ recompute; open pages morph themselves when the new decision lands.
   the weight trend, and steps and energy into expenditure. Nothing it sends
   becomes a new kind of record: each metric turns into the thing a user could
   have logged by hand, so every rule downstream works unchanged.
-- **Account deletion** — password-confirmed erasure of everything: logs,
-  decisions, measurements and paired devices.
+- **Account export and deletion** — one JSON file holding everything the app
+  knows, and a password-confirmed erasure of the same set.
 - **Web Push** — hourly check-in reminders via a Solid Queue recurring task.
 - **PWA** — manifest, service worker, and a mobile bottom tab bar.
 
