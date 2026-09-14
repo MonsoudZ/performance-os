@@ -11,7 +11,14 @@ class DoubleProgressionEvaluator
   # block now owns its scheme instead of having it applied to every target. The
   # snapshot gains a "targets" key recording what was actually in force and where
   # it came from, which the prescription alone no longer answers.
-  RULE_VERSION = "3.0.0"
+  # 4.0.0: the headline no longer carries a measurement. It used to read "Add
+  # 2.5 kg next time" and "Deload to 85 kg", which every view that printed it
+  # raw showed to an imperial reader in kilograms — including the audit page's
+  # own heading, directly above a table rendering the same number in pounds. The
+  # weights were always in the snapshot as `current_weight_kg` and
+  # `next_weight_kg`; the sentence is composed from those, in the reader's units,
+  # by `progression_headline`.
+  RULE_VERSION = "4.0.0"
   STALL_SESSION_COUNT = 3
   DELOAD_PERCENT = 0.10
 
@@ -122,7 +129,7 @@ class DoubleProgressionEvaluator
       next_weight = current_weight + prescription.increment_kg
       {
         "status" => "increase",
-        "headline" => "Add #{format_weight(prescription.increment_kg)} kg next time",
+        "headline" => "Add to the load next time",
         "guidance" => increase_guidance(prescription),
         "current_weight_kg" => current_weight.to_f,
         "next_weight_kg" => next_weight.to_f
@@ -236,7 +243,7 @@ class DoubleProgressionEvaluator
     deload_weight = rounded_deload_weight(current_weight, prescription.increment_kg.to_f)
     {
       "status" => "deload",
-      "headline" => "Deload to #{format_weight(deload_weight)} kg",
+      "headline" => "Reduce the load",
       "guidance" => "Three consecutive sessions stalled at the same load. Reduce load by about 10%, rebuild the rep range, then resume progression.",
       "current_weight_kg" => current_weight.to_f,
       "next_weight_kg" => deload_weight,
@@ -278,9 +285,5 @@ class DoubleProgressionEvaluator
     sets.map do |set|
       set.attributes.slice("id", "set_index", "weight_kg", "reps", "rir")
     end
-  end
-
-  def format_weight(value)
-    format("%.2f", value).sub(/\.?0+$/, "")
   end
 end

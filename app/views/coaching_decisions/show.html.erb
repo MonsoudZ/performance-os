@@ -4,7 +4,7 @@
   <section class="page-heading">
     <div>
       <p class="eyebrow">Decision #<%= @decision.id %> · <%= decision_type_label(@decision.decision_type) %></p>
-      <h1><%= @decision.output["headline"].presence || decision_type_label(@decision.decision_type) %></h1>
+      <h1><%= decision_headline(@decision).presence || decision_type_label(@decision.decision_type) %></h1>
       <p><%= @decision.output["guidance"] %></p>
     </div>
   </section>
@@ -80,7 +80,7 @@
               <% end %>
               <% if link.child_decision.retracted_at? %><span class="pill">Withdrawn</span><% end %>
             </strong>
-            <span><%= link.child_decision.output["headline"] %></span>
+            <span><%= decision_headline(link.child_decision) %></span>
             <small><%= link.role.humanize %></small>
           </div>
         <% end %>
@@ -109,7 +109,7 @@
               <% end %>
               <% if link.parent_decision.retracted_at? %><span class="pill">Withdrawn</span><% end %>
             </strong>
-            <span><%= link.parent_decision.output["headline"] %></span>
+            <span><%= decision_headline(link.parent_decision) %></span>
             <small>as <%= link.role.humanize.downcase %></small>
           </div>
         <% end %>

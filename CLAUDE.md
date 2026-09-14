@@ -161,6 +161,21 @@ decision carries the numbers behind its sentence, the *view* rebuilds it in the
 reader's units (`progression_headline`, `lift_headline`, `conditioning_progress`)
 rather than doing string surgery on stored text.
 
+**Better still, a new rule writes no measurement into its prose at all.** Every
+view that prints a stored sentence raw then shows the right thing to everybody,
+and nothing depends on remembering which helper to route it through.
+`DoubleProgressionEvaluator` used to write "Deload to 85 kg", and the audit
+page's own heading showed that to an imperial reader directly above a table
+rendering the same number in pounds. From `rule_version` 4.0.0 the sentence names
+no unit and the weights stay where they always were, in `current_weight_kg` and
+`next_weight_kg`.
+
+Decisions already written are immutable, so `decision_headline` rebuilds an older
+progression sentence from those weights wherever one is displayed. Their stored
+text still appears verbatim in the snapshot table, which is the record of what
+was written — the fix is that nothing new writes a unit there, not that history
+gets rewritten.
+
 ## Conventions elsewhere
 
 - **Controllers are thin.** Anything with a rule in it belongs in `app/services`.

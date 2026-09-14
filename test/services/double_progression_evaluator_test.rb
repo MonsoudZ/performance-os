@@ -62,6 +62,34 @@ class DoubleProgressionEvaluatorTest < ActiveSupport::TestCase
     assert_equal 3, decision.output["stall_sessions"]
   end
 
+  # The headline used to read "Add 2.5 kg next time" and "Deload to 85 kg", and
+  # every view that printed it raw showed kilograms to an imperial reader. The
+  # weights are in the snapshot beside it; the sentence is composed from those.
+  test "no outcome writes a unit into its headline" do
+    increase = DoubleProgressionEvaluator.new(create_workout([ [ 100, 8, 2 ], [ 100, 8, 2 ], [ 100, 8, 2 ] ])).call.first
+    assert_equal "increase", increase.output["status"]
+
+    2.times { DoubleProgressionEvaluator.new(create_workout(HOLD_SETS)).call }
+    deload = DoubleProgressionEvaluator.new(create_workout(HOLD_SETS)).call.first
+    assert_equal "deload", deload.output["status"]
+
+    [ increase, deload ].each do |decision|
+      %w[headline guidance].each do |key|
+        assert_no_match(/\b(kg|lb|lbs|kilograms?|pounds?)\b/, decision.output[key].to_s,
+          "#{decision.output['status']} #{key} still names a unit")
+      end
+    end
+  end
+
+  # Losing the unit must not lose the number: the view rebuilds the sentence
+  # from these, so they are what the headline used to say.
+  test "the weights the headline used to carry are still recorded" do
+    decision = DoubleProgressionEvaluator.new(create_workout([ [ 100, 8, 2 ], [ 100, 8, 2 ], [ 100, 8, 2 ] ])).call.first
+
+    assert_equal 100.0, decision.output["current_weight_kg"]
+    assert_equal 102.5, decision.output["next_weight_kg"]
+  end
+
   test "does not count one workout twice as separate stalls" do
     workout = create_workout(HOLD_SETS)
     2.times { DoubleProgressionEvaluator.new(workout).call }
@@ -244,7 +272,7 @@ class DoubleProgressionEvaluatorTest < ActiveSupport::TestCase
     assert_equal "block_scheme", decision.inputs.dig("targets", "source")
     assert_equal 4, decision.inputs.dig("targets", "rep_max")
     assert_equal 8, decision.inputs.dig("prescription", "rep_max")
-    assert_equal "3.0.0", decision.rule_version
+    assert_equal "4.0.0", decision.rule_version
   end
 
   test "a decision reads the block that was running when the session happened" do

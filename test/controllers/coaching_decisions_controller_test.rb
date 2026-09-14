@@ -189,6 +189,60 @@ class CoachingDecisionsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".snapshot__row dd", text: /training block’s scheme/
   end
 
+  # A decision written before rule_version 4.0.0 recorded the weight in its own
+  # sentence. Those decisions are immutable, so the page has to rebuild the
+  # sentence from the weights beside it — otherwise the heading says kilograms
+  # directly above a table saying pounds.
+  test "an older progression headline is rebuilt in the reader's units" do
+    imperial = users(:two)
+    assert_equal "imperial", imperial.unit_system
+    sign_out
+    sign_in_as(imperial)
+    decision = create_decision(
+      user: imperial,
+      decision_type: "double_progression",
+      output: {
+        "status" => "deload", "headline" => "Deload to 85 kg", "guidance" => "Stalled three times.",
+        "current_weight_kg" => 95.0, "next_weight_kg" => 85.0
+      }
+    )
+
+    get coaching_decision_path(decision)
+
+    assert_response :success
+    assert_select "h1", text: "Deload to 187.3929 lb"
+
+    # The snapshot below still shows the sentence as it was stored. A decision is
+    # immutable and that table is the record of what was written, so the fix is
+    # that nothing new writes a unit into it — not that history gets rewritten.
+    assert_select ".snapshot__row dd", text: "Deload to 85 kg"
+  end
+
+  test "a metric reader sees the same headline in kilograms" do
+    decision = create_decision(
+      decision_type: "double_progression",
+      output: {
+        "status" => "increase", "headline" => "Add to the load next time", "guidance" => "All sets topped out.",
+        "current_weight_kg" => 100.0, "next_weight_kg" => 102.5
+      }
+    )
+
+    get coaching_decision_path(decision)
+
+    assert_response :success
+    assert_select "h1", text: "Add 2.5 kg next time"
+  end
+
+  # Only progression decisions record a weight in their sentence; everything
+  # else passes through untouched.
+  test "a headline with no weight behind it is left alone" do
+    decision = create_decision(output: { "status" => "push", "headline" => "Green light", "guidance" => "Go." })
+
+    get coaching_decision_path(decision)
+
+    assert_select "h1", text: "Green light"
+  end
+
   private
 
   def create_decision(user: @user, decision_type: "daily_readiness", inputs: {}, output: nil)

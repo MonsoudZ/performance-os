@@ -35,6 +35,20 @@ module CoachingDecisionsHelper
 
   # "next_weight_kg" -> "Next weight". The unit belongs to the value, not the
   # name, because the reader's unit may not be the stored one.
+  # A decision's headline in the reader's units.
+  #
+  # Progression decisions before rule_version 4.0.0 recorded the weight in the
+  # sentence — "Deload to 85 kg" — and every view that printed it raw showed
+  # kilograms to an imperial reader, including this page's own heading, above a
+  # table rendering the same number in pounds. Those decisions are immutable and
+  # stay as they are, so the sentence is rebuilt from the weights beside it.
+  # Newer ones carry no measurement and pass straight through.
+  def decision_headline(decision)
+    return progression_headline(decision.output) if decision.decision_type == "double_progression"
+
+    decision.output["headline"]
+  end
+
   def decision_field_label(key)
     label = key.to_s
     MEASUREMENT_SUFFIXES.each { |suffix| label = label.delete_suffix(suffix) }

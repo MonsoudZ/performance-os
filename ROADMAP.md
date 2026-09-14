@@ -24,10 +24,12 @@ risk they carry, not by size.
   targets metres and writes no unit into its prose at all, and the view composes
   the progress sentence in the reader's units.
 
-  Remaining: `DoubleProgressionEvaluator` still writes kilograms into two
-  `headline` strings. Both are rebuilt by `progression_headline` for display, so
-  no user reads them, but making the stored output unit-neutral would need a
-  `rule_version` bump.
+  `DoubleProgressionEvaluator` used to write kilograms into two `headline`
+  strings. That was logged here as cosmetic — "no user reads them" — and it was
+  wrong: the audit page prints `output["headline"]` as its own `<h1>`, so an
+  imperial reader opening a deload decision got "Deload to 85 kg" as the page
+  heading, immediately above a table reading "Next weight = 187.3929 lb". Fixed
+  from both ends at `rule_version` 4.0.0, below.
 
 - [x] **Measurements are stored exactly.** Columns held two decimal places, which
   is coarser than a unit conversion needs: 45.25 lb was stored as 20.53 kg and
@@ -507,6 +509,28 @@ risk they carry, not by size.
   the commented-out SMTP block beside it, and the reason an alert would have
   been filtered as spam even once it was configured. It derives from `APP_HOST`
   now, so no new variable is required.
+
+- [x] **A progression headline names no unit.** Checking the claim that "no user
+  reads them" is what turned this from a cosmetic note into a bug: the audit page
+  renders `output["headline"]` as its `<h1>`, so an imperial reader saw "Deload
+  to 85 kg" as the heading directly above a snapshot row reading "Next weight =
+  187.3929 lb" — the same number, two units, one page.
+
+  Fixed from both ends. `DoubleProgressionEvaluator` goes to `rule_version` 4.0.0
+  and writes "Add to the load next time" and "Reduce the load"; the weights were
+  always in the snapshot as `current_weight_kg` and `next_weight_kg`, so nothing
+  is lost and `progression_headline` composes the sentence in the reader's units
+  as it always did. Decisions already written are immutable, so `decision_headline`
+  rebuilds their sentence from those weights wherever one is displayed, which
+  fixes history as well as the future.
+
+  Their stored text still shows verbatim in the snapshot table. That is
+  deliberate: the table is the record of what was written, and the fix is that
+  nothing new writes a unit there rather than that the past gets edited.
+
+  Checked by rendering the page as an imperial reader before and after — a v4
+  decision now contains no "kg" anywhere, and an older one has a correct heading
+  over an unchanged record.
 
 ## Developer experience
 
