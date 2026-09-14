@@ -32,6 +32,32 @@ class NutritionAdjustmentEvaluatorTest < ActiveSupport::TestCase
     assert_equal adjustment.id, tomorrow["adjustment_decision_id"]
   end
 
+  # The correction has to stop being authoritative at some point, or one week's
+  # verdict keeps setting calories long after the week it reasoned about.
+  test "records when the adjustment stops applying" do
+    review = create_review("decrease")
+
+    adjustment = NutritionAdjustmentEvaluator.new(review).call
+    effective_on = Date.iso8601(adjustment.output["effective_on"])
+
+    assert_equal (effective_on + NutritionAdjustmentEvaluator::AUTHORITY_DAYS).iso8601,
+      adjustment.output["expires_on"]
+
+    resolve = ->(date) { NutritionTargetResolver.new(@user, goal: @user.active_goal, target_date: date).call }
+
+    assert_equal "weekly_adjustment", resolve.call(Date.iso8601(adjustment.output["expires_on"]))["source"]
+    assert_equal "goal_params", resolve.call(Date.iso8601(adjustment.output["expires_on"]) + 1.day)["source"]
+  end
+
+  # The sentence a user reads has to match what the rule does, or the record
+  # says one thing and the engine does another.
+  test "the guidance names the date the target lapses" do
+    adjustment = NutritionAdjustmentEvaluator.new(create_review("decrease")).call
+    expires_on = Date.iso8601(adjustment.output["expires_on"])
+
+    assert_includes adjustment.output["guidance"], expires_on.strftime("%B %-d")
+  end
+
   test "is idempotent for the same weekly review" do
     review = create_review("hold")
     first = NutritionAdjustmentEvaluator.new(review).call

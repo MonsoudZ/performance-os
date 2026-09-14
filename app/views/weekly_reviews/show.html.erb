@@ -7,6 +7,16 @@
       <p class="eyebrow">Weekly evidence review</p>
       <h1>Is the plan working?</h1>
       <p>The daily engine tells you what to do. This review asks whether seven days of training, readiness, nutrition, and weight evidence justify changing the plan.</p>
+      <%# Which week this verdict is about, so a review from a month ago cannot
+          read as this morning's. It runs itself now; the button is for asking
+          again before the next one is due. %>
+      <% if @review %>
+        <p class="evidence-note">
+          Covering <%= @review.output.dig("period", "start")&.to_date&.strftime("%B %-d") %>–<%=
+            @review.output.dig("period", "end")&.to_date&.strftime("%B %-d") %>, run
+          <%= time_ago_in_words @review.created_at %> ago. It runs again on Monday.
+        </p>
+      <% end %>
     </div>
     <%= button_to @review ? "Refresh review" : "Run first review", weekly_review_path, class: "button" %>
   </section>

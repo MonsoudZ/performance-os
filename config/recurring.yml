@@ -9,3 +9,8 @@ production:
     schedule: "every day at 4am"
     # Expiry is enforced per request; this only clears rows nobody will return
     # to make that request for.
+  weekly_review:
+    class: ScheduledWeeklyReviewJob
+    schedule: "every hour"
+    # No-ops outside each user's local review hour, for a week already reviewed,
+    # or for a week the account recorded nothing in.

@@ -453,6 +453,36 @@ risk they carry, not by size.
   trips `--canonical` while leaving the structural check quiet — which is the
   whole reason they are separate.
 
+- [x] **The weekly review runs itself, and its verdict expires.** Two halves of
+  one bug. `WeeklyReviewRecomputeJob` was enqueued from exactly one place — a
+  button — so the only rule in the DAG that changes a calorie target ran when
+  somebody remembered it. And `NutritionTargetResolver` prefers an adjustment
+  over every other source with no lower bound, so a target set in March was still
+  setting calories in September, beating an expenditure estimate recomputed daily
+  from what the user actually weighed. The app said so out loud: the guidance
+  read "remains active until newer weekly evidence replaces it", and nothing
+  produced newer weekly evidence on its own.
+
+  `ScheduledWeeklyReviewJob` runs hourly and acts at each user's own local hour,
+  so the review lands on the week the user lives in. It checks daily rather than
+  only when the week turns, so a review the worker missed is caught up instead of
+  skipped, and it writes nothing for a week the account recorded nothing in —
+  otherwise a dormant account collects "keep collecting evidence" forever, which
+  is the readiness-day mistake wearing different clothes.
+
+  The expiry is the net rather than the plan: with the review scheduled it should
+  rarely fire, but a job can legitimately not run and a stale correction must not
+  outrank measured evidence when it doesn't. `rule_version` goes to 2.0.0 for the
+  new `expires_on`, and because the evaluator's short-circuit means existing rows
+  are never rewritten, the resolver derives the same bound from `effective_on`
+  for decisions that predate the field.
+
+  Checked by running an account through the whole loop rather than trusting the
+  assertions: a week of evidence, the job firing at the user's local hour with
+  nobody pressing anything, and the target reading 2,750 on the adjustment's
+  first and last day and 2,600 the day after it lapses. Each guard in the job was
+  disabled in turn to confirm the test that names it is the one that fails.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

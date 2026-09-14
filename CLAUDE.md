@@ -178,6 +178,38 @@ rather than doing string surgery on stored text.
   inline `style=` attributes are allowed. If something renders but does not work,
   check the console for a CSP violation before anything else.
 
+## The weekly review runs itself
+
+`WeeklyEvidenceReview` decides whether a week of evidence justifies changing the
+calorie target, and `NutritionAdjustmentEvaluator` turns that verdict into one.
+It used to be reachable only from a button on `/weekly_review`, which made the
+one rule that changes a target depend on somebody remembering it.
+
+- **`ScheduledWeeklyReviewJob` runs hourly and acts at each user's own
+  `REVIEW_HOUR`**, like `CheckInReminderJob`, so a review lands on the week the
+  user lives in rather than on UTC's. The button stays, for asking again before
+  the next one is due.
+- **It checks every day, not only when the week turns.** A review missed because
+  the worker was down is picked up the next morning rather than skipped. The
+  evaluator is idempotent, so a redundant run would be free anyway — the check
+  only keeps one off the queue.
+- **A week the account recorded nothing in gets no review.** Otherwise a dormant
+  account collects "keep collecting evidence" on the record every week forever,
+  which is the same mistake as scoring a readiness day nobody answered. Partial
+  evidence *is* reviewed: that user is training and being told what is missing is
+  the point.
+- **An adjustment expires** (`NutritionAdjustmentEvaluator::AUTHORITY_DAYS`).
+  `NutritionTargetResolver` prefers an adjustment over every other way of
+  arriving at a target, so unbounded it kept setting calories long after the week
+  it reasoned about, beating an expenditure estimate recomputed daily. Two weeks
+  tolerates one missed review; after that the resolver falls back to measured
+  evidence. Scheduling is why this should rarely fire — it is the net, not the
+  plan.
+- Decisions written before `rule_version` 2.0.0 carry no `expires_on`, and the
+  evaluator's short-circuit means they are never rewritten, so the resolver
+  derives the bound from `effective_on` when the field is absent. Old rows are
+  held to the same rule rather than living forever by accident.
+
 ## Wearable ingestion
 
 Samples arrive at `POST /api/v1/wearable_sync` authenticated by a per-device

@@ -1,8 +1,20 @@
 class NutritionAdjustmentEvaluator
   RULE_KEY = "nutrition_adjustment.v1"
-  RULE_VERSION = "1.0.0"
+  # 2.0.0 adds `expires_on` to the output. An adjustment used to outrank every
+  # other way of arriving at a calorie target for as long as it existed, and the
+  # only thing that replaced it was a weekly review somebody remembered to run —
+  # so a target set in March was still setting calories in September, beating an
+  # expenditure estimate recomputed daily from what the user actually weighed.
+  RULE_VERSION = "2.0.0"
   CALORIE_STEP = 150
   MINIMUM_REVIEW_CADENCE_DAYS = 7
+
+  # How long an adjustment stays authoritative. The review it came from covers
+  # seven days and is meant to be superseded by the next one, so two weeks
+  # tolerates exactly one missed review. After that the resolver falls back to
+  # the adaptive expenditure estimate — measured evidence rather than a
+  # remembered correction.
+  AUTHORITY_DAYS = 14
 
   def initialize(weekly_review)
     @weekly_review = weekly_review
@@ -78,6 +90,10 @@ class NutritionAdjustmentEvaluator
     period_end + 1.day
   end
 
+  def expires_on
+    effective_on + AUTHORITY_DAYS
+  end
+
   def inputs
     {
       "weekly_review_decision_id" => weekly_review.id,
@@ -95,7 +111,8 @@ class NutritionAdjustmentEvaluator
       "calorie_delta" => calorie_delta,
       "previous_target_kcal" => current_target,
       "target_kcal" => new_target,
-      "effective_on" => effective_on
+      "effective_on" => effective_on,
+      "expires_on" => expires_on
     }
   end
 
@@ -114,9 +131,12 @@ class NutritionAdjustmentEvaluator
 
     case direction
     when "increase", "decrease"
-      "The new #{new_target.round} kcal target begins #{effective_on.strftime("%B %-d")} and remains active until newer weekly evidence replaces it."
+      "The new #{new_target.round} kcal target begins #{effective_on.strftime("%B %-d")}. Next week's " \
+        "review replaces it; if none runs, it lapses on #{expires_on.strftime("%B %-d")} and the target " \
+        "goes back to what your logged intake and weight say."
     when "hold"
-      "The weight trend is inside the goal rate band, so the current target remains in place."
+      "The weight trend is inside the goal rate band, so the current target stays until " \
+        "#{expires_on.strftime("%B %-d")} or until next week's review, whichever comes first."
     when "cadence_locked"
       "A calorie correction already used a review from the last seven days. Wait for a new weekly evidence window."
     else

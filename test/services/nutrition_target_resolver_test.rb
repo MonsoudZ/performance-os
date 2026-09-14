@@ -67,7 +67,82 @@ class NutritionTargetResolverTest < ActiveSupport::TestCase
     assert_equal(-150, result["calorie_delta"])
   end
 
+  # An adjustment outranking every other source is the point of it; outranking
+  # them forever is the bug. Two weeks is one missed review.
+  test "an adjustment stops applying once it has expired" do
+    goal = build_goal("lose_fat", started_on: Date.current - 60.days)
+    expenditure(2_600)
+    adjustment(
+      effective_on: Date.current - NutritionAdjustmentEvaluator::AUTHORITY_DAYS - 1.day,
+      expires_on: Date.current - 1.day
+    )
+
+    result = resolve(goal)
+
+    assert_equal 2_100.0, result["kcal"] # back to 2,600 - 500
+    assert_equal "adaptive_expenditure", result["source"]
+    assert_nil result["adjustment_decision_id"]
+  end
+
+  test "an adjustment still inside its window applies" do
+    goal = build_goal("lose_fat", started_on: Date.current - 60.days)
+    expenditure(2_600)
+    adjustment(effective_on: Date.current - 1.day, expires_on: Date.current)
+
+    result = resolve(goal)
+
+    assert_equal 2_650.0, result["kcal"]
+    assert_equal "weekly_adjustment", result["source"]
+  end
+
+  # Decisions written before rule_version 2.0.0 carry no expires_on, and the
+  # evaluator's short-circuit means they are never rewritten — so the bound has
+  # to be derived for them or they would outlive the rule that replaced them.
+  test "an adjustment predating expires_on is bounded from effective_on" do
+    goal = build_goal("lose_fat", started_on: Date.current - 60.days)
+    expenditure(2_600)
+    adjustment(effective_on: Date.current - NutritionAdjustmentEvaluator::AUTHORITY_DAYS - 1.day)
+
+    assert_equal "adaptive_expenditure", resolve(goal)["source"]
+  end
+
+  test "an adjustment predating expires_on still applies inside the derived window" do
+    goal = build_goal("lose_fat", started_on: Date.current - 60.days)
+    expenditure(2_600)
+    adjustment(effective_on: Date.current - NutritionAdjustmentEvaluator::AUTHORITY_DAYS + 1.day)
+
+    assert_equal "weekly_adjustment", resolve(goal)["source"]
+  end
+
+  # The boundary itself, because an off-by-one here silently changes a user's
+  # calories on a day nobody is looking.
+  test "an adjustment applies on its last day and not the day after" do
+    goal = build_goal("lose_fat", started_on: Date.current - 60.days)
+    expenditure(2_600)
+    decision = adjustment(effective_on: Date.current - 5.days, expires_on: Date.current)
+
+    assert_equal "weekly_adjustment", resolve(goal)["source"]
+
+    decision.update_column(:output, decision.output.merge("expires_on" => (Date.current - 1.day).iso8601))
+    assert_equal "adaptive_expenditure", resolve(goal)["source"]
+  end
+
   private
+
+  def adjustment(effective_on:, expires_on: :none)
+    output = { "target_kcal" => 2_650, "calorie_delta" => -150, "effective_on" => effective_on.to_date.iso8601 }
+    output["expires_on"] = expires_on.to_date.iso8601 unless expires_on == :none
+
+    @user.coaching_decisions.create!(
+      decision_type: "nutrition_adjustment",
+      rule_key: NutritionAdjustmentEvaluator::RULE_KEY,
+      rule_version: "2.0.0",
+      inputs: {},
+      citations: [],
+      confidence: "moderate",
+      output: output
+    )
+  end
 
   def resolve(goal)
     NutritionTargetResolver.new(@user, goal: goal, target_date: Date.current).call

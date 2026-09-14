@@ -73,6 +73,15 @@ class NutritionTargetResolver
       .pick(:ewma_kg)
   end
 
+  # An adjustment outranks every other way of arriving at a target, so it has to
+  # stop somewhere: unbounded, one correction kept setting calories long after
+  # the week it was reasoning about, beating an expenditure estimate recomputed
+  # daily from what the user actually weighed.
+  #
+  # Decisions written before rule_version 2.0.0 carry no `expires_on`, and the
+  # evaluator's short-circuit means they are never rewritten, so the bound is
+  # derived from `effective_on` when the field is absent. Old rows are held to
+  # the same rule as new ones rather than living forever by accident.
   def nutrition_adjustment
     return @nutrition_adjustment if defined?(@nutrition_adjustment)
 
@@ -81,6 +90,12 @@ class NutritionTargetResolver
       .of_type("nutrition_adjustment")
       .where(rule_key: NutritionAdjustmentEvaluator::RULE_KEY)
       .where("(output ->> 'effective_on')::date <= ?", target_date)
+      .where(
+        # The cast is load-bearing: a bind parameter arrives untyped and
+        # `date + unknown` is ambiguous to Postgres.
+        "COALESCE((output ->> 'expires_on')::date, (output ->> 'effective_on')::date + ?::integer) >= ?",
+        NutritionAdjustmentEvaluator::AUTHORITY_DAYS, target_date
+      )
       .order(Arel.sql("(output ->> 'effective_on')::date DESC"), created_at: :desc)
       .first
   end

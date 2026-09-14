@@ -40,6 +40,7 @@ nothing has changed. Re-running the pipeline is always safe.
 | `DailyTrainingOrchestrator` | The composed daily plan, modulated by readiness, mesocycle phase, and deload weeks. |
 | `CoachNarrator` | Optional. Asks Claude to explain the decision graph in plain language, grounded *only* on the serialized decisions — never the database. |
 | `CoachBudget` | How many coach questions an account has left today, and the claim that stops two asked at once from both taking the last one. |
+| `ScheduledWeeklyReviewJob` | Runs each user's weekly review at their own local hour, so a calorie correction does not wait to be asked for. |
 
 ### How a write becomes a new plan
 
