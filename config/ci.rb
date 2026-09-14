@@ -3,6 +3,11 @@
 CI.run do
   step "Setup", "bin/setup --skip-server"
 
+  # --canonical as well as the structural check, because this runs against a
+  # developer's own Postgres — the only server whose dump the committed file can
+  # be expected to match byte for byte.
+  step "Schema: db/schema.rb matches db/migrate", "bin/schema-check --canonical"
+
   step "Style: Ruby", "bin/rubocop"
 
   step "Security: Gem audit", "bin/bundler-audit"

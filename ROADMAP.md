@@ -433,6 +433,26 @@ risk they carry, not by size.
   container, so a version-dependent failure can still reach CI having passed
   `bin/ci`. That is now written down in CLAUDE.md rather than rediscovered.
 
+- [x] **Schema drift is caught before it is committed.** `bin/schema-check`
+  rebuilds the schema two ways on a scratch database of its own and compares
+  them, so neither development nor test is disturbed.
+
+  The check is deliberately two questions rather than one, because only one of
+  them has the same answer on every Postgres. *Does the committed file load into
+  the same database the migrations build?* compares two dumps from the same
+  server, so a version's particular way of printing an expression cancels out —
+  that one is safe in GitHub Actions, which runs a major version ahead of the
+  development container, and it is what breaks when somebody adds a migration
+  and forgets to commit the dump. *Is the file byte-for-byte what this server
+  dumps?* is the churn that was just fixed, is only answerable about the server
+  in front of you, and so runs under `--canonical` from `bin/ci` alone.
+
+  Both halves were proved to fail rather than assumed to work: an uncommitted
+  migration trips the structural check with a diff naming the missing column,
+  and putting the two constraints back into the form Postgres does not print
+  trips `--canonical` while leaving the structural check quiet — which is the
+  whole reason they are separate.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

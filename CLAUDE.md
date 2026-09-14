@@ -403,7 +403,17 @@ only route back to that checklist once a user has left it.
   committed form is now the one both `db:migrate` and `db:schema:load` converge
   on and re-dump unchanged. If those two lines ever look wrong, re-derive them
   with a rebuild rather than hand-editing them back; the constraints are
-  identical either way, and a test proves it by inserting an unlisted value.
+  identical either way, and `CheckConstraintsTest` proves it by inserting an
+  unlisted value.
+
+  `bin/schema-check` guards both halves of this, on a scratch database of its
+  own so development and test are untouched. **Structural** — the committed file
+  loads into the same database the migrations build — is what breaks when a
+  migration's dump is not committed, and it compares two dumps from the *same*
+  server, so it means the same thing on any Postgres and runs in GitHub Actions
+  too. **Canonical** — the file is byte-for-byte what this server dumps — is the
+  churn above, is only a sensible question of the server you are asking, and so
+  runs under `--canonical` from `bin/ci` alone.
 
 - Catalog exercises (`user_id: nil`) survive `db:seed:replant`. Tests must not
   assume an empty `exercises` table — use distinctive names and assert on

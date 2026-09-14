@@ -108,6 +108,17 @@ jobs:
         with:
           bundler-cache: true
 
+      # The structural half only. Whether the committed file is byte-for-byte
+      # what a server dumps depends on the server, and this one is a major
+      # version ahead of the development container — so asking that here would
+      # fail over how Postgres 18 prints an expression rather than over drift.
+      # Comparing two dumps this same server made cancels that out.
+      - name: Check db/schema.rb against db/migrate
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+        run: bin/schema-check
+
       - name: Run tests
         env:
           RAILS_ENV: test

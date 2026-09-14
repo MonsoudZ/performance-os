@@ -1,0 +1,101 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Does db/schema.rb still describe the database the migrations build?
+#
+# Two properties, checked separately because only one of them is the same
+# question on every Postgres.
+#
+#   Structural  The schema file, loaded, produces the same database the
+#               migrations produce. This is what breaks when someone adds a
+#               migration and forgets to commit the dump. Both sides are dumped
+#               by the same server, so a version's particular way of printing an
+#               expression cancels out and the check means the same thing
+#               everywhere. Always run.
+#
+#   Canonical   The committed file is byte-for-byte what this server dumps.
+#               This is what breaks when the file holds a form Postgres does not
+#               produce, which left a diff nobody wrote after every db:migrate
+#               until it was fixed. It is only meaningful against the Postgres
+#               you are asking, so it runs with --canonical, from bin/ci, on a
+#               developer's own server — not in GitHub Actions, which runs a
+#               different major version.
+#
+# Uses a scratch database of its own and drops it afterwards, so development and
+# test are never touched.
+
+require "fileutils"
+require "tmpdir"
+require "uri"
+
+SCHEMA = File.expand_path("../db/schema.rb", __dir__)
+SCRATCH_DATABASE = "performance_os_schema_check"
+
+def scratch_url
+  return "postgres:///#{SCRATCH_DATABASE}" if ENV["DATABASE_URL"].to_s.empty?
+
+  URI.parse(ENV["DATABASE_URL"]).tap { |url| url.path = "/#{SCRATCH_DATABASE}" }.to_s
+end
+
+def rails(*tasks)
+  env = { "RAILS_ENV" => "test", "DATABASE_URL" => scratch_url, "DISABLE_SPRING" => "1" }
+  return if system(env, File.expand_path("rails", __dir__), *tasks, out: File::NULL)
+
+  abort "bin/schema-check: `bin/rails #{tasks.join(' ')}` failed against the scratch database"
+end
+
+def dump_after(*tasks)
+  rails("db:drop", "db:create", *tasks)
+  rails("db:schema:dump")
+  File.read(SCHEMA)
+end
+
+def report(title, expected, actual, advice)
+  return true if expected == actual
+
+  warn "\n#{title}\n"
+  Dir.mktmpdir do |dir|
+    File.write(File.join(dir, "expected.rb"), expected)
+    File.write(File.join(dir, "actual.rb"), actual)
+    system("diff", "-u", File.join(dir, "expected.rb"), File.join(dir, "actual.rb"))
+  end
+  warn "\n#{advice}\n"
+  false
+end
+
+canonical = ARGV.include?("--canonical")
+committed = File.read(SCHEMA)
+
+begin
+  # Load first, while db/schema.rb is still the committed file.
+  from_file = dump_after("db:schema:load")
+  from_migrations = dump_after("db:migrate")
+ensure
+  File.write(SCHEMA, committed)
+  rails("db:drop")
+end
+
+ok = report(
+  "db/schema.rb and db/migrate describe different databases.",
+  from_file,
+  from_migrations,
+  "Left is what the committed schema loads, right is what the migrations build. " \
+  "Run `bin/rails db:migrate` and commit db/schema.rb."
+)
+
+if canonical
+  ok &= report(
+    "db/schema.rb is not what this Postgres dumps.",
+    committed,
+    from_migrations,
+    "Left is the committed file, right is what a rebuild produces. Take the right-hand " \
+    "form: an expression Postgres does not print back is rewritten on every rebuild. " \
+    "See the db/schema.rb note in CLAUDE.md."
+  )
+end
+
+if ok
+  puts "db/schema.rb matches the migrations#{canonical ? ' and is what this Postgres dumps' : ''}."
+else
+  exit 1
+end
