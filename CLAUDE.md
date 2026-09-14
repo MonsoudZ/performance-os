@@ -265,6 +265,38 @@ in the app could see it, let alone end it. It now has two clocks and a page.
 - Revoking the current session from that list is just signing out, and has to
   clear the cookie as well as the row.
 
+## When something fails
+
+Failures used to go to STDOUT and, once a job had given up, into
+`solid_queue_failed_executions` — where a user's plan quietly not updating looks
+exactly like nothing happening. `ErrorReporter` is a `Rails.error` subscriber,
+which is the whole capture mechanism: Rails already routes unhandled request
+errors and jobs that have exhausted their retries there.
+
+- **Recording is unconditional; notifying is configured.** Every failure lands in
+  `error_reports` and the log with no setup. An email needs `ERROR_REPORT_TO`
+  *and* deliverable mail — the same question the confirmation gate asks, because
+  an alert nobody receives is not a control. Production says so at boot.
+- **One row per distinct failure, with a count.** The fingerprint is the error
+  class plus the top frame from this app, so the same bug from two requests is
+  one row while two bugs of one class stay apart. `NOTIFY_INTERVAL` means a
+  failure hitting every user in a recompute sweep is one email, not a mailbox.
+- **What Rails reports is already the right set**, and it was measured rather
+  than assumed: a job retried five times reports *once*, at the attempt it gives
+  up on; a job `discard_on` drops (an account deleted out from under a queued
+  recompute) reports nothing; a routine 404 reports nothing.
+- **The reporter never becomes the error.** Both the write and the send are
+  rescued and logged — if the database is what broke, recording an error about it
+  there breaks the same way, and raising would replace a useful exception with a
+  useless one.
+- **Context is an id, never the thing being worked on**: no params, no headers,
+  no addresses. A message can still quote values from a failing query, so
+  `error_reports` carries the same sensitivity as the data it is about, and is
+  capped rather than left to grow.
+- `error_reports` is deliberately **not** associated with `users` — these are
+  records about the system, so they are neither exported with an account nor
+  destroyed with one, and `AccountFixture` does not change.
+
 ## Email confirmation
 
 New accounts are created unconfirmed and signed in anyway. Confirmation gates one
@@ -439,13 +471,23 @@ only route back to that checklist once a user has left it.
   unlisted value.
 
   `bin/schema-check` guards both halves of this, on a scratch database of its
-  own so development and test are untouched. **Structural** — the committed file
-  loads into the same database the migrations build — is what breaks when a
-  migration's dump is not committed, and it compares two dumps from the *same*
+  own so development and test are untouched. **Structural** — the file plus any
+  migration newer than it, against the file alone — is what breaks when a
+  migration's dump is not committed. Note that `db:migrate` on an empty database
+  *loads* `db/schema.rb` and stamps the versions rather than replaying
+  migrations, so only the migrations the file does not account for actually run;
+  that is the set worth comparing, and it is not a full replay, because Postgres
+  normalises constraint text on load and a raw migration would be reported as
+  drift for spelling `IN (...)` differently. Both sides are dumped by the same
   server, so it means the same thing on any Postgres and runs in GitHub Actions
   too. **Canonical** — the file is byte-for-byte what this server dumps — is the
   churn above, is only a sensible question of the server you are asking, and so
   runs under `--canonical` from `bin/ci` alone.
+
+  A practical consequence: `bin/rails db:migrate` on an existing database writes
+  the raw form of a new check constraint into the dump, while a rebuild writes
+  the normalised one. `--canonical` catches it; the fix is to regenerate with a
+  rebuild rather than to hand-edit, as above.
 
 - Catalog exercises (`user_id: nil`) survive `db:seed:replant`. Tests must not
   assume an empty `exercises` table — use distinctive names and assert on

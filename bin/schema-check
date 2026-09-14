@@ -6,12 +6,21 @@
 # Two properties, checked separately because only one of them is the same
 # question on every Postgres.
 #
-#   Structural  The schema file, loaded, produces the same database the
-#               migrations produce. This is what breaks when someone adds a
-#               migration and forgets to commit the dump. Both sides are dumped
-#               by the same server, so a version's particular way of printing an
-#               expression cancels out and the check means the same thing
-#               everywhere. Always run.
+#   Structural  db/schema.rb plus any migration newer than it, against
+#               db/schema.rb alone. This is what breaks when someone adds a
+#               migration and forgets to commit the dump: `db:migrate` on an
+#               empty database loads the schema file and stamps the versions
+#               rather than replaying migrations, so only the ones the file does
+#               not already account for actually run — which is exactly the set
+#               worth comparing. Both sides are dumped by the same server, so a
+#               version's particular way of printing an expression cancels out
+#               and the check means the same thing everywhere. Always run.
+#
+#               It is deliberately not a full replay. Postgres normalises a
+#               constraint's text when the schema file is loaded, so raw
+#               migrations and a loaded schema disagree about how to spell
+#               `IN (...)` while meaning the same thing, and comparing them
+#               would report formatting as drift.
 #
 #   Canonical   The committed file is byte-for-byte what this server dumps.
 #               This is what breaks when the file holds a form Postgres does not

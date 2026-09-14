@@ -1,0 +1,26 @@
+<h1><%= @report.error_class %></h1>
+<p><%= @report.message %></p>
+
+<p>
+  Seen <%= pluralize @report.occurrences, "time" %>, first
+  <%= @report.first_seen_at.utc.strftime("%Y-%m-%d %H:%M UTC") %>, last
+  <%= @report.last_seen_at.utc.strftime("%Y-%m-%d %H:%M UTC") %>.<br>
+  Source: <%= @report.source.presence || "unknown" %>
+</p>
+
+<% if @report.context.any? %>
+  <ul>
+    <% @report.context.each do |key, value| %>
+      <li><strong><%= key %>:</strong> <%= value %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @report.backtrace.present? %>
+  <pre style="white-space: pre-wrap; font-size: 12px;"><%= @report.backtrace %></pre>
+<% end %>
+
+<p>
+  You will not hear about this one again for at least
+  <%= distance_of_time_in_words ErrorReport::NOTIFY_INTERVAL %>, however often it fires.
+</p>

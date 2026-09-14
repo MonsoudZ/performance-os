@@ -135,6 +135,7 @@ feature dormant.
 | Variable | Effect when unset |
 | --- | --- |
 | `ANTHROPIC_API_KEY` | The AI coach panel is hidden and `CoachNarrator` stays dormant. |
+| `ERROR_REPORT_TO` | Failures are still recorded in `error_reports` and the log, but nobody is emailed about them. |
 | `ANTHROPIC_MODEL` | Defaults to `claude-opus-4-8`. |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Push delivery is a no-op. Generate a pair with `WebPush.generate_key`. |
 | `VAPID_SUBJECT` | Defaults to `mailto:support@performance-os.app`. |

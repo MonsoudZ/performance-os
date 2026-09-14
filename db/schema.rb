@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -117,6 +117,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_170000) do
     t.check_constraint "sleep_quality >= 1 AND sleep_quality <= 5", name: "readiness_inputs_sleep_quality_check"
     t.check_constraint "soreness >= 1 AND soreness <= 5", name: "readiness_inputs_soreness_check"
     t.check_constraint "stress >= 1 AND stress <= 5", name: "readiness_inputs_stress_check"
+  end
+
+  create_table "error_reports", force: :cascade do |t|
+    t.text "backtrace"
+    t.jsonb "context", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.string "error_class", null: false
+    t.string "fingerprint", null: false
+    t.datetime "first_seen_at", null: false
+    t.boolean "handled", default: false, null: false
+    t.datetime "last_notified_at"
+    t.datetime "last_seen_at", null: false
+    t.text "message"
+    t.integer "occurrences", default: 1, null: false
+    t.string "severity", default: "error", null: false
+    t.string "source"
+    t.datetime "updated_at", null: false
+    t.index ["fingerprint"], name: "index_error_reports_on_fingerprint", unique: true
+    t.index ["last_seen_at"], name: "index_error_reports_on_last_seen_at"
+    t.check_constraint "occurrences > 0", name: "error_reports_occurrences_check"
+    t.check_constraint "severity::text = ANY (ARRAY['error'::character varying::text, 'warning'::character varying::text, 'info'::character varying::text])", name: "error_reports_severity_check"
   end
 
   create_table "exercise_muscle_contributions", force: :cascade do |t|

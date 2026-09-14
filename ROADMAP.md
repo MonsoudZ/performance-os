@@ -483,6 +483,31 @@ risk they carry, not by size.
   first and last day and 2,600 the day after it lapses. Each guard in the job was
   disabled in turn to confirm the test that names it is the one that fails.
 
+- [x] **A failure now reaches somebody.** Nothing reported errors: production
+  logged to STDOUT with `consider_all_requests_local` off, and a job that
+  exhausted `ApplicationJob`'s five retries landed in
+  `solid_queue_failed_executions` where nobody looked — which is the same silent
+  stop that `retry_on` was added to prevent, moved one step later.
+
+  No vendor SDK. Rails already routes unhandled request errors and given-up jobs
+  to `Rails.error`, so the whole capture mechanism is one subscriber;
+  `error_reports` holds one row per distinct failure with a count, and an email
+  goes out when `ERROR_REPORT_TO` and deliverable mail are both there. Recording
+  needs no configuration at all, so the record exists whether or not anyone
+  wired up the alerting.
+
+  What Rails reports was measured before anything was built on it: a job retried
+  five times reports once, at the attempt it gives up on, not once per attempt; a
+  job discarded because its account was deleted reports nothing, so closing an
+  account does not page anyone; and a routine 404 reports nothing.
+
+  Building it turned up the other half of a bug already fixed once this session.
+  `ApplicationMailer` still carried the scaffold's literal
+  `from: "from@example.com"` — the same "looks configured and is not" failure as
+  the commented-out SMTP block beside it, and the reason an alert would have
+  been filtered as spam even once it was configured. It derives from `APP_HOST`
+  now, so no new variable is required.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute
