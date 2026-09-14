@@ -4,26 +4,31 @@ class User < ApplicationRecord
   EQUIPMENT_OPTIONS = Exercise::MODALITIES
 
   has_secure_password
+
+  # Order is load-bearing: `user.destroy` runs these in declaration order, and
+  # several of them reference each other, so anything that points at another row
+  # has to be listed before the row it points at. AccountDeletion is the only
+  # caller and lifts the two guards this order cannot — see it before reordering.
   has_many :sessions, dependent: :destroy
+  has_many :push_subscriptions, dependent: :destroy
+  has_many :coach_narratives, dependent: :destroy
+  has_many :coaching_decisions, dependent: :destroy
+  has_many :conditioning_sessions, dependent: :destroy      # -> wearable_samples
+  has_many :wearable_samples, dependent: :destroy           # -> wearable_devices
+  has_many :wearable_devices, dependent: :destroy
+  has_many :workout_sessions, dependent: :destroy           # -> workout_templates, exercises
+  has_many :workout_templates, dependent: :destroy          # -> exercises
+  has_many :exercise_prescriptions, dependent: :destroy     # -> exercises
+  has_many :exercises, dependent: :destroy
+  has_many :food_log_entries, dependent: :destroy           # -> foods
+  has_many :foods, dependent: :destroy
   has_many :goal_periods, dependent: :destroy
   has_many :daily_readiness_inputs, dependent: :destroy
   has_many :readiness_scores, dependent: :destroy
-  has_many :coaching_decisions, dependent: :destroy
-  has_many :exercises, dependent: :destroy
-  has_many :exercise_prescriptions, dependent: :destroy
-  has_many :workout_templates, dependent: :destroy
-  has_many :workout_sessions, dependent: :destroy
-  has_many :foods, dependent: :destroy
-  has_many :food_log_entries, dependent: :destroy
   has_many :body_metrics, dependent: :destroy
   has_many :weight_trends, dependent: :destroy
   has_many :expenditure_estimates, dependent: :destroy
-  has_many :wearable_devices, dependent: :destroy
-  has_many :wearable_samples, dependent: :destroy
-  has_many :conditioning_sessions, dependent: :destroy
-  has_many :push_subscriptions, dependent: :destroy
   has_many :mesocycles, dependent: :destroy
-  has_many :coach_narratives, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   # The profile's sex select offers "Prefer not to say", which posts an empty

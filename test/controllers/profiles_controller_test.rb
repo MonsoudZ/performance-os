@@ -58,4 +58,71 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
 
     assert_not_equal "wombat", @user.reload.sex
   end
+
+  test "the profile page offers account deletion behind a password" do
+    get edit_profile_path
+
+    assert_response :success
+    assert_select "form[action=?][method=post] input[name=password][type=password]", profile_path
+    assert_select ".panel--danger", text: /cannot be undone/
+  end
+
+  test "deleting the account erases it and signs the user out" do
+    @user.workout_sessions.create!(performed_at: 1.day.ago)
+
+    assert_difference "User.count", -1 do
+      delete profile_path, params: { password: "password" }
+    end
+
+    assert_redirected_to new_session_path
+    assert_nil User.find_by(id: @user.id)
+    assert_equal 0, WorkoutSession.where(user_id: @user.id).count
+  end
+
+  test "the deleted account's session cookie stops working" do
+    delete profile_path, params: { password: "password" }
+
+    # The session rows went with the account; a cookie still pointing at one
+    # would try to resume a session that no longer exists.
+    get edit_profile_path
+    assert_redirected_to new_session_path
+  end
+
+  test "a wrong password deletes nothing" do
+    assert_no_difference "User.count" do
+      delete profile_path, params: { password: "not-the-password" }
+    end
+
+    assert_redirected_to edit_profile_path
+    assert_match(/nothing was deleted/, flash[:alert])
+    assert User.exists?(@user.id)
+  end
+
+  test "a missing password deletes nothing" do
+    assert_no_difference "User.count" do
+      delete profile_path
+    end
+
+    assert User.exists?(@user.id)
+  end
+
+  test "signing out closes account deletion too" do
+    sign_out
+
+    assert_no_difference "User.count" do
+      delete profile_path, params: { password: "password" }
+    end
+
+    assert_redirected_to new_session_path
+  end
+
+  test "deleting one account leaves another alone" do
+    other = users(:two)
+    other.workout_sessions.create!(performed_at: 1.day.ago)
+
+    delete profile_path, params: { password: "password" }
+
+    assert User.exists?(other.id)
+    assert_equal 1, WorkoutSession.where(user_id: other.id).count
+  end
 end

@@ -38,7 +38,7 @@ Rails.application.routes.draw do
   resources :conditioning_sessions, only: %i[index create destroy]
   resources :coach_narratives, only: :create
   resources :coaching_decisions, only: :show
-  resource :profile, only: %i[edit update]
+  resource :profile, only: %i[edit update destroy]
   post "push_subscriptions", to: "push_subscriptions#create"
   delete "push_subscriptions", to: "push_subscriptions#destroy"
 

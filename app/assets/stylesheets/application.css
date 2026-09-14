@@ -454,6 +454,16 @@ h1 {
   line-height: 1.5;
 }
 
+/* The one panel on the site whose actions cannot be undone. */
+.panel--danger {
+  border: 1px solid #e4c3bd;
+}
+
+.button--danger {
+  color: #fff;
+  background: #9e3428;
+}
+
 .nutrition-directive {
   display: grid;
   grid-template-columns: 1fr auto auto;

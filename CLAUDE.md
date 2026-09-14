@@ -46,7 +46,8 @@ one means a migration.
 
 To correct a decision, **retract** it (`decision.retract!(reason:)`) and write a
 new one. Retracted decisions stay in the table and stay visible to the user — a
-withdrawn recommendation is part of the record. Every lookup that feeds a new
+withdrawn recommendation is part of the record. `AccountDeletion` is the single
+exception and deletes them: erasing an account erases its audit trail too. Every lookup that feeds a new
 decision must scope to `active_evidence`; the `withdrawn` scope is its complement
 and exists only so the UI can show what was taken back.
 
@@ -193,6 +194,24 @@ Three rules are easy to break:
 A day that synced only steps must not produce a readiness check-in — an
 unanswered day on the record as an answered one gets scored, and a score built
 from nothing is worse than no score.
+
+## Deleting an account
+
+`AccountDeletion` is the only thing that calls `user.destroy`, and two rules
+stand behind it:
+
+- **The order of `has_many` declarations on `User` is load-bearing.** Rails
+  destroys them in declaration order and several reference each other, so
+  anything pointing at another row is declared before the row it points at.
+- **Two guards protect a live account and have to be lifted deliberately.** A
+  cited decision cannot be deleted (model and database), and an exercise with
+  logged sets cannot be deleted (`restrict_with_error`). The service releases
+  citations and workout history first, then reloads the user — those guards ask
+  the *association* whether it is empty, and the objects that lifted them still
+  hold loaded, stale collections that say otherwise.
+
+Adding a `has_many` to `User` means placing it in that order and extending
+`AccountDeletionTest`'s fixture, which populates every association on purpose.
 
 ## Empty states
 

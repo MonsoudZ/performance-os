@@ -70,4 +70,28 @@
       <%= form.submit "Save profile", class: "button" %>
     <% end %>
   </section>
+
+  <section class="panel panel--danger">
+    <div class="panel__header">
+      <div>
+        <p class="eyebrow">Danger zone</p>
+        <h2>Delete your account.</h2>
+      </div>
+    </div>
+
+    <p class="evidence-note">
+      This erases everything: every workout and set you have logged, every weigh-in and food entry,
+      every coaching decision and the evidence behind it, and any paired device. It cannot be undone
+      and there is no export, so take anything you want to keep first.
+    </p>
+
+    <%= form_with url: profile_path, method: :delete, class: "stacked-form",
+      data: { turbo_confirm: "Delete your account and everything in it? This cannot be undone." } do |form| %>
+      <label>
+        <span>Confirm your password</span>
+        <%= password_field_tag :password, nil, required: true, autocomplete: "current-password" %>
+      </label>
+      <%= form.submit "Delete my account", class: "button button--danger" %>
+    <% end %>
+  </section>
 </main>

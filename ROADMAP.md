@@ -228,6 +228,26 @@ risk they carry, not by size.
   re-run no longer counts the session's own earlier verdict as evidence against
   itself. `rule_version` is 3.0.0.
 
+- [x] **An account can be deleted.** `User` declared `dependent: :destroy` across
+  twenty associations and the cascade had never run — it could not. Two
+  invariants that exist to protect a live account stood in the way: a decision
+  cited by another cannot be deleted, and an exercise with logged sets against it
+  cannot either. Both are right, and erasure has to lift them rather than be
+  blocked by them, so `AccountDeletion` does it explicitly and in a transaction.
+
+  The declaration order on `User` was wrong too — Rails destroys in declaration
+  order and several associations reference each other — and there was a third
+  thing no amount of ordering fixes: `restrict_with_exception` asks the
+  *association* whether it is empty, so the objects used to lift the guards still
+  held stale collections that said it was not. The service reloads before it
+  destroys.
+
+  It is behind the account's password rather than a confirm dialog alone, since a
+  dialog only proves someone clicked and a session left open on a shared machine
+  can click. The test populates every one of the twenty associations and erases
+  it, asserts nothing of anyone else's moves, and asserts a failure mid-cascade
+  leaves the account whole.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

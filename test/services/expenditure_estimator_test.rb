@@ -4,11 +4,16 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
   setup do
     @user = users(:one)
     @user.update!(time_zone: "America/Denver")
+    # Every date here is the user's local one, because that is what the estimator
+    # reasons in. Mixing in Date.current — the server's — makes the whole file
+    # pass or fail depending on the hour it runs at: between 00:00 and 06:00 UTC
+    # the two are different days, and the evidence window comes up a day short.
+    @today = @user.local_date
   end
 
   test "waits for enough intake and weight evidence" do
     6.times do |offset|
-      date = Date.current - offset.days
+      date = @today - offset.days
       create_intake(date, 2_500)
       create_trend(date, 80)
     end
@@ -18,7 +23,7 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
 
   test "estimates expenditure after the evidence threshold" do
     8.times do |offset|
-      date = Date.current - offset.days
+      date = @today - offset.days
       create_intake(date, 2_500)
       create_trend(date, 80)
     end
@@ -31,7 +36,7 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
   end
 
   test "falls back to the device's own energy while energy balance has nothing to say" do
-    3.times { |offset| create_device_energy(@user.local_date - (offset + 1).days, active: 620, basal: 1_780) }
+    3.times { |offset| create_device_energy(@today - (offset + 1).days, active: 620, basal: 1_780) }
 
     estimate = ExpenditureEstimator.new(@user).call
 
@@ -43,11 +48,11 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
 
   test "measured outcome beats the device when both are available" do
     8.times do |offset|
-      date = Date.current - offset.days
+      date = @today - offset.days
       create_intake(date, 2_500)
       create_trend(date, 80)
     end
-    create_device_energy(@user.local_date - 1.day, active: 620, basal: 1_780)
+    create_device_energy(@today - 1.day, active: 620, basal: 1_780)
 
     estimate = ExpenditureEstimator.new(@user).call
 
@@ -56,7 +61,7 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
   end
 
   test "ignores the day still being lived" do
-    create_device_energy(@user.local_date, active: 90, basal: 400)
+    create_device_energy(@today, active: 90, basal: 400)
 
     # Reading a TDEE off a day at breakfast would set the day's calorie target at
     # a few hundred kilocalories and the plan would tell the user to starve.
@@ -64,14 +69,14 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
   end
 
   test "ignores a day the device only reported half of" do
-    create_device_energy(@user.local_date - 1.day, active: 620, basal: nil)
+    create_device_energy(@today - 1.day, active: 620, basal: nil)
 
     assert_nil ExpenditureEstimator.new(@user).call
   end
 
   test "averages the window rather than trusting one day" do
-    create_device_energy(@user.local_date - 1.day, active: 1_400, basal: 1_800)
-    create_device_energy(@user.local_date - 2.days, active: 200, basal: 1_800)
+    create_device_energy(@today - 1.day, active: 1_400, basal: 1_800)
+    create_device_energy(@today - 2.days, active: 200, basal: 1_800)
 
     estimate = ExpenditureEstimator.new(@user).call
 
@@ -80,11 +85,11 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
   end
 
   test "a later week of real evidence replaces the device estimate for that date" do
-    create_device_energy(Date.current - 1.day, active: 620, basal: 1_780)
+    create_device_energy(@today - 1.day, active: 620, basal: 1_780)
     assert_equal "wearable_energy", ExpenditureEstimator.new(@user).call.basis
 
     8.times do |offset|
-      date = Date.current - offset.days
+      date = @today - offset.days
       create_intake(date, 2_500)
       create_trend(date, 80)
     end
@@ -92,16 +97,16 @@ class ExpenditureEstimatorTest < ActiveSupport::TestCase
     estimate = ExpenditureEstimator.new(@user).call
 
     assert_equal "energy_balance", estimate.basis
-    assert_equal 1, @user.expenditure_estimates.where(estimate_date: Date.current).count
+    assert_equal 1, @user.expenditure_estimates.where(estimate_date: @today).count
   end
 
   test "ignores intake logged outside the weight-trend span" do
     # Weight trends cover an older 8-day span (stable weight).
-    (14..21).each { |offset| create_trend(Date.current - offset.days, 80) }
+    (14..21).each { |offset| create_trend(@today - offset.days, 80) }
     # Intake logged densely within that span...
-    (14..21).each { |offset| create_intake(Date.current - offset.days, 2_000) }
+    (14..21).each { |offset| create_intake(@today - offset.days, 2_000) }
     # ...and a burst of higher intake AFTER the trend span that must not leak in.
-    (0..6).each { |offset| create_intake(Date.current - offset.days, 3_500) }
+    (0..6).each { |offset| create_intake(@today - offset.days, 3_500) }
 
     estimate = ExpenditureEstimator.new(@user).call
 
