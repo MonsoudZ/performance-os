@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -466,6 +466,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_150000) do
   create_table "users", force: :cascade do |t|
     t.string "available_equipment", default: ["barbell", "dumbbell", "machine", "bodyweight", "cable", "other"], null: false, array: true
     t.date "birth_date"
+    t.string "canonical_email_address", null: false
     t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.string "experience_level", default: "intermediate", null: false
@@ -479,6 +480,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_150000) do
     t.string "unit_system", default: "metric", null: false
     t.datetime "updated_at", null: false
     t.datetime "verified_at"
+    t.index ["canonical_email_address"], name: "index_users_on_canonical_email_address"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.check_constraint "experience_level::text = ANY (ARRAY['beginner'::character varying::text, 'intermediate'::character varying::text, 'advanced'::character varying::text])", name: "users_experience_level_check"
     t.check_constraint "max_hr IS NULL OR max_hr > 0", name: "users_max_hr_check"

@@ -223,6 +223,26 @@ money — and `EmailVerificationsMailer.enforced?` decides whether it gates at a
 - Fixture users are confirmed. A test that wants an unconfirmed one clears
   `verified_at` itself, so the banner does not appear in every other test's markup.
 
+## One mailbox, a few accounts
+
+`email_address` being unique says nothing about how many addresses reach one
+inbox: `me+1@`, `me+2@` and, on Gmail, `m.e@` all deliver to the same place, so
+confirmation confirms every one of them. `EmailAddress.canonical` reduces an
+address to the mailbox it lands in and `User::ACCOUNTS_PER_MAILBOX` caps how many
+accounts that mailbox may hold.
+
+- **Canonicalization is for counting only.** What a user typed is what is stored,
+  what they sign in with and where mail goes. Nothing rewrites an address.
+- **Dot-insensitivity is a short allow-list**, not a rule applied everywhere. At
+  most hosts `a.b@` and `ab@` are two different people, and merging them would
+  refuse a stranger's sign-up over a name that looks similar.
+- **Both ways into a mailbox are covered** — a new account and a confirmed
+  change. The validation on `User` fires whenever `email_address` changes;
+  `EmailChangeRequest` checks it too, so the user hears it before following a
+  link rather than after.
+- Fixtures set `canonical_email_address` through the same rule, because fixtures
+  insert rows directly and the callback never runs.
+
 ## Changing an email address
 
 Nothing moves until the new address proves itself. `EmailChangeRequest` parks it

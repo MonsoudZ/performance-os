@@ -53,6 +53,21 @@ class EmailChangeRequestTest < ActiveSupport::TestCase
     assert_equal "new@example.com", @user.reload.pending_email_address
   end
 
+  test "a change into a full mailbox is refused before any email is sent" do
+    User::ACCOUNTS_PER_MAILBOX.times do |i|
+      User.create!(email_address: "full+#{i}@example.com", password: "password123", available_equipment: %w[barbell])
+    end
+
+    result = nil
+    assert_no_enqueued_emails do
+      result = request("full+mine@example.com")
+    end
+
+    # Otherwise the change flow is the way around the cap.
+    assert_not_predicate result, :success?
+    assert_match(/as many accounts as it can hold/, result.error)
+  end
+
   test "a change cannot be started when it could never be confirmed" do
     ActionMailer::Base.perform_deliveries = false
 

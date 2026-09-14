@@ -316,7 +316,7 @@ risk they carry, not by size.
   exists — the same question `CoachNarrator.configured?` asks — and the boot
   warning says so out loud rather than failing open in silence.
 
-  Still open: nothing stops one address confirming many accounts.
+  One mailbox is capped at a few accounts — see below.
 
 - [x] **An email address can be changed.** The new one confirms itself before it
   takes effect, so a typo costs nothing and the account keeps working throughout.
@@ -333,6 +333,20 @@ risk they carry, not by size.
   request on a record that still held the rejected address in memory, so the save
   failed the same way and the request stuck forever, unconfirmable and
   uncancellable. It reloads first now.
+
+- [x] **One mailbox holds a few accounts, not unlimited ones.** A unique
+  `email_address` says nothing about how many addresses reach one inbox:
+  sub-addressing works everywhere, Gmail ignores dots, and confirmation confirms
+  all of them because they all arrive. Addresses are reduced to the mailbox they
+  land in and capped at three — enough for a household sharing an inbox, far
+  under what multiplying accounts for free AI-coach quota needs.
+
+  Deliberately narrow in one place: dots are only ignored for Gmail, not
+  everywhere, because at most hosts `a.b@` and `ab@` are two different people and
+  merging them would refuse a stranger's sign-up over a name that looked similar.
+
+  Covered on both ways into a mailbox. Validating only registration would have
+  left the email-change flow as the way around it.
 
 ## Developer experience
 

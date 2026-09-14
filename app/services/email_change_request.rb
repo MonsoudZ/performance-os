@@ -48,6 +48,7 @@ class EmailChangeRequest
     return "That is already your email address." if new_address == user.email_address
     return "That password is not right, so nothing was changed." unless user.authenticate(password)
     return "That email address is already in use." if taken?
+    return "That mailbox already has as many accounts as it can hold." if mailbox_full?
 
     nil
   end
@@ -56,5 +57,12 @@ class EmailChangeRequest
   # between — the unique index is what finally decides.
   def taken?
     User.where.not(id: user.id).exists?(email_address: new_address)
+  end
+
+  # Caught here so the user hears it now rather than after following a link. The
+  # validation on User is what actually holds, since the count can change while a
+  # request is pending.
+  def mailbox_full?
+    User.mailbox_full?(new_address, except: user)
   end
 end

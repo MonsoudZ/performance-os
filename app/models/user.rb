@@ -10,6 +10,12 @@ class User < ApplicationRecord
   EMAIL_VERIFICATION_PERIOD = 2.days
   EMAIL_CHANGE_PERIOD = 2.days
 
+  # How many accounts one mailbox may hold. A shared household address covering a
+  # couple or a small family is a real thing; a fourth account on the same inbox
+  # is somebody multiplying, and the AI coach is the thing worth multiplying for.
+  # Counted against the canonical mailbox, so `me+1@` and `me+2@` are one.
+  ACCOUNTS_PER_MAILBOX = 3
+
   # Both tokens carry the address they were issued for, so neither can confirm
   # an address it was not issued for, and both die the moment the thing they
   # describe moves — a confirmation once the account is verified, a change once
@@ -58,6 +64,7 @@ class User < ApplicationRecord
   normalizes :sex, with: ->(value) { value.presence }
 
   validates :email_address, presence: true, uniqueness: true
+  validate :mailbox_under_capacity, if: :email_address_changed?
   validates :unit_system, inclusion: { in: %w[metric imperial] }
   validates :experience_level, inclusion: { in: EXPERIENCE_LEVELS }
   validates :sex, inclusion: { in: SEXES }, allow_nil: true
@@ -68,6 +75,7 @@ class User < ApplicationRecord
   validate :recognized_equipment
 
   before_validation :normalize_equipment
+  before_validation :set_canonical_email_address
 
   def verified?
     verified_at.present?
@@ -79,6 +87,15 @@ class User < ApplicationRecord
 
   def email_change_pending?
     pending_email_address.present?
+  end
+
+  def self.mailbox_full?(address, except: nil)
+    canonical = EmailAddress.canonical(address)
+    return false if canonical.blank?
+
+    scope = where(canonical_email_address: canonical)
+    scope = scope.where.not(id: except.id) if except&.persisted?
+    scope.count >= ACCOUNTS_PER_MAILBOX
   end
 
   def active_goal
@@ -115,6 +132,20 @@ class User < ApplicationRecord
   end
 
   private
+
+  def set_canonical_email_address
+    self.canonical_email_address = EmailAddress.canonical(email_address)
+  end
+
+  # Covers both ways an address gets into a mailbox — a new account and a
+  # confirmed change — because validating only the first leaves the second as
+  # the way around it.
+  def mailbox_under_capacity
+    return if email_address.blank?
+    return unless User.mailbox_full?(email_address, except: self)
+
+    errors.add(:email_address, "already has as many accounts as it can hold")
+  end
 
   def normalize_equipment
     return if available_equipment.nil?

@@ -31,6 +31,20 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to onboarding_path
   end
 
+  test "a mailbox that is full cannot take another account" do
+    User::ACCOUNTS_PER_MAILBOX.times do |i|
+      User.create!(email_address: "full+#{i}@example.com", password: "password123", available_equipment: %w[barbell])
+    end
+
+    assert_no_difference "User.count" do
+      # Sub-addressing is the cheap way around a unique index, and confirmation
+      # does not catch it: every one of these lands in the same inbox.
+      register("full+another@example.com", from: "10.7.0.1")
+    end
+
+    assert_response :unprocessable_entity
+  end
+
   test "throttles an address that floods the sign-up form" do
     Rack::Attack::REGISTRATION_LIMIT.times { |i| register("flood-#{i}@example.com", from: "10.9.0.1") }
 

@@ -85,7 +85,9 @@ recompute; open pages morph themselves when the new decision lands.
   knows, and a password-confirmed erasure of the same set.
 - **Email confirmation and change** — new accounts can log training immediately
   but cannot spend money on the AI coach until the address is confirmed, and a
-  new address confirms itself before it replaces the old one.
+  new address confirms itself before it replaces the old one. One mailbox holds
+  at most three accounts, counted against the inbox an address actually reaches
+  rather than the string.
 - **Web Push** — hourly check-in reminders via a Solid Queue recurring task.
 - **PWA** — manifest, service worker, and a mobile bottom tab bar.
 
