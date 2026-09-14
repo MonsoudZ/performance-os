@@ -400,6 +400,25 @@ risk they carry, not by size.
   list is wrong. An unrecognized user agent is shown verbatim rather than as
   "Unknown", since the raw string is worth more to the person deciding.
 
+- [x] **`db/schema.rb` stopped rewriting itself.** Two check constraints were
+  committed in a form Postgres does not produce, so every `db:migrate` or
+  `db:prepare` left the file dirty with a diff nobody wrote — and each of the
+  last few changes had to strip that churn out by hand before committing.
+
+  Postgres stores a check constraint as a parsed expression and prints it back
+  in its own normal form, so `metric_type IN ('a', 'b')` in a migration is not
+  what the dump says. Measuring settled it rather than guessing: the committed
+  form was not a fixed point — loading that schema and dumping it again changed
+  those two lines — while the regenerated form survives both `db:migrate` from
+  nothing and a `db:schema:load` round trip unchanged.
+
+  The constraints are identical either way, which is asserted rather than
+  assumed: `CheckConstraintsTest` inserts past the models and proves each one
+  still accepts every listed value and rejects an unlisted one. That needed the
+  expenditure bases to be a named list (`ExpenditureEstimator::BASES`) like
+  `WearableSample::METRIC_UNITS` already was, so the test can ask about
+  everything the app writes rather than two strings copied into it.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

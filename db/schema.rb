@@ -181,7 +181,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_170000) do
     t.bigint "user_id", null: false
     t.index ["user_id", "estimate_date"], name: "index_expenditure_estimates_on_user_id_and_estimate_date", unique: true
     t.index ["user_id"], name: "index_expenditure_estimates_on_user_id"
-    t.check_constraint "basis::text = ANY (ARRAY['energy_balance'::character varying, 'wearable_energy'::character varying]::text[])", name: "expenditure_estimates_basis_check"
+    t.check_constraint "basis::text = ANY (ARRAY['energy_balance'::character varying::text, 'wearable_energy'::character varying::text])", name: "expenditure_estimates_basis_check"
     t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying::text, 'moderate'::character varying::text, 'high'::character varying::text])", name: "expenditure_estimates_confidence_check"
   end
 
@@ -522,7 +522,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_170000) do
     t.index ["user_id"], name: "index_wearable_samples_on_user_id"
     t.index ["wearable_device_id", "external_id"], name: "index_wearable_samples_on_wearable_device_id_and_external_id", unique: true
     t.index ["wearable_device_id"], name: "index_wearable_samples_on_wearable_device_id"
-    t.check_constraint "metric_type::text = ANY (ARRAY['hrv_sdnn_ms'::character varying, 'resting_hr_bpm'::character varying, 'sleep_asleep'::character varying, 'workout'::character varying, 'step_count'::character varying, 'active_energy_kcal'::character varying, 'basal_energy_kcal'::character varying, 'body_mass_kg'::character varying]::text[])", name: "wearable_samples_metric_type_check"
+    t.check_constraint "metric_type::text = ANY (ARRAY['hrv_sdnn_ms'::character varying::text, 'resting_hr_bpm'::character varying::text, 'sleep_asleep'::character varying::text, 'workout'::character varying::text, 'step_count'::character varying::text, 'active_energy_kcal'::character varying::text, 'basal_energy_kcal'::character varying::text, 'body_mass_kg'::character varying::text])", name: "wearable_samples_metric_type_check"
     t.check_constraint "value IS NULL OR value >= 0::numeric", name: "wearable_samples_value_check"
   end
 

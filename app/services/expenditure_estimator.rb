@@ -19,6 +19,11 @@ class ExpenditureEstimator
   WEARABLE_WINDOW_DAYS = 7
   WEARABLE_ENERGY_METRICS = %w[active_energy_kcal basal_energy_kcal].freeze
 
+  # The two answers, named. A check constraint enforces the same list, so adding
+  # a third means a migration as well as an entry here.
+  BASES = %w[energy_balance wearable_energy].freeze
+  ENERGY_BALANCE, WEARABLE_ENERGY = BASES
+
   def initialize(user, estimate_date: nil)
     @user = user
     @estimate_date = estimate_date || user.local_date
@@ -39,7 +44,7 @@ class ExpenditureEstimator
     weight_change_per_day = (latest_trend.ewma_kg - earliest_trend.ewma_kg) / trend_span_days
 
     persist(
-      basis: "energy_balance",
+      basis: ENERGY_BALANCE,
       intake_kcal: average_intake.round(1),
       trend_weight_kg: latest_trend.ewma_kg,
       estimated_tdee: (average_intake - (weight_change_per_day * KCAL_PER_KG)).round(1),
@@ -55,7 +60,7 @@ class ExpenditureEstimator
     return unless average.positive?
 
     persist(
-      basis: "wearable_energy",
+      basis: WEARABLE_ENERGY,
       intake_kcal: nil,
       trend_weight_kg: latest_trend&.ewma_kg,
       estimated_tdee: average.round(1),

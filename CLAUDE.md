@@ -384,6 +384,17 @@ only route back to that checklist once a user has left it.
   key, so the bug ships looking fine. They have ids now; `PrimaryKeysTest` fails
   if a keyless table appears again. The unique index on the natural key is still
   what enforces "one per user per day" — the id does not.
+- **`db/schema.rb` is whatever a rebuild produces, not what looks tidiest.**
+  Postgres stores a check constraint as a parsed expression and prints it back
+  in its own normal form, so `metric_type IN ('a', 'b')` in a migration is not
+  what the dump says. Two constraints were committed in a form Postgres does not
+  produce — loading that schema and dumping it again changed them — so every
+  `db:migrate` or `db:prepare` left the file dirty with a diff nobody wrote. The
+  committed form is now the one both `db:migrate` and `db:schema:load` converge
+  on and re-dump unchanged. If those two lines ever look wrong, re-derive them
+  with a rebuild rather than hand-editing them back; the constraints are
+  identical either way, and a test proves it by inserting an unlisted value.
+
 - Catalog exercises (`user_id: nil`) survive `db:seed:replant`. Tests must not
   assume an empty `exercises` table — use distinctive names and assert on
   presence rather than totals — and note that a test database prepared with
