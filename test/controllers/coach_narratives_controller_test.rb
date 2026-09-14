@@ -51,6 +51,46 @@ class CoachNarrativesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/check-in/, flash[:alert])
   end
 
+  test "refuses once the day's budget is spent, and enqueues nothing" do
+    CoachBudget::DAILY_LIMIT.times do
+      @user.coach_narratives.create!(question: "Why?", coaching_decision: @decision, status: "pending")
+    end
+
+    assert_no_difference "CoachNarrative.count" do
+      assert_no_enqueued_jobs only: CoachNarrativeJob do
+        post coach_narratives_path, params: { coach_narrative: { question: "One more?" } }
+      end
+    end
+
+    assert_redirected_to root_path
+    assert_match(/#{CoachBudget::DAILY_LIMIT} questions/, flash[:alert])
+  end
+
+  # The budget counts questions the user got, so a coach that could not answer
+  # hands the slot back rather than charging for silence.
+  test "a failed question frees its slot" do
+    narratives = Array.new(CoachBudget::DAILY_LIMIT) do
+      @user.coach_narratives.create!(question: "Why?", coaching_decision: @decision, status: "pending")
+    end
+    narratives.first.update!(status: "failed")
+
+    assert_difference "CoachNarrative.count", 1 do
+      post coach_narratives_path, params: { coach_narrative: { question: "One more?" } }
+    end
+
+    assert_nil flash[:alert]
+  end
+
+  # A question rejected by the model's own validations never persisted, so it
+  # cannot have spent the slot it was claimed under.
+  test "a rejected question does not spend a slot" do
+    assert_no_difference "CoachNarrative.count" do
+      post coach_narratives_path, params: { coach_narrative: { question: "" } }
+    end
+
+    assert_equal 0, CoachBudget.new(@user).spent
+  end
+
   test "refuses when the AI coach is not configured" do
     Rails.application.config.x.anthropic[:api_key] = nil
 

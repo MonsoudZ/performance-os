@@ -348,6 +348,32 @@ risk they carry, not by size.
   Covered on both ways into a mailbox. Validating only registration would have
   left the email-change flow as the way around it.
 
+- [x] **The coach has a daily budget.** Four commits in a row capped how many
+  *accounts* one person could hold — the registration throttle, confirmation, the
+  per-mailbox cap — and none of them capped what a single account could spend.
+  `POST /coach_narratives` was the only endpoint in the app that costs real money
+  per press and the only outbound-call endpoint with no limit at all; food search
+  was throttled precisely because it calls Open Food Facts.
+
+  Twenty questions per the user's own local day, which is far past what
+  understanding one day's plan takes and far under what scripting a bill needs.
+  It is a product limit rather than an attack response, so it is enforced in a
+  service and rendered as a sentence: the panel withdraws the ask form, says when
+  the budget refills, and keeps the answers already given on screen. It starts
+  counting down out loud with five left, because a wall nobody saw coming is the
+  actual failure.
+
+  A question the coach could not answer is refunded — the call raised rather than
+  billed, and the user got no answer — while a pending one still counts, since it
+  is already in flight.
+
+  The part worth the test: counting and inserting are two statements, so two
+  questions asked at the same instant both read the same count and both insert. A
+  probe confirmed it — two granted, twenty-one rows against a limit of twenty —
+  and confirmed a lock on the user's own row fixes it. `CoachBudgetRaceTest` runs
+  non-transactionally so its threads can see each other, and fails if the lock is
+  ever removed.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

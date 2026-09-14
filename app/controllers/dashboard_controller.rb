@@ -39,5 +39,8 @@ class DashboardController < ApplicationController
     @coach_enabled = CoachNarrator.configured? && @decision.present?
     @coach_narratives = @decision ?
       @user.coach_narratives.where(coaching_decision_id: @decision.id).recent_first.limit(5) : []
+    # The coach's daily budget, so the panel can say how many questions are left
+    # before the last one turns into a refusal.
+    @coach_budget = CoachBudget.new(@user)
   end
 end

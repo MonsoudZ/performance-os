@@ -243,6 +243,34 @@ accounts that mailbox may hold.
 - Fixtures set `canonical_email_address` through the same rule, because fixtures
   insert rows directly and the callback never runs.
 
+## What the coach costs
+
+Asking the coach is the only action in this app that spends money per press, and
+four separate guards stand around it. Each covers what the others cannot, so
+adding a fifth means asking which gap it fills:
+
+- the registration throttle caps sign-ups per IP,
+- confirmation proves the address exists,
+- `User::ACCOUNTS_PER_MAILBOX` caps accounts per inbox,
+- `CoachBudget` caps what one account can spend once it is in.
+
+`CoachBudget::DAILY_LIMIT` questions per **the user's own local day**, like every
+other day boundary here — a budget refilling at UTC midnight would refill
+mid-afternoon in Denver.
+
+- **It is a product limit, not an attack response.** It lives here rather than in
+  `Rack::Attack` because a user who has asked their questions should be told when
+  they get more, not handed a 429. The panel withdraws the ask form, says when the
+  budget refills, and leaves the answers already given on screen.
+- **A failed narrative is refunded; a pending one is not.** A failure means the
+  call raised rather than billed and the user got no answer. A pending one is a
+  call already in flight, and refunding it would make a burst of unanswered
+  questions free.
+- **The count and the insert happen under a lock on the user's row**
+  (`CoachBudget#claim`). They are two statements, so without it two questions
+  asked at once both read the same count and both insert.
+  `CoachBudgetRaceTest` runs non-transactionally and fails if the lock goes.
+
 ## Changing an email address
 
 Nothing moves until the new address proves itself. `EmailChangeRequest` parks it

@@ -90,9 +90,10 @@ class Rack::Attack
   # or an office behind one address never notices: ten new accounts in an hour is
   # far past anything real and far under what filling a table takes.
   #
-  # This does not stop a caller with many addresses. Email verification is the
-  # answer to that one, and this app has none — registration signs you straight
-  # in. Worth building before the sign-up page is ever advertised.
+  # This does not stop a caller with many addresses. Three other things do, and
+  # each covers what the others cannot: confirmation proves the address exists,
+  # User::ACCOUNTS_PER_MAILBOX caps how many accounts one inbox can hold, and
+  # CoachBudget caps what any single account can spend once it is in.
   throttle(
     "registration/ip",
     limit: REGISTRATION_LIMIT,

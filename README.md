@@ -39,6 +39,7 @@ nothing has changed. Re-running the pipeline is always safe.
 | `WeeklyEvidenceReview` | A 7-day rollup that checks actual rate of change against goal-specific bands. |
 | `DailyTrainingOrchestrator` | The composed daily plan, modulated by readiness, mesocycle phase, and deload weeks. |
 | `CoachNarrator` | Optional. Asks Claude to explain the decision graph in plain language, grounded *only* on the serialized decisions — never the database. |
+| `CoachBudget` | How many coach questions an account has left today, and the claim that stops two asked at once from both taking the last one. |
 
 ### How a write becomes a new plan
 
@@ -87,7 +88,8 @@ recompute; open pages morph themselves when the new decision lands.
   but cannot spend money on the AI coach until the address is confirmed, and a
   new address confirms itself before it replaces the old one. One mailbox holds
   at most three accounts, counted against the inbox an address actually reaches
-  rather than the string.
+  rather than the string, and each account gets twenty coach questions per local
+  day — the one action here that costs money per press.
 - **Web Push** — hourly check-in reminders via a Solid Queue recurring task.
 - **PWA** — manifest, service worker, and a mobile bottom tab bar.
 

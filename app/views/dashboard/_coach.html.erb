@@ -12,23 +12,39 @@
     conditioning — and nothing else. No invented numbers.
   </p>
 
-  <div class="coach__suggestions">
-    <% CoachNarrative::SUGGESTED_QUESTIONS.each do |question| %>
-      <%= form_with url: coach_narratives_path, method: :post, class: "coach__suggestion" do |form| %>
-        <%= form.hidden_field "coach_narrative[question]", value: question %>
-        <%= form.submit question, class: "button button--inline" %>
+  <% if @coach_budget.exhausted? %>
+    <%# Say when the questions come back rather than only that they are gone —
+        the answers already given stay below, so the panel is not a dead end. %>
+    <p class="evidence-note">
+      <%# distance_of_time_in_words supplies its own "about", so this does not. %>
+      That's all <%= @coach_budget.limit %> questions for today. More at midnight,
+      <%= distance_of_time_in_words Time.current, @coach_budget.resets_at %> from now.
+    </p>
+  <% else %>
+    <div class="coach__suggestions">
+      <% CoachNarrative::SUGGESTED_QUESTIONS.each do |question| %>
+        <%= form_with url: coach_narratives_path, method: :post, class: "coach__suggestion" do |form| %>
+          <%= form.hidden_field "coach_narrative[question]", value: question %>
+          <%= form.submit question, class: "button button--inline" %>
+        <% end %>
       <% end %>
-    <% end %>
-  </div>
+    </div>
 
-  <%= form_with url: coach_narratives_path, method: :post, class: "coach__ask" do |form| %>
-    <label class="visually-hidden" for="coach_question">Ask the coach a question</label>
-    <%= text_field_tag "coach_narrative[question]", nil,
-      id: "coach_question",
-      placeholder: "Ask anything about today's plan…",
-      maxlength: CoachNarrative::MAX_QUESTION_LENGTH,
-      class: "coach__input" %>
-    <%= form.submit "Ask", class: "button" %>
+    <%= form_with url: coach_narratives_path, method: :post, class: "coach__ask" do |form| %>
+      <label class="visually-hidden" for="coach_question">Ask the coach a question</label>
+      <%= text_field_tag "coach_narrative[question]", nil,
+        id: "coach_question",
+        placeholder: "Ask anything about today's plan…",
+        maxlength: CoachNarrative::MAX_QUESTION_LENGTH,
+        class: "coach__input" %>
+      <%= form.submit "Ask", class: "button" %>
+    <% end %>
+
+    <% if @coach_budget.running_low? %>
+      <p class="evidence-note">
+        <%= pluralize @coach_budget.remaining, "question" %> left today.
+      </p>
+    <% end %>
   <% end %>
 
   <% if @coach_narratives.any? %>

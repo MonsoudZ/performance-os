@@ -15,13 +15,14 @@ class CoachNarrativesController < ApplicationController
       redirect_to root_path, alert: "Complete today's check-in before asking the coach." and return
     end
 
-    narrative = Current.user.coach_narratives.build(
-      question: params.dig(:coach_narrative, :question).to_s.strip,
-      coaching_decision: decision,
-      status: "pending"
-    )
+    # Claimed rather than checked, so the count and the insert cannot be split by
+    # two questions asked at once. A nil back means the day is spent.
+    narrative = budget.claim { build_narrative(decision) }
+    unless narrative
+      redirect_to root_path, alert: budget_spent_message and return
+    end
 
-    if narrative.save
+    if narrative.persisted?
       CoachNarrativeJob.perform_later(narrative)
       redirect_to root_path
     else
@@ -30,6 +31,22 @@ class CoachNarrativesController < ApplicationController
   end
 
   private
+
+  def budget = @budget ||= CoachBudget.new(Current.user)
+
+  # A rejected question is not saved, so it does not spend the slot it was
+  # claimed under — the claim only holds for the length of the insert.
+  def build_narrative(decision)
+    Current.user.coach_narratives.build(
+      question: params.dig(:coach_narrative, :question).to_s.strip,
+      coaching_decision: decision,
+      status: "pending"
+    ).tap(&:save)
+  end
+
+  def budget_spent_message
+    "That's all #{CoachBudget::DAILY_LIMIT} questions for today. The coach resets at midnight."
+  end
 
   def todays_decision
     today = Current.user.local_date
