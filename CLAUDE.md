@@ -106,6 +106,29 @@ depend on what the jobs are:
   for anything still queued. It is logged — if it shows up for a live account,
   records are disappearing some other way.
 
+## The exercise catalog
+
+`db/catalog/exercises.yml` is the shared catalog, owned by nobody
+(`user_id: nil`) and imported idempotently by `bin/rails catalog:import`, so
+adding an entry and re-running it is the whole job.
+
+- **`staple: true` is what `ProgramGenerator` may prescribe on its own**, and it
+  is opt-in. The generator picks the first compound in a muscle group, ranked by
+  modality then *name*, so without this every exercise added to the catalog
+  competes to become somebody's program: growing the catalog once made a barbell
+  clean outrank a barbell row for "back" on the alphabet alone, and a decline
+  dumbbell press outrank a flat one. A staple is the canonical movement, not
+  every variant of it — the set is deliberately small and does not grow just
+  because the catalog does.
+- Everything else is fully available to log, to search, and to pick by hand. A
+  user's own exercises are never staples.
+- **Tests must not pin the catalog's size.** Assert on presence, or against
+  `Exercise.where(user_id: nil).count`, so growing it fails nothing.
+- The catalog is larger than `Api::V1::ExercisesController::MAX_LIMIT`, so
+  `/api/v1/exercises` pages: `meta.next_offset` is the offset to ask for next and
+  `nil` on the last page. One request stopped being enough the moment the catalog
+  passed 100.
+
 ## Training targets and blocks
 
 An `ExercisePrescription` stores a baseline; a `Mesocycle` owns the scheme. What

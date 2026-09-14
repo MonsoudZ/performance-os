@@ -139,11 +139,22 @@ class ProgramGenerator
 
   # Only lifts the user has the equipment for (bodyweight included only if they
   # kept it). Free-weight compounds rank first within a group.
+  #
+  # Staples first, and only staples when there are any: the ranking below breaks
+  # ties on name, so without this every exercise added to the catalog competes to
+  # become somebody's program — a barbell clean outranked a barbell row for
+  # "back" purely on the alphabet, prescribed with a rule that says to add load
+  # every time the top of the rep range is reached. A user's own exercises are
+  # never staples, so they stay opt-in by hand, and a muscle group with no staple
+  # at all still gets the best of what is left rather than nothing.
   def candidates_for(muscle)
-    Exercise.available_to(user)
+    available = Exercise.available_to(user)
       .joins(exercise_muscle_contributions: :muscle_group)
       .where(exercise_muscle_contributions: { role: "primary" }, muscle_groups: { name: muscle })
       .select { |exercise| user.available_equipment.include?(exercise.modality) }
+
+    staples = available.select(&:staple?)
+    (staples.presence || available)
       .sort_by { |exercise| [ exercise.is_compound? ? 0 : 1, MODALITY_RANK.fetch(exercise.modality, 9), exercise.name ] }
   end
 

@@ -551,6 +551,29 @@ risk they carry, not by size.
   notice is still there, and with each message fixed again the overlap assertion
   reports the original bug in numbers — one ends at 120, the next starts at 40.
 
+- [x] **The exercise catalog is 173 lifts, not 49.** Abs and calves had two each;
+  quads had six. Now every muscle group has at least eight primary options and
+  every modality is properly represented, so a user with dumbbells and a bench is
+  not looking at a list built for a fully equipped gym.
+
+  Growing it turned up a real weakness rather than just adding rows.
+  `ProgramGenerator` picks the first compound per muscle group ranked by modality
+  then *name*, so the catalog's alphabet decided people's programs: adding a
+  barbell clean made it outrank a barbell row for "back", and prescribing an
+  Olympic lift under double progression means telling somebody to add 2.5 kg to
+  their clean every week. Narrowing to staples exposed the same bug one level
+  down, where a decline dumbbell press outranked a flat one.
+
+  `staple` is opt-in and deliberately small — the canonical movement, not every
+  variant — so the catalog can grow without anybody's program moving. A generated
+  program is identical to what it was at 49 exercises, which is the point.
+
+  It also outgrew the catalog API. `MAX_LIMIT` is 100, and with 49 entries "one
+  request gets everything" was true by accident and untested; at 173 a client
+  could not see the whole catalog at all. `/api/v1/exercises` takes an `offset`
+  and returns `meta.next_offset`, so a client is told where to continue rather
+  than having to infer it from three numbers.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -183,8 +183,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
     t.boolean "is_compound", default: false, null: false
     t.string "modality", null: false
     t.string "name", null: false
+    t.boolean "staple", default: false, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.index ["staple"], name: "index_exercises_on_staple", where: "((user_id IS NULL) AND staple)"
     t.index ["user_id", "name"], name: "index_exercises_on_user_id_and_name", unique: true
     t.index ["user_id"], name: "index_exercises_on_user_id"
     t.check_constraint "default_unit::text = ANY (ARRAY['kg'::character varying::text, 'reps'::character varying::text, 'seconds'::character varying::text, 'meters'::character varying::text])", name: "exercises_default_unit_check"

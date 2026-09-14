@@ -1,282 +1,1153 @@
+# The starting exercise catalog, owned by nobody (user_id: nil) and shared by
+# every account. Imported by ExerciseCatalogImporter, which is idempotent, so
+# adding an entry here and re-running `bin/rails catalog:import` is the whole
+# job. A user can still add their own on top of this.
+- name: Ab Wheel Rollout
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Arnold Press
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Back Extension
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    hamstrings: primary
+    glutes: primary
+    back: secondary
 - name: Barbell Back Squat
   modality: barbell
   compound: true
+  staple: true
   muscles:
     quads: primary
     glutes: secondary
-- name: Barbell Front Squat
-  modality: barbell
-  compound: true
-  muscles:
-    quads: primary
-    glutes: secondary
-- name: Romanian Deadlift
-  modality: barbell
-  compound: true
-  muscles:
-    hamstrings: primary
-    glutes: secondary
-- name: Conventional Deadlift
-  modality: barbell
-  compound: true
-  muscles:
-    back: primary
-    glutes: primary
-    hamstrings: secondary
-- name: Barbell Hip Thrust
-  modality: barbell
-  compound: true
-  muscles:
-    glutes: primary
-    hamstrings: secondary
-- name: Leg Press
-  modality: machine
-  compound: true
-  muscles:
-    quads: primary
-    glutes: secondary
-- name: Bulgarian Split Squat
-  modality: dumbbell
-  compound: true
-  muscles:
-    quads: primary
-    glutes: secondary
-- name: Leg Extension
-  modality: machine
-  compound: false
-  muscles:
-    quads: primary
-- name: Seated Leg Curl
-  modality: machine
-  compound: false
-  muscles:
-    hamstrings: primary
-- name: Standing Calf Raise
-  modality: machine
-  compound: false
-  muscles:
-    calves: primary
 - name: Barbell Bench Press
   modality: barbell
   compound: true
+  staple: true
   muscles:
     chest: primary
     triceps: secondary
-- name: Incline Barbell Bench Press
+- name: Barbell Box Squat
   modality: barbell
   compound: true
+  staple: false
   muscles:
-    chest: primary
-    shoulders: secondary
-    triceps: secondary
-- name: Dumbbell Bench Press
-  modality: dumbbell
+    quads: primary
+    glutes: secondary
+- name: Barbell Clean
+  modality: barbell
   compound: true
+  staple: false
   muscles:
-    chest: primary
-    triceps: secondary
-- name: Incline Dumbbell Bench Press
-  modality: dumbbell
-  compound: true
-  muscles:
-    chest: primary
+    back: primary
+    quads: primary
     shoulders: secondary
-- name: Cable Chest Fly
-  modality: cable
+- name: Barbell Curl
+  modality: barbell
   compound: false
+  staple: true
   muscles:
-    chest: primary
-- name: Push-Up
-  modality: bodyweight
+    biceps: primary
+- name: Barbell Floor Press
+  modality: barbell
   compound: true
-  default_unit: reps
+  staple: false
   muscles:
     chest: primary
     triceps: secondary
+- name: Barbell Front Squat
+  modality: barbell
+  compound: true
+  staple: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Barbell Hip Thrust
+  modality: barbell
+  compound: true
+  staple: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary
 - name: Barbell Overhead Press
   modality: barbell
   compound: true
+  staple: true
   muscles:
     shoulders: primary
     triceps: secondary
-- name: Dumbbell Shoulder Press
+- name: Barbell Pause Squat
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Barbell Reverse Lunge
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: primary
+- name: Barbell Row
+  modality: barbell
+  compound: true
+  staple: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Barbell Shrug
+  modality: barbell
+  compound: false
+  staple: false
+  muscles:
+    back: primary
+- name: Battle Ropes
+  modality: other
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    abs: secondary
+- name: Bayesian Cable Curl
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Behind-the-Neck Press
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Belt Squat
+  modality: machine
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Bench Dip
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    triceps: primary
+    chest: secondary
+- name: Bicycle Crunch
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Bulgarian Split Squat
   modality: dumbbell
   compound: true
+  staple: true
   muscles:
-    shoulders: primary
-    triceps: secondary
-- name: Dumbbell Lateral Raise
-  modality: dumbbell
+    quads: primary
+    glutes: secondary
+- name: Burpee
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    chest: secondary
+- name: Cable Chest Fly
+  modality: cable
   compound: false
+  staple: true
   muscles:
-    shoulders: primary
+    chest: primary
+- name: Cable Crunch
+  modality: cable
+  compound: false
+  staple: true
+  muscles:
+    abs: primary
+- name: Cable Curl
+  modality: cable
+  compound: false
+  staple: true
+  muscles:
+    biceps: primary
+- name: Cable Hammer Curl
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Cable Kickback
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    glutes: primary
 - name: Cable Lateral Raise
   modality: cable
   compound: false
+  staple: true
   muscles:
     shoulders: primary
-- name: Pull-Up
-  modality: bodyweight
+- name: Cable Overhead Triceps Extension
+  modality: cable
+  compound: false
+  staple: true
+  muscles:
+    triceps: primary
+- name: Cable Pallof Press
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Cable Pull-Through
+  modality: cable
   compound: true
-  default_unit: reps
+  staple: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Cable Rear Delt Fly
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    shoulders: primary
+- name: Cable Rear Delt Row
+  modality: cable
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    back: secondary
+- name: Cable Triceps Pressdown
+  modality: cable
+  compound: false
+  staple: true
+  muscles:
+    triceps: primary
+- name: Cable Woodchop
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Captain's Chair Knee Raise
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Chest-Supported Dumbbell Row
+  modality: dumbbell
+  compound: true
+  staple: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Chest-Supported Machine Row
+  modality: machine
+  compound: true
+  staple: false
   muscles:
     back: primary
     biceps: secondary
 - name: Chin-Up
   modality: bodyweight
   compound: true
-  default_unit: reps
+  staple: true
   muscles:
     back: primary
     biceps: secondary
-- name: Lat Pulldown
-  modality: cable
-  compound: true
-  muscles:
-    back: primary
-    biceps: secondary
-- name: Barbell Row
+- name: Close-Grip Bench Press
   modality: barbell
   compound: true
+  staple: false
   muscles:
-    back: primary
-    biceps: secondary
-- name: Seated Cable Row
-  modality: cable
+    triceps: primary
+    chest: secondary
+- name: Conventional Deadlift
+  modality: barbell
   compound: true
+  staple: true
   muscles:
     back: primary
-    biceps: secondary
-- name: Chest-Supported Dumbbell Row
+    glutes: primary
+    hamstrings: secondary
+- name: Cross-Body Cable Extension
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    triceps: primary
+- name: Cyclist Squat
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Dead Bug
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Decline Barbell Bench Press
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Decline Dumbbell Bench Press
   modality: dumbbell
   compound: true
+  staple: false
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Decline Sit-Up
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Deficit Deadlift
+  modality: barbell
+  compound: true
+  staple: false
   muscles:
     back: primary
-    biceps: secondary
-- name: Face Pull
-  modality: cable
-  compound: false
+    hamstrings: primary
+    glutes: secondary
+- name: Deficit Push-Up
+  modality: bodyweight
+  compound: true
+  staple: false
   muscles:
-    shoulders: primary
-    back: secondary
-- name: Barbell Curl
-  modality: barbell
+    chest: primary
+    triceps: secondary
+- name: Diamond Push-Up
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    triceps: primary
+    chest: secondary
+- name: Dip
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    chest: primary
+    triceps: primary
+- name: Donkey Calf Raise
+  modality: machine
   compound: false
+  staple: false
+  muscles:
+    calves: primary
+- name: Dragon Flag
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Dumbbell Bench Press
+  modality: dumbbell
+  compound: true
+  staple: true
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Dumbbell Concentration Curl
+  modality: dumbbell
+  compound: false
+  staple: false
   muscles:
     biceps: primary
+- name: Dumbbell Fly
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    chest: primary
+- name: Dumbbell Front Raise
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    shoulders: primary
+- name: Dumbbell Front Squat
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
 - name: Dumbbell Hammer Curl
   modality: dumbbell
   compound: false
+  staple: true
   muscles:
     biceps: primary
-- name: Cable Triceps Pressdown
-  modality: cable
-  compound: false
-  muscles:
-    triceps: primary
-- name: Skull Crusher
-  modality: barbell
-  compound: false
-  muscles:
-    triceps: primary
-- name: Plank
-  modality: bodyweight
-  compound: false
-  default_unit: seconds
-  muscles:
-    abs: primary
 - name: Dumbbell Hip Thrust
   modality: dumbbell
   compound: true
+  staple: true
   muscles:
     glutes: primary
     hamstrings: secondary
-- name: Machine Hip Thrust
-  modality: machine
+- name: Dumbbell Kickback
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    triceps: primary
+- name: Dumbbell Lateral Raise
+  modality: dumbbell
+  compound: false
+  staple: true
+  muscles:
+    shoulders: primary
+- name: Dumbbell Preacher Curl
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Dumbbell Pullover
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    chest: primary
+    back: secondary
+- name: Dumbbell Rear Delt Fly
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    shoulders: primary
+- name: Dumbbell Romanian Deadlift
+  modality: dumbbell
   compound: true
+  staple: false
   muscles:
+    hamstrings: primary
+    glutes: secondary
+- name: Dumbbell Shoulder Press
+  modality: dumbbell
+  compound: true
+  staple: true
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Dumbbell Shrug
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    back: primary
+- name: Dumbbell Skull Crusher
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    triceps: primary
+- name: Dumbbell Snatch
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    back: secondary
+    quads: secondary
+- name: Dumbbell Standing Calf Raise
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    calves: primary
+- name: Dumbbell Step-Up
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
     glutes: primary
-    hamstrings: secondary
-- name: Cable Pull-Through
+- name: Dumbbell Walking Lunge
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: primary
+- name: EZ-Bar Curl
+  modality: barbell
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Face Pull
   modality: cable
+  compound: false
+  staple: true
+  muscles:
+    shoulders: primary
+    back: secondary
+- name: Farmer's Walk
+  modality: dumbbell
   compound: true
+  staple: false
+  muscles:
+    back: primary
+    abs: secondary
+- name: Frog Pump
+  modality: bodyweight
+  compound: false
+  staple: false
   muscles:
     glutes: primary
-    hamstrings: secondary
 - name: Glute Bridge
   modality: bodyweight
   compound: true
+  staple: true
   muscles:
     glutes: primary
     hamstrings: secondary
+- name: Glute Ham Raise
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    hamstrings: primary
+    glutes: secondary
+- name: Goblet Squat
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Good Morning
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    hamstrings: primary
+    glutes: secondary
+    back: secondary
+- name: Hack Squat
+  modality: machine
+  compound: true
+  staple: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Hanging Knee Raise
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Hanging Leg Raise
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: High-to-Low Cable Fly
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    chest: primary
+- name: Hollow Body Hold
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Incline Barbell Bench Press
+  modality: barbell
+  compound: true
+  staple: true
+  muscles:
+    chest: primary
+    shoulders: secondary
+    triceps: secondary
+- name: Incline Dumbbell Bench Press
+  modality: dumbbell
+  compound: true
+  staple: true
+  muscles:
+    chest: primary
+    shoulders: secondary
+- name: Incline Dumbbell Curl
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Incline Dumbbell Fly
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    chest: primary
+- name: Incline Machine Press
+  modality: machine
+  compound: true
+  staple: false
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Incline Push-Up
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Inverted Row
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: JM Press
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    triceps: primary
+    chest: secondary
+- name: Kettlebell Swing
+  modality: other
+  compound: true
+  staple: false
+  muscles:
+    glutes: primary
+    hamstrings: primary
+- name: Lat Pulldown
+  modality: cable
+  compound: true
+  staple: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Leaning Cable Lateral Raise
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    shoulders: primary
+- name: Leg Extension
+  modality: machine
+  compound: false
+  staple: true
+  muscles:
+    quads: primary
+- name: Leg Press
+  modality: machine
+  compound: true
+  staple: true
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Leg Press Calf Raise
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    calves: primary
+- name: Low-to-High Cable Fly
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    chest: primary
+- name: Lying Leg Curl
+  modality: machine
+  compound: false
+  staple: true
+  muscles:
+    hamstrings: primary
 - name: Machine Chest Press
   modality: machine
   compound: true
+  staple: true
   muscles:
     chest: primary
     triceps: secondary
     shoulders: secondary
-- name: Pec Deck Fly
+- name: Machine Crunch
   modality: machine
   compound: false
+  staple: false
   muscles:
-    chest: primary
-- name: Machine Shoulder Press
+    abs: primary
+- name: Machine Curl
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Machine Hip Abduction
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    glutes: primary
+- name: Machine Hip Thrust
   modality: machine
   compound: true
+  staple: true
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Machine Lateral Raise
+  modality: machine
+  compound: false
+  staple: false
   muscles:
     shoulders: primary
-    triceps: secondary
-- name: Reverse Pec Deck
-  modality: machine
-  compound: false
-  muscles:
-    shoulders: primary
-    back: secondary
-- name: Seated Machine Row
-  modality: machine
-  compound: true
-  muscles:
-    back: primary
-    biceps: secondary
-- name: Hack Squat
-  modality: machine
-  compound: true
-  muscles:
-    quads: primary
-    glutes: secondary
-- name: Lying Leg Curl
-  modality: machine
-  compound: false
-  muscles:
-    hamstrings: primary
-- name: Seated Calf Raise
-  modality: machine
-  compound: false
-  muscles:
-    calves: primary
 - name: Machine Preacher Curl
   modality: machine
   compound: false
+  staple: true
   muscles:
     biceps: primary
+- name: Machine Pullover
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    back: primary
+- name: Machine Shoulder Press
+  modality: machine
+  compound: true
+  staple: true
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Machine Triceps Extension
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    triceps: primary
+- name: Meadows Row
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Neutral-Grip Lat Pulldown
+  modality: cable
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Neutral-Grip Pull-Up
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Nordic Hamstring Curl
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    hamstrings: primary
+- name: Overhead Dumbbell Triceps Extension
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    triceps: primary
+- name: Paused Bench Press
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Pec Deck Fly
+  modality: machine
+  compound: false
+  staple: true
+  muscles:
+    chest: primary
+- name: Pendlay Row
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Pendulum Squat
+  modality: machine
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Pike Push-Up
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Plank
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Power Clean
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    quads: primary
+    shoulders: secondary
+- name: Pull-Up
+  modality: bodyweight
+  compound: true
+  staple: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Push Press
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Push-Up
+  modality: bodyweight
+  compound: true
+  staple: true
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Rack Pull
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    glutes: secondary
+- name: Reverse Curl
+  modality: barbell
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Reverse Hyperextension
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Reverse Pec Deck
+  modality: machine
+  compound: false
+  staple: true
+  muscles:
+    shoulders: primary
+    back: secondary
+- name: Romanian Deadlift
+  modality: barbell
+  compound: true
+  staple: true
+  muscles:
+    hamstrings: primary
+    glutes: secondary
+- name: Rope Triceps Pressdown
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    triceps: primary
+- name: Safety Bar Squat
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Seated Barbell Overhead Press
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Seated Cable Row
+  modality: cable
+  compound: true
+  staple: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Seated Calf Raise
+  modality: machine
+  compound: false
+  staple: true
+  muscles:
+    calves: primary
+- name: Seated Dumbbell Shoulder Press
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    triceps: secondary
+- name: Seated Leg Curl
+  modality: machine
+  compound: false
+  staple: true
+  muscles:
+    hamstrings: primary
+- name: Seated Machine Row
+  modality: machine
+  compound: true
+  staple: true
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Side Plank
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Single-Arm Cable Pressdown
+  modality: cable
+  compound: false
+  staple: false
+  muscles:
+    triceps: primary
+- name: Single-Arm Cable Row
+  modality: cable
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Single-Arm Dumbbell Row
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Single-Leg Calf Raise
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    calves: primary
+- name: Single-Leg Hip Thrust
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    glutes: primary
+    hamstrings: secondary
+- name: Single-Leg Leg Press
+  modality: machine
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Single-Leg Romanian Deadlift
+  modality: dumbbell
+  compound: true
+  staple: false
+  muscles:
+    hamstrings: primary
+    glutes: primary
+- name: Sissy Squat
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    quads: primary
+- name: Skull Crusher
+  modality: barbell
+  compound: false
+  staple: true
+  muscles:
+    triceps: primary
+- name: Sled Push
+  modality: other
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: primary
+- name: Smith Machine Bench Press
+  modality: machine
+  compound: true
+  staple: false
+  muscles:
+    chest: primary
+    triceps: secondary
+- name: Smith Machine Calf Raise
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    calves: primary
+- name: Smith Machine Squat
+  modality: machine
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+- name: Spider Curl
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    biceps: primary
+- name: Split Squat
+  modality: bodyweight
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: primary
+- name: Standing Calf Raise
+  modality: machine
+  compound: false
+  staple: true
+  muscles:
+    calves: primary
+- name: Standing Leg Curl
+  modality: machine
+  compound: false
+  staple: false
+  muscles:
+    hamstrings: primary
+- name: Stiff-Leg Deadlift
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    hamstrings: primary
+    glutes: secondary
 - name: Straight-Arm Pulldown
   modality: cable
   compound: false
+  staple: true
   muscles:
     back: primary
-- name: Cable Curl
-  modality: cable
+- name: Suitcase Carry
+  modality: dumbbell
   compound: false
-  muscles:
-    biceps: primary
-- name: Cable Overhead Triceps Extension
-  modality: cable
-  compound: false
-  muscles:
-    triceps: primary
-- name: Cable Crunch
-  modality: cable
-  compound: false
+  staple: false
   muscles:
     abs: primary
+    back: secondary
+- name: Sumo Deadlift
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    glutes: primary
+    quads: secondary
+    back: secondary
+- name: T-Bar Row
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Tibialis Raise
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    calves: primary
+- name: Trap Bar Deadlift
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: primary
+    back: secondary
+- name: Upright Row
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    shoulders: primary
+    back: secondary
+- name: Wall Sit
+  modality: bodyweight
+  compound: false
+  staple: false
+  muscles:
+    quads: primary
+- name: Weighted Crunch
+  modality: dumbbell
+  compound: false
+  staple: false
+  muscles:
+    abs: primary
+- name: Wide-Grip Lat Pulldown
+  modality: cable
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Yates Row
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    back: primary
+    biceps: secondary
+- name: Zercher Squat
+  modality: barbell
+  compound: true
+  staple: false
+  muscles:
+    quads: primary
+    glutes: secondary
+    back: secondary

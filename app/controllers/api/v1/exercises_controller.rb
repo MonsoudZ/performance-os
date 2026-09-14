@@ -13,14 +13,19 @@ module Api
         exercises = exercises.where(modality: params[:modality]) if params[:modality].present?
         exercises = search(exercises) if params[:query].present?
         total = exercises.count
-        returned_exercises = exercises.limit(limit)
+        returned_exercises = exercises.limit(limit).offset(offset)
 
         render json: {
           data: returned_exercises.map { |exercise| serialize(exercise) },
           meta: {
             returned: returned_exercises.length,
             total: total,
-            limit: limit
+            limit: limit,
+            offset: offset,
+            # Saves a client having to work out from three numbers whether it has
+            # everything. The catalog outgrew MAX_LIMIT, so "one request gets it
+            # all" stopped being true and nothing said so.
+            next_offset: (offset + limit < total ? offset + limit : nil)
           }
         }
       end
@@ -45,6 +50,10 @@ module Api
 
       def limit
         params.fetch(:limit, DEFAULT_LIMIT).to_i.clamp(1, MAX_LIMIT)
+      end
+
+      def offset
+        [ params.fetch(:offset, 0).to_i, 0 ].max
       end
 
       def serialize(exercise)

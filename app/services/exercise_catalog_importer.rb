@@ -35,6 +35,9 @@ class ExerciseCatalogImporter
     exercise.update!(
       modality: attributes.fetch(:modality),
       is_compound: attributes.fetch(:compound),
+      # Opt-in: an entry that says nothing is available to log and to choose by
+      # hand, and is not something ProgramGenerator will put in a program.
+      staple: attributes.fetch(:staple, false),
       default_unit: attributes.fetch(:default_unit, "kg")
     )
 
