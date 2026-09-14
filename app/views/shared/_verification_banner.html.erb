@@ -1,0 +1,10 @@
+<%# Shown on every page until the address is confirmed, because there is no
+    other moment a user reliably comes back to. It states what is actually held
+    back rather than nagging in the abstract. %>
+<% if authenticated? && Current.user && !Current.user.verified? && EmailVerificationsMailer.enforced? %>
+  <div class="flash flash--alert">
+    Confirm <%= Current.user.email_address %> to enable the AI coach and make sure
+    a password reset can reach you.
+    <%= button_to "Resend the email", email_verifications_path, method: :post, class: "text-button" %>
+  </div>
+<% end %>

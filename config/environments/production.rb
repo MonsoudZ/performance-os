@@ -59,21 +59,33 @@ Rails.application.configure do
       ENV["CABLE_ALLOWED_ORIGINS"].split(",").map { |origin| origin.strip }
   end
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # Mail is not decoration here: a password reset and an email confirmation are
+  # both delivered this way, and neither works without it. Configured from the
+  # environment like every other outside service in this app (see
+  # config/initializers/web_push.rb and anthropic.rb) rather than from
+  # credentials, so a deploy can set it without re-encrypting anything.
+  #
+  # APP_HOST is what every link in an email is built from. There is no sensible
+  # default — a reset link pointing at example.com is worse than no email — so
+  # the boot check in config/initializers/mail.rb refuses to let it be guessed.
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("APP_HOST", "example.com"),
+    protocol: "https"
+  }
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.perform_deliveries = ENV["SMTP_ADDRESS"].present?
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
-
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  if ENV["SMTP_ADDRESS"].present?
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address: ENV.fetch("SMTP_ADDRESS"),
+      port: ENV.fetch("SMTP_PORT", 587).to_i,
+      user_name: ENV["SMTP_USER_NAME"],
+      password: ENV["SMTP_PASSWORD"],
+      authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain").to_sym,
+      enable_starttls_auto: true
+    }
+  end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

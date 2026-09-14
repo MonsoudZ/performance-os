@@ -207,6 +207,22 @@ A day that synced only steps must not produce a readiness check-in — an
 unanswered day on the record as an answered one gets scored, and a score built
 from nothing is worse than no score.
 
+## Email confirmation
+
+New accounts are created unconfirmed and signed in anyway. Confirmation gates one
+thing — asking the AI coach, the only surface where an unconfirmed address spends
+money — and `EmailVerificationsMailer.enforced?` decides whether it gates at all:
+
+- **If mail cannot be delivered, confirmation is not enforced.** Nobody can
+  confirm, so a gate would be an outage rather than a control. Production logs a
+  warning at boot (`config/initializers/mail.rb`) instead of failing open quietly.
+- **Mail is configured from the environment** (`APP_HOST`, `SMTP_*`), like
+  `web_push.rb` and `anthropic.rb`. Rails' production scaffold looks configured
+  and is not — a commented-out SMTP block and a host of `example.com` — and both
+  password reset and confirmation depend on it.
+- Fixture users are confirmed. A test that wants an unconfirmed one clears
+  `verified_at` itself, so the banner does not appear in every other test's markup.
+
 ## Exporting and deleting an account
 
 `AccountExport` and `AccountDeletion` are complements: whatever erasure destroys,

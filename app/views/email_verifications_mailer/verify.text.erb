@@ -1,0 +1,8 @@
+Confirm this address to finish setting up your PerformanceOS account:
+
+<%= email_verification_url(@user.generate_token_for(:email_verification)) %>
+
+This link expires in <%= distance_of_time_in_words(0, User::EMAIL_VERIFICATION_PERIOD) %>.
+
+You can keep logging your training in the meantime. If you did not create this
+account, ignore this email and nothing further will happen.

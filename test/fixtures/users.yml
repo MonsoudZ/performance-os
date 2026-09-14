@@ -1,11 +1,17 @@
 <% password_digest = BCrypt::Password.create("password") %>
 
+<%# Established accounts, so verified. A test that cares about an unconfirmed
+    one clears verified_at itself, rather than every other test carrying the
+    confirmation banner in its markup. %>
+
 one:
   email_address: one@example.com
   password_digest: <%= password_digest %>
   unit_system: metric
+  verified_at: <%= 30.days.ago.to_fs(:db) %>
 
 two:
   email_address: two@example.com
   password_digest: <%= password_digest %>
   unit_system: imperial
+  verified_at: <%= 30.days.ago.to_fs(:db) %>

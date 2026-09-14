@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -477,6 +477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_080000) do
     t.integer "training_days_per_week", default: 4, null: false
     t.string "unit_system", default: "metric", null: false
     t.datetime "updated_at", null: false
+    t.datetime "verified_at"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.check_constraint "experience_level::text = ANY (ARRAY['beginner'::character varying::text, 'intermediate'::character varying::text, 'advanced'::character varying::text])", name: "users_experience_level_check"
     t.check_constraint "max_hr IS NULL OR max_hr > 0", name: "users_max_hr_check"

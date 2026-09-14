@@ -9,8 +9,14 @@ class RegistrationsController < ApplicationController
     @user = User.new(registration_params)
 
     if @user.save
+      EmailVerificationsMailer.verify(@user).deliver_later
       start_new_session_for(@user)
-      redirect_to onboarding_path, notice: "Welcome to PerformanceOS."
+      # Signed straight in on purpose: a new account can start logging
+      # immediately, and the one thing it cannot do until confirmed is spend
+      # money. Walling off the whole app behind an email that may be slow,
+      # filtered or misaddressed costs more than it protects.
+      redirect_to onboarding_path,
+        notice: "Welcome to PerformanceOS. Confirm your email when you get a moment."
     else
       render :new, status: :unprocessable_entity
     end

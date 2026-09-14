@@ -19,6 +19,18 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "America/Denver", User.order(:created_at).last.time_zone
   end
 
+  test "a new account is unconfirmed and is sent a confirmation" do
+    assert_enqueued_emails 1 do
+      register("fresh@example.com", from: "10.8.0.1")
+    end
+
+    user = User.find_by!(email_address: "fresh@example.com")
+    assert_not_predicate user, :verified?
+    # Signed in anyway: a new account can start logging straight away.
+    assert cookies[:session_id]
+    assert_redirected_to onboarding_path
+  end
+
   test "throttles an address that floods the sign-up form" do
     Rack::Attack::REGISTRATION_LIMIT.times { |i| register("flood-#{i}@example.com", from: "10.9.0.1") }
 

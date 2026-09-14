@@ -5,6 +5,17 @@ class User < ApplicationRecord
 
   has_secure_password
 
+  # Two days is long enough for an address that batches or greylists, short
+  # enough that a link found in an old inbox is dead. The token carries the
+  # address it was issued for and the verification state, so it stops working
+  # the moment it is used — and could never verify an address it was not issued
+  # for, if this app ever lets one be changed.
+  EMAIL_VERIFICATION_PERIOD = 2.days
+
+  generates_token_for :email_verification, expires_in: EMAIL_VERIFICATION_PERIOD do
+    [ email_address, verified_at&.to_i ]
+  end
+
   # Order is load-bearing: `user.destroy` runs these in declaration order, and
   # several of them reference each other, so anything that points at another row
   # has to be listed before the row it points at. AccountDeletion is the only
@@ -48,6 +59,14 @@ class User < ApplicationRecord
   validate :recognized_equipment
 
   before_validation :normalize_equipment
+
+  def verified?
+    verified_at.present?
+  end
+
+  def verify!
+    update!(verified_at: Time.current) unless verified?
+  end
 
   def active_goal
     goal_periods.active_on(local_date).order(started_on: :desc).first

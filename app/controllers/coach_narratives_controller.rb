@@ -4,6 +4,12 @@ class CoachNarrativesController < ApplicationController
       redirect_to root_path, alert: "The AI coach isn't configured yet." and return
     end
 
+    # Every narrative is a paid call to Claude, which makes this the one surface
+    # where an unconfirmed address costs real money rather than a table row.
+    if EmailVerificationsMailer.enforced? && !Current.user.verified?
+      redirect_to root_path, alert: "Confirm your email address to ask the coach." and return
+    end
+
     decision = todays_decision
     unless decision
       redirect_to root_path, alert: "Complete today's check-in before asking the coach." and return

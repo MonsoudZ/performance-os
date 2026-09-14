@@ -298,6 +298,28 @@ risk they carry, not by size.
   is the answer to that, and there is none — registration signs you straight in.
   Worth building before the sign-up page is advertised anywhere.
 
+- [x] **Email is confirmed, and email works at all.** The second half was the
+  bigger discovery: production mail was the untouched Rails scaffold — SMTP
+  commented out, every link built against a literal `example.com` — so password
+  reset had been quietly dead the whole time. It is configured from the
+  environment now, like every other outside service here, and production logs at
+  boot when it is not.
+
+  Confirmation itself is deliberately not a wall. A new account signs in and can
+  log training straight away; what it cannot do is ask the AI coach, which is the
+  one surface where an unconfirmed address spends real money rather than
+  occupying a table row. Walling off the whole app behind an email that may be
+  slow, filtered or misaddressed costs more than it protects.
+
+  And it is not enforced when mail cannot be delivered. A confirmation nobody can
+  complete is an outage, not a control, so the gate asks whether the service
+  exists — the same question `CoachNarrator.configured?` asks — and the boot
+  warning says so out loud rather than failing open in silence.
+
+  Still open: nothing stops one address confirming many accounts, and there is no
+  flow for changing an address once set. The token already carries the address it
+  was issued for, so it is ready for the second.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

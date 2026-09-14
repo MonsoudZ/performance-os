@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   resource :session, only: %i[new create destroy]
   resources :passwords, param: :token, only: %i[new create edit update]
   resource :registration, only: %i[new create]
+  resources :email_verifications, param: :token, only: %i[create show]
   root "dashboard#show"
 
   resource :onboarding, only: :show, controller: "onboarding"

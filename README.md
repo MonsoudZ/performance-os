@@ -83,6 +83,8 @@ recompute; open pages morph themselves when the new decision lands.
   have logged by hand, so every rule downstream works unchanged.
 - **Account export and deletion** — one JSON file holding everything the app
   knows, and a password-confirmed erasure of the same set.
+- **Email confirmation** — new accounts can log training immediately but cannot
+  spend money on the AI coach until the address is confirmed.
 - **Web Push** — hourly check-in reminders via a Solid Queue recurring task.
 - **PWA** — manifest, service worker, and a mobile bottom tab bar.
 
@@ -127,6 +129,8 @@ feature dormant.
 | `ANTHROPIC_MODEL` | Defaults to `claude-opus-4-8`. |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Push delivery is a no-op. Generate a pair with `WebPush.generate_key`. |
 | `VAPID_SUBJECT` | Defaults to `mailto:support@performance-os.app`. |
+| `APP_HOST` | Every link in an email points at `example.com`, so password resets and confirmations go nowhere useful. Set it in production. |
+| `SMTP_ADDRESS` | No mail is delivered at all: password reset is silently dead, and email confirmation is **not enforced**, since a confirmation nobody can complete would be an outage rather than a control. Production logs a warning at boot. `SMTP_PORT`, `SMTP_USER_NAME`, `SMTP_PASSWORD` and `SMTP_AUTHENTICATION` go with it. |
 | `CABLE_ALLOWED_ORIGINS` | Comma-separated Action Cable origins, for running behind an SSL-terminating proxy in production. |
 | `SOLID_QUEUE_IN_PUMA` | Runs the worker inside Puma. Always on in production. |
 
