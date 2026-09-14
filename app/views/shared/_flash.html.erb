@@ -1,0 +1,15 @@
+<%# One flash message. `dismiss_after` is milliseconds, 0 to stay until closed.
+
+    A notice reports that something went right, so it can see itself out. An
+    alert is usually the explanation for why something did not, so it waits to
+    be read. Both can be closed, because a message fixed over the page that
+    cannot be got rid of is worse than no message. %>
+<div class="flash flash--<%= kind %>"
+  role="<%= kind == "alert" ? "alert" : "status" %>"
+  data-controller="flash"
+  data-flash-dismiss-after-value="<%= dismiss_after %>">
+  <div class="flash__body"><%= message %></div>
+  <button type="button" class="flash__close" data-action="flash#dismiss" aria-label="Dismiss this message">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>

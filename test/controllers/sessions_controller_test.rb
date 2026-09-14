@@ -3,6 +3,17 @@ require "test_helper"
 class SessionsControllerTest < ActionDispatch::IntegrationTest
   setup { @user = User.take }
 
+  # An error is the explanation for what just went wrong, so it waits to be read
+  # rather than timing out the way a success message does.
+  test "a sign-in error waits to be closed rather than timing out" do
+    post session_path, params: { email_address: users(:one).email_address, password: "wrong" }
+    follow_redirect!
+
+    assert_select ".flash--alert[data-flash-dismiss-after-value=?]", "0"
+    assert_select ".flash--alert .flash__close"
+    assert_select ".flash--alert[role=?]", "alert"
+  end
+
   test "new" do
     get new_session_path
     assert_response :success

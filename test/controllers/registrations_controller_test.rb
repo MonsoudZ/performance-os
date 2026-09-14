@@ -19,6 +19,34 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "America/Denver", User.order(:created_at).last.time_zone
   end
 
+  # Both of these are fixed over the page. They used to be fixed at the same
+  # coordinates, so a new account read the welcome printed across the banner
+  # telling it to confirm an address — and neither could be closed.
+  test "the welcome notice and the confirm banner stack instead of colliding" do
+    post registration_path, params: { user: {
+      email_address: "stacked@example.com", password: "password123", password_confirmation: "password123"
+    } }
+    follow_redirect!
+
+    assert_select ".flash-stack .flash", 2
+    assert_select ".flash-stack .flash--notice", text: /Welcome to PerformanceOS/
+    assert_select ".flash-stack .flash--alert", text: /Confirm stacked@example\.com/
+  end
+
+  test "the welcome notice can be closed and sees itself out" do
+    post registration_path, params: { user: {
+      email_address: "closable@example.com", password: "password123", password_confirmation: "password123"
+    } }
+    follow_redirect!
+
+    assert_select ".flash--notice[data-controller=?]", "flash"
+    assert_select ".flash--notice[data-flash-dismiss-after-value=?]", "5000"
+    assert_select ".flash--notice .flash__close[data-action=?]", "flash#dismiss"
+    # Announced rather than only drawn: a message fixed over the page is no use
+    # to somebody who never hears it.
+    assert_select ".flash--notice[role=?]", "status"
+  end
+
   test "a new account is unconfirmed and is sent a confirmation" do
     assert_enqueued_emails 1 do
       register("fresh@example.com", from: "10.8.0.1")

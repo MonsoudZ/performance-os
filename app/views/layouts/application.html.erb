@@ -33,14 +33,14 @@
   </head>
 
   <body>
-    <%= render "shared/verification_banner" %>
-
-    <% if notice %>
-      <div class="flash flash--notice"><%= notice %></div>
-    <% end %>
-    <% if alert %>
-      <div class="flash flash--alert"><%= alert %></div>
-    <% end %>
+    <%# One stack, because these used to be three separately fixed elements at the
+        same coordinates: a new account got the welcome notice landing exactly on
+        top of the confirm-your-email banner. %>
+    <div class="flash-stack">
+      <%= render "shared/verification_banner" %>
+      <%= render "shared/flash", kind: "notice", message: notice, dismiss_after: 5000 if notice %>
+      <%= render "shared/flash", kind: "alert", message: alert, dismiss_after: 0 if alert %>
+    </div>
     <%= yield %>
     <%= render "shared/mobile_tab_bar" if authenticated? %>
   </body>

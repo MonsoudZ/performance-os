@@ -532,6 +532,25 @@ risk they carry, not by size.
   decision now contains no "kg" anywhere, and an older one has a correct heading
   over an unchanged record.
 
+- [x] **A flash message goes away.** Reported as the welcome banner needing to
+  disappear sooner or be closable. It was worse than either: `.flash` was
+  `position: fixed` with no dismissal and no timer at all, so it stayed for the
+  whole page view — and because the verification banner shares the class and the
+  coordinates, a newly registered account got "Welcome to PerformanceOS" drawn
+  exactly on top of "Confirm your email", two unreadable messages neither of
+  which could be got rid of.
+
+  One `.flash-stack` now owns the fixed position and lays them out in a grid, so
+  any number of messages stack instead of colliding. A notice reports that
+  something went right and sees itself out after five seconds; an alert is the
+  explanation for why something did not and waits to be read. Both carry a close
+  button, and both are announced (`role="status"` / `role="alert"`) rather than
+  only drawn.
+
+  The browser tests were checked by breaking the fix: without the timer the
+  notice is still there, and with each message fixed again the overlap assertion
+  reports the original bug in numbers — one ends at 120, the next starts at 40.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

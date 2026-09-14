@@ -1439,17 +1439,66 @@ h1 {
   color: var(--muted);
 }
 
-.flash {
+/* The stack owns the fixed position now. Each message used to carry it, so two
+   at once landed on the same coordinates and covered each other. */
+.flash-stack {
   position: fixed;
   z-index: 10;
   top: 20px;
   left: 50%;
+  display: grid;
+  gap: 10px;
   width: min(560px, calc(100% - 40px));
-  padding: 14px 18px;
   transform: translateX(-50%);
+}
+
+.flash-stack:empty {
+  display: none;
+}
+
+.flash {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px 18px;
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(24, 33, 29, 0.16);
   text-align: center;
+}
+
+.flash__body {
+  flex: 1;
+}
+
+/* Sits in the corner of the message rather than in the flow of it, so the text
+   stays centred with or without it. */
+.flash__close {
+  flex: none;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.flash__close:hover,
+.flash__close:focus-visible {
+  opacity: 1;
+}
+
+.flash--leaving {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash--leaving {
+    transition: none;
+  }
 }
 
 .flash--notice {

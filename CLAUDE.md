@@ -434,6 +434,27 @@ stand behind it:
 Adding a `has_many` to `User` means placing it in that order as well as adding it
 to `AccountFixture`.
 
+## Flash messages
+
+Everything the app says over the page renders into one `.flash-stack`. They used
+to be individually `position: fixed` at the same coordinates, so a new account
+got the welcome notice drawn exactly on top of the confirm-your-email banner,
+and neither could be closed.
+
+- **A notice sees itself out; an alert waits.** A notice reports that something
+  went right, so `shared/_flash` gives it a `dismiss_after`. An alert is usually
+  the explanation for why something did not — taking "That password is not right"
+  away from the person still typing is the failure mode, so alerts pass 0. The
+  Stimulus controller defaults to 0, so a view cannot forget to opt out.
+- **Everything can be closed**, because a message fixed over the page that will
+  not go away is worse than no message.
+- A dismissed flash is **removed, not hidden** — a class that sets `display`
+  outranks the user agent's `[hidden]` rule, which has already left one element
+  on screen in this app.
+- The verification banner lives in the same stack but is neither timed nor
+  closable: it is a standing state rather than something that just happened, and
+  dismissing it would only bring it back on the next page.
+
 ## Empty states
 
 An empty state names the action that fills it and links to it. "No workouts
