@@ -1439,6 +1439,27 @@ h1 {
   color: var(--muted);
 }
 
+/* Turbo injects its own <style> for this bar and signs it with the request's
+   CSP nonce. That works, and it is one dependency deep: a cached page, an edge
+   that rewrites the header, or a deploy predating the nonce fix all end with the
+   element refused and the app's only loading indicator invisible — which has
+   already happened here once.
+   
+   Same declarations Turbo ships, served from our own stylesheet, one step more
+   specific so this is what applies rather than whichever of the two loaded last.
+   Turbo's element being blocked then costs a console warning and nothing else. */
+body .turbo-progress-bar {
+  position: fixed;
+  display: block;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: #0076ff;
+  z-index: 2147483647;
+  transition: width 300ms ease-out, opacity 150ms 150ms ease-in;
+  transform: translate3d(0, 0, 0);
+}
+
 /* The stack owns the fixed position now. Each message used to carry it, so two
    at once landed on the same coordinates and covered each other. */
 .flash-stack {
