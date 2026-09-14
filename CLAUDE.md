@@ -129,6 +129,25 @@ adding an entry and re-running it is the whole job.
   `nil` on the last page. One request stopped being enough the moment the catalog
   passed 100.
 
+## A session and a workout are the same shape
+
+A `WorkoutTemplate` and a logged `WorkoutSession` both answer "which exercises,
+in which order", so `WorkoutTemplateFromSession` reads one out of the other and
+the second time somebody trains it costs a name and a button rather than
+rebuilding the workout by hand.
+
+- **Warming up on something is not training it**, so an exercise with only
+  warm-up sets is left out — unless the whole session was warm-ups, which is
+  still worth saving as what it was rather than failing as an empty workout.
+- **The suggested name steps around one already taken.** Running a template and
+  saving the result is the ordinary case, so a prefilled name that collides would
+  be a validation error on something the user never typed. A name they *do* type
+  is never silently renamed.
+- Saving lands in the template editor, because the day to schedule it on is the
+  one thing a session cannot supply.
+- The template is what gets created, so the action lives on
+  `WorkoutTemplatesController` even though the route hangs off a session.
+
 ## Training targets and blocks
 
 An `ExercisePrescription` stores a baseline; a `Mesocycle` owns the scheme. What

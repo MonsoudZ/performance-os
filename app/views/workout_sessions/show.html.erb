@@ -17,6 +17,35 @@
     </div>
   </section>
 
+  <%# Building a workout by hand and logging one are the same act done twice, so
+      the second time costs a name and a button. Only offered when there is
+      something to save: a session with no sets makes an invalid template. %>
+  <% if @workout_session.set_entries.any? %>
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Do this again</p>
+          <h2>Save as a workout.</h2>
+        </div>
+      </div>
+
+      <p class="evidence-note">
+        Keeps these <%= pluralize @workout_session.set_entries.reject(&:is_warmup?).map(&:exercise_id).uniq.size, "exercise" %>
+        in the order you did them, so next time you pick it from Workouts instead of building it again.
+        You can schedule it to a day once it is saved.
+      </p>
+
+      <%= form_with url: save_workout_session_as_workout_path(@workout_session), method: :post,
+        class: "stacked-form" do |form| %>
+        <label>
+          <span>Name</span>
+          <%= text_field_tag :name, WorkoutTemplateFromSession.suggested_name(@workout_session), required: true %>
+        </label>
+        <%= form.submit "Save as a workout", class: "button" %>
+      <% end %>
+    </section>
+  <% end %>
+
   <% if @workout_session.template_snapshot.present? %>
     <section class="workout-completion">
       <article class="panel">

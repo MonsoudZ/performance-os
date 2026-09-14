@@ -38,6 +38,11 @@ Rails.application.routes.draw do
   end
   resources :workout_templates, except: :show
   resources :workout_sessions, only: %i[index new create show edit update destroy]
+  # A logged session and a template hold the same thing — which exercises, in
+  # which order — so one can be made from the other. The template is what gets
+  # created, so the action lives with templates.
+  post "workout_sessions/:workout_session_id/save_as_workout",
+    to: "workout_templates#create_from_session", as: :save_workout_session_as_workout
   resources :conditioning_sessions, only: %i[index create destroy]
   resources :coach_narratives, only: :create
   resources :coaching_decisions, only: :show

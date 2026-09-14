@@ -574,6 +574,23 @@ risk they carry, not by size.
   and returns `meta.next_offset`, so a client is told where to continue rather
   than having to infer it from three numbers.
 
+- [x] **A logged session can be saved as a workout.** Building a workout by hand
+  and logging one are the same act done twice — the exercises and their order are
+  already in the session — so the session page now offers to keep them. Name it,
+  press the button, and it is waiting under Workouts to run again.
+
+  Two judgements the rule makes. An exercise that was only warmed up is left out,
+  because warming up on something is not training it; but a session that was
+  nothing but warm-ups keeps its exercises rather than failing as an empty
+  workout. And the prefilled name steps around one already in use, since running
+  a template and saving the result is the ordinary case and a default name that
+  collided would be a validation error on something nobody typed — while a name
+  the user does type is rejected rather than silently renamed.
+
+  Each of those rules was checked by breaking it and watching the test that names
+  it fail, and the journey itself runs in a browser: log, save, find it under
+  Workouts with both exercises on it.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

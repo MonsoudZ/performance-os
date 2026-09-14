@@ -87,4 +87,48 @@ class WorkoutTemplatesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+  test "saves a logged session as a workout and opens it for scheduling" do
+    squat = Exercise.create!(name: "Zzz Ctl Squat", modality: "barbell", is_compound: true)
+    bench = Exercise.create!(name: "Zzz Ctl Bench", modality: "barbell", is_compound: true)
+    session = @user.workout_sessions.create!(performed_at: 1.hour.ago)
+    session.set_entries.create!(exercise: squat, set_index: 1, weight_kg: 100, reps: 5, rir: 2)
+    session.set_entries.create!(exercise: bench, set_index: 2, weight_kg: 60, reps: 8, rir: 2)
+
+    assert_difference "@user.workout_templates.count", 1 do
+      post save_workout_session_as_workout_path(session), params: { name: "Zzz Ctl Saved" }
+    end
+
+    template = @user.workout_templates.find_by(name: "Zzz Ctl Saved")
+    assert_equal [ squat.id, bench.id ], template.workout_template_exercises.order(:position).pluck(:exercise_id)
+    # Straight into the editor, because scheduling it to a day is the next thing
+    # anybody wants and it is the one part a session cannot supply.
+    assert_redirected_to edit_workout_template_path(template)
+  end
+
+  test "a name already taken says so and creates nothing" do
+    squat = Exercise.create!(name: "Zzz Ctl Dup", modality: "barbell", is_compound: true)
+    @user.workout_templates.create!(name: "Zzz Ctl Clash", weekdays: [],
+      workout_template_exercises_attributes: [ { exercise_id: squat.id, position: 1 } ])
+    session = @user.workout_sessions.create!(performed_at: 1.hour.ago)
+    session.set_entries.create!(exercise: squat, set_index: 1, weight_kg: 100, reps: 5, rir: 2)
+
+    assert_no_difference "@user.workout_templates.count" do
+      post save_workout_session_as_workout_path(session), params: { name: "Zzz Ctl Clash" }
+    end
+
+    assert_redirected_to workout_session_path(session)
+    assert_match(/name/i, flash[:alert])
+  end
+
+  # Scoped to the signed-in user, so somebody else's session cannot be copied
+  # into your own workouts.
+  test "another account's session cannot be saved as your workout" do
+    theirs = users(:two).workout_sessions.create!(performed_at: 1.hour.ago)
+
+    assert_no_difference "WorkoutTemplate.count" do
+      post save_workout_session_as_workout_path(theirs), params: { name: "Zzz Ctl Theirs" }
+    end
+
+    assert_response :not_found
+  end
 end

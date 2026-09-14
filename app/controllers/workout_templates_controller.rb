@@ -25,6 +25,19 @@ class WorkoutTemplatesController < ApplicationController
     end
   end
 
+  # Save a workout somebody already did as one they can run again.
+  def create_from_session
+    session = Current.user.workout_sessions.find(params[:workout_session_id])
+    template = WorkoutTemplateFromSession.new(session, name: params[:name]).call
+
+    if template.persisted?
+      redirect_to edit_workout_template_path(template),
+        notice: "#{template.name} saved. Schedule it or adjust the order here."
+    else
+      redirect_to workout_session_path(session), alert: template.errors.full_messages.to_sentence
+    end
+  end
+
   def edit
     prepare_form
   end
