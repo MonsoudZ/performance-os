@@ -384,6 +384,16 @@ only route back to that checklist once a user has left it.
   key, so the bug ships looking fine. They have ids now; `PrimaryKeysTest` fails
   if a keyless table appears again. The unique index on the natural key is still
   what enforces "one per user per day" — the id does not.
+- **CI runs a newer Postgres than the dev container, so `bin/ci` green is not
+  CI green.** Development here is Postgres 16; `.github/workflows/ci.yml` pins
+  the service to `postgres:18` — pinned so the version only moves when someone
+  edits that line, rather than whenever Docker Hub retags `latest`. Behaviour
+  that differs between majors has already bitten twice: a RESTRICT violation
+  surfaces as a different exception class on each, so a test asserting the
+  narrower class passed locally and failed the build. Assert on the parent class
+  and the message rather than on whichever class the local server happens to
+  raise.
+
 - **`db/schema.rb` is whatever a rebuild produces, not what looks tidiest.**
   Postgres stores a check constraint as a parsed expression and prints it back
   in its own normal form, so `metric_type IN ('a', 'b')` in a migration is not

@@ -70,7 +70,19 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        # Pinned to the major version, not `postgres` (which is `:latest`).
+        # Postgres changes behaviour between majors in ways this suite can see —
+        # a RESTRICT violation arrives as a different exception class on 16 than
+        # on 18, which once turned a green local run into a red build — so the
+        # version CI tests against should move when someone changes this line,
+        # not when Docker Hub retags. The patch level still floats, so fixes
+        # arrive without a commit.
+        #
+        # This is 18 because that is what `postgres:latest` already resolved to;
+        # pinning changed nothing about what runs here. Note that it is ahead of
+        # the local development image, so a version-dependent failure can still
+        # reach CI having passed `bin/ci`.
+        image: postgres:18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

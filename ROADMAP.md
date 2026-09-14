@@ -419,6 +419,20 @@ risk they carry, not by size.
   `WearableSample::METRIC_UNITS` already was, so the test can ask about
   everything the app writes rather than two strings copied into it.
 
+- [x] **CI's Postgres is pinned.** The workflow asked for `postgres`, which is
+  `postgres:latest`, so the major version CI tested against could change without
+  anyone committing anything — and this repo has already lost a build to a
+  behaviour difference between majors, when a RESTRICT violation turned out to
+  arrive as a different exception class on 16 than on 18.
+
+  Pinned to `postgres:18`, which is what `latest` already resolved to, so nothing
+  about what runs changed — only whether it can change by itself. The patch level
+  still floats, so fixes arrive without a commit.
+
+  What this does not close is that CI is a major ahead of the development
+  container, so a version-dependent failure can still reach CI having passed
+  `bin/ci`. That is now written down in CLAUDE.md rather than rediscovered.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute
