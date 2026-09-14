@@ -6,14 +6,20 @@ class User < ApplicationRecord
   has_secure_password
 
   # Two days is long enough for an address that batches or greylists, short
-  # enough that a link found in an old inbox is dead. The token carries the
-  # address it was issued for and the verification state, so it stops working
-  # the moment it is used — and could never verify an address it was not issued
-  # for, if this app ever lets one be changed.
+  # enough that a link found in an old inbox is dead.
   EMAIL_VERIFICATION_PERIOD = 2.days
+  EMAIL_CHANGE_PERIOD = 2.days
 
+  # Both tokens carry the address they were issued for, so neither can confirm
+  # an address it was not issued for, and both die the moment the thing they
+  # describe moves — a confirmation once the account is verified, a change once
+  # the request is confirmed or cancelled.
   generates_token_for :email_verification, expires_in: EMAIL_VERIFICATION_PERIOD do
     [ email_address, verified_at&.to_i ]
+  end
+
+  generates_token_for :email_change, expires_in: EMAIL_CHANGE_PERIOD do
+    pending_email_address
   end
 
   # Order is load-bearing: `user.destroy` runs these in declaration order, and
@@ -42,6 +48,9 @@ class User < ApplicationRecord
   has_many :mesocycles, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
+  # Normalized the same way, or "Me@Example.com " would be compared against a
+  # stored address it is equal to and treated as a different one.
+  normalizes :pending_email_address, with: ->(e) { e&.strip&.downcase.presence }
   # The profile's sex select offers "Prefer not to say", which posts an empty
   # string. The column's check constraint accepts NULL but not "", so without
   # this the whole profile save fails at the database — taking every other field
@@ -66,6 +75,10 @@ class User < ApplicationRecord
 
   def verify!
     update!(verified_at: Time.current) unless verified?
+  end
+
+  def email_change_pending?
+    pending_email_address.present?
   end
 
   def active_goal

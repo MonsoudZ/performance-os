@@ -316,9 +316,23 @@ risk they carry, not by size.
   exists — the same question `CoachNarrator.configured?` asks — and the boot
   warning says so out loud rather than failing open in silence.
 
-  Still open: nothing stops one address confirming many accounts, and there is no
-  flow for changing an address once set. The token already carries the address it
-  was issued for, so it is ready for the second.
+  Still open: nothing stops one address confirming many accounts.
+
+- [x] **An email address can be changed.** The new one confirms itself before it
+  takes effect, so a typo costs nothing and the account keeps working throughout.
+  The current password is required and the *old* address is told a change was
+  asked for — that second email is the one that reaches the real owner if it was
+  not them who asked, and it deliberately carries no link and asks for no action.
+
+  Unlike new-account confirmation this fails closed when mail is undeliverable:
+  refusing to start leaves the account exactly as it was, while starting one
+  would park a request nobody could ever confirm.
+
+  Writing the test for the race — somebody registering the address between the
+  request and the click — turned up a real bug. The rescue cleared the pending
+  request on a record that still held the rejected address in memory, so the save
+  failed the same way and the request stuck forever, unconfirmable and
+  uncancellable. It reloads first now.
 
 ## Developer experience
 

@@ -223,6 +223,27 @@ money — and `EmailVerificationsMailer.enforced?` decides whether it gates at a
 - Fixture users are confirmed. A test that wants an unconfirmed one clears
   `verified_at` itself, so the banner does not appear in every other test's markup.
 
+## Changing an email address
+
+Nothing moves until the new address proves itself. `EmailChangeRequest` parks it
+in `pending_email_address`; `EmailChangeConfirmation` swaps it, and only then.
+Writing it straight in would mean a typo costs every route back into the account
+— a password reset would go somewhere that does not exist — and would let anyone
+holding a session take the account outright.
+
+- **The current password is required**, the bar account deletion sets, and the
+  **old address is told** a change was asked for. The second is the one that
+  reaches the real owner when it was not them who asked.
+- **Uniqueness is checked twice**: at request and again at confirmation, because
+  somebody can register the address in between. On losing that race the request
+  is cancelled — and the record has to be reloaded first, because the failed save
+  left it holding the rejected address and saving it again fails the same way.
+- **This flow fails closed** when mail is undeliverable, unlike new-account
+  confirmation. Refusing to start leaves the account as it was; starting one
+  would park a request that can never be confirmed.
+- Confirming a new address also verifies the account — receiving mail there is
+  the only question confirmation asks.
+
 ## Exporting and deleting an account
 
 `AccountExport` and `AccountDeletion` are complements: whatever erasure destroys,

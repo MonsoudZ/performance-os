@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -472,6 +472,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_140000) do
     t.decimal "height_cm", precision: 8, scale: 4
     t.integer "max_hr"
     t.string "password_digest", null: false
+    t.string "pending_email_address"
     t.string "sex"
     t.string "time_zone", default: "UTC", null: false
     t.integer "training_days_per_week", default: 4, null: false

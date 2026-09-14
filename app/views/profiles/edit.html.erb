@@ -74,6 +74,39 @@
   <section class="panel">
     <div class="panel__header">
       <div>
+        <p class="eyebrow">Email address</p>
+        <h2><%= Current.user.email_address %></h2>
+      </div>
+    </div>
+
+    <% if Current.user.email_change_pending? %>
+      <p class="evidence-note">
+        Waiting on <strong><%= Current.user.pending_email_address %></strong> to confirm.
+        This account keeps <%= Current.user.email_address %> until then, so nothing is lost if the
+        new address was wrong.
+      </p>
+      <%= button_to "Cancel the change", cancel_email_change_path, method: :delete,
+        class: "text-button text-button--danger" %>
+    <% else %>
+      <p class="evidence-note">
+        A new address has to confirm itself before it takes effect, so a typo costs nothing. Your
+        current address is told that a change was asked for, which is how you find out if it was not
+        you who asked.
+      </p>
+
+      <%= form_with url: email_changes_path, method: :post, class: "stacked-form" do |form| %>
+        <div class="form-grid">
+          <label><span>New email address</span><%= email_field_tag :email_address, nil, required: true, autocomplete: "email" %></label>
+          <label><span>Current password</span><%= password_field_tag :password, nil, required: true, autocomplete: "current-password" %></label>
+        </div>
+        <%= form.submit "Send a confirmation", class: "button" %>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
         <p class="eyebrow">Your data</p>
         <h2>Take a copy.</h2>
       </div>

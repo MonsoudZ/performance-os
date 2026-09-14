@@ -3,6 +3,8 @@ Rails.application.routes.draw do
   resources :passwords, param: :token, only: %i[new create edit update]
   resource :registration, only: %i[new create]
   resources :email_verifications, param: :token, only: %i[create show]
+  resources :email_changes, param: :token, only: %i[create show]
+  delete "email_changes", to: "email_changes#destroy", as: :cancel_email_change
   root "dashboard#show"
 
   resource :onboarding, only: :show, controller: "onboarding"

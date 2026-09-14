@@ -1,0 +1,11 @@
+<p>
+  Confirm this address to finish moving your PerformanceOS account to it:
+  <%= link_to "confirm the new address", email_change_url(@user.generate_token_for(:email_change)) %>.
+</p>
+
+<p>
+  This link expires in <%= distance_of_time_in_words(0, User::EMAIL_CHANGE_PERIOD) %>.
+  Until you use it, the account keeps its current address and nothing changes.
+</p>
+
+<p>If you did not ask for this, ignore this email.</p>

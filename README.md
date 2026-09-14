@@ -83,8 +83,9 @@ recompute; open pages morph themselves when the new decision lands.
   have logged by hand, so every rule downstream works unchanged.
 - **Account export and deletion** — one JSON file holding everything the app
   knows, and a password-confirmed erasure of the same set.
-- **Email confirmation** — new accounts can log training immediately but cannot
-  spend money on the AI coach until the address is confirmed.
+- **Email confirmation and change** — new accounts can log training immediately
+  but cannot spend money on the AI coach until the address is confirmed, and a
+  new address confirms itself before it replaces the old one.
 - **Web Push** — hourly check-in reminders via a Solid Queue recurring task.
 - **PWA** — manifest, service worker, and a mobile bottom tab bar.
 
