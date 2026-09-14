@@ -282,6 +282,22 @@ risk they carry, not by size.
   configured to put a file in. A few years of training is single-digit megabytes;
   the comment on the controller says what would change that answer.
 
+- [x] **Registration is throttled.** Signing in and resetting a password were
+  both capped; creating an account was not, so it was the one unauthenticated
+  write anyone could issue without limit. Ten per client IP per hour — far past
+  anything a household or office behind one address does, far under what filling
+  a table takes.
+
+  It is a Rack::Attack throttle rather than the controller-level `rate_limit`
+  that sessions and passwords use, because Rack::Attack is the mechanism this app
+  can actually test: `config.cache_store` is `:null_store` in test, so Rails'
+  `rate_limit` cannot count there and those two declarations are unexercised by
+  the suite. They still work in production against Solid Cache.
+
+  What this does not do is stop a caller with many addresses. Email verification
+  is the answer to that, and there is none — registration signs you straight in.
+  Worth building before the sign-up page is advertised anywhere.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

@@ -257,6 +257,11 @@ only route back to that checklist once a user has left it.
 - Any URL a client supplies and the server later requests is an SSRF vector.
   Push endpoints are allow-listed against vendor hosts in `PushSubscription` for
   this reason.
+- **Throttles belong in `Rack::Attack`, not in `rate_limit`.** Both exist here,
+  but `config.cache_store` is `:null_store` in test, so a controller-level
+  `rate_limit` counts nothing there and cannot be tested — the declarations on
+  `SessionsController` and `PasswordsController` only bite in production. Every
+  throttle with a test behind it is a Rack::Attack one.
 - `bundler-audit` only sees gems in `Gemfile.lock`. Default gems like `resolv`
   are invisible to it unless declared in the `Gemfile`.
 - **Every table needs a primary key, including the derived ones.** Four here

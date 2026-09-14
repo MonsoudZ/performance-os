@@ -17,6 +17,9 @@ class Rack::Attack
   FOOD_SEARCH_PATH = %r{\A/foods/search/?\z}
   FOOD_SEARCH_LIMIT = 20
   FOOD_SEARCH_PERIOD = 1.minute
+  REGISTRATION_PATH = %r{\A/registration/?\z}
+  REGISTRATION_LIMIT = 10
+  REGISTRATION_PERIOD = 1.hour
 
   # In production the counters live in the shared Solid Cache so every Puma
   # worker (and any future dyno) enforces one global limit. In dev/test a
@@ -79,6 +82,23 @@ class Rack::Attack
     if request.get? && request.path.match?(FOOD_SEARCH_PATH)
       request.cookies["session_id"].presence || CLIENT_IP.call(request)
     end
+  end
+
+  # Signing up is rare for a person and trivial to script, and unlike logging in
+  # there is no second axis to key on — every account is a different address by
+  # definition. So the cap is per client IP and generous enough that a household
+  # or an office behind one address never notices: ten new accounts in an hour is
+  # far past anything real and far under what filling a table takes.
+  #
+  # This does not stop a caller with many addresses. Email verification is the
+  # answer to that one, and this app has none — registration signs you straight
+  # in. Worth building before the sign-up page is ever advertised.
+  throttle(
+    "registration/ip",
+    limit: REGISTRATION_LIMIT,
+    period: REGISTRATION_PERIOD
+  ) do |request|
+    CLIENT_IP.call(request) if request.post? && request.path.match?(REGISTRATION_PATH)
   end
 
   self.throttled_response_retry_after_header = true
