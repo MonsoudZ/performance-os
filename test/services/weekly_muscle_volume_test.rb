@@ -4,8 +4,9 @@ class WeeklyMuscleVolumeTest < ActiveSupport::TestCase
   setup do
     @user = users(:one)
     @bench = Exercise.create!(name: "Bench", modality: "barbell")
-    chest = MuscleGroup.create!(name: "chest")
-    triceps = MuscleGroup.create!(name: "triceps")
+    # The seeds own the real muscle names — see progress_controller_test.
+    chest = MuscleGroup.find_or_create_by!(name: "chest")
+    triceps = MuscleGroup.find_or_create_by!(name: "triceps")
     @bench.exercise_muscle_contributions.create!(muscle_group: chest, role: "primary", fraction: 1.0)
     @bench.exercise_muscle_contributions.create!(muscle_group: triceps, role: "secondary", fraction: 0.5)
   end

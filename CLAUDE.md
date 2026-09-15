@@ -696,9 +696,20 @@ landing mid-check-in blanked all four ratings, with nothing on screen to say why
   the normalised one. `--canonical` catches it; the fix is to regenerate with a
   rebuild rather than to hand-edit, as above.
 
-- Catalog exercises (`user_id: nil`) survive `db:seed:replant`. Tests must not
-  assume an empty `exercises` table — use distinctive names and assert on
-  presence rather than totals — and note that a test database prepared with
+- **`bin/ci` seeds the test database as its last step, so the run after it
+  starts on a seeded one.** `Tests: Seeds` is `db:seed:replant` under
+  `RAILS_ENV=test`, and `bin/setup`'s `db:prepare` does not wipe what it leaves
+  — ten muscle groups and the whole exercise catalog. So a test that creates a
+  row the seeds also create passes on a clean database and fails on the next
+  `bin/ci`, and looks intermittent because a new migration reloads the schema
+  and clears the seeds in between. Three did: two `MuscleGroup.create!("chest")`
+  and an `Exercise.create!("Pendlay Row")`. Use `find_or_create_by!` for a name
+  the seeds own, or a `Zzz` name of your own. To reproduce this class of failure
+  deliberately, run `env RAILS_ENV=test bin/rails db:seed:replant` and then the
+  suite.
+- Catalog exercises (`user_id: nil`) survive `db:seed:replant`, as above. Tests
+  must not assume an empty `exercises` table — use distinctive names and assert
+  on presence rather than totals — and note that a test database prepared with
   `db:reset` (which seeds) starts with them while `db:test:prepare` does not.
 - `assert_select "sel", "some message"` treats the second argument as a **text
   match**, not a message, and `assert_select "sel", text: "x", "message"` is a

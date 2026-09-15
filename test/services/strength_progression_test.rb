@@ -57,7 +57,8 @@ class StrengthProgressionTest < ActiveSupport::TestCase
   end
 
   test "returns nothing for an exercise the user has never logged" do
-    unlogged = Exercise.create!(name: "Pendlay Row", modality: "barbell")
+    # A name of its own: the shared catalog already holds a Pendlay Row.
+    unlogged = Exercise.create!(name: "Zzz Unlogged Row", modality: "barbell")
     log(1.day.ago, weight: 100, reps: 5)
 
     assert_empty StrengthProgression.new(@user, exercise: unlogged).call

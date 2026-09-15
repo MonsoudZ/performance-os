@@ -8,7 +8,9 @@ class ProgressControllerTest < ActionDispatch::IntegrationTest
 
   test "renders the progress page with volume and strength sections" do
     bench = Exercise.create!(name: "Bench", modality: "barbell")
-    chest = MuscleGroup.create!(name: "chest")
+    # The seeds own the real muscle names, and bin/ci's last step plants them
+    # in the test database, so creating one here fails on the next run.
+    chest = MuscleGroup.find_or_create_by!(name: "chest")
     bench.exercise_muscle_contributions.create!(muscle_group: chest, role: "primary", fraction: 1.0)
     workout = @user.workout_sessions.create!(performed_at: Time.current)
     3.times { |i| workout.set_entries.create!(exercise: bench, set_index: i + 1, weight_kg: 100, reps: 8, rir: 1) }
