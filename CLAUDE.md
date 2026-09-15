@@ -547,9 +547,23 @@ and neither could be closed.
 
 ## Empty states
 
-An empty state names the action that fills it and links to it. "No workouts
-logged yet" is a description; a user who reads it still has to work out where to
-go. What a new account is missing is answered in one place — `OnboardingProgress`
+An empty state names the action that fills it and **offers it as a button**, not
+as a link buried in a sentence. "No workouts logged yet" is a description; a user
+who reads it still has to work out where to go, and "Log a workout and each
+working set lands against the muscles it trains" hides the target inside the
+prose.
+
+It is also a placeholder rather than a lost paragraph: `.empty-state` reads down
+the same left edge as the heading above it and stops at a readable measure.
+Centred text with 36px of padding left one sentence floating in the middle of an
+1106px-wide box on a page where everything else is left-aligned, and made the
+panel 150px taller than its own content. A panel whose sole job is a rarely-used form folds it away: the nutrition page's
+seven-field "add a food manually" is a `<details>`, because searching finds most
+foods and the form was taking as much room as the food log itself. A `<details>`
+rather than Stimulus — nothing else needs to know it is open, and it works
+before any JavaScript does.
+
+What a new account is missing is answered in one place — `OnboardingProgress`
 — which both `/onboarding` and the dashboard read, because the dashboard is the
 only route back to that checklist once a user has left it.
 

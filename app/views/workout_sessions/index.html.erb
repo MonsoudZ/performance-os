@@ -43,8 +43,8 @@
       <p class="evidence-note">Showing the most recent <%= @workout_sessions.size %> <%= "session".pluralize(@workout_sessions.size) %>.</p>
     <% else %>
       <div class="empty-state">
-        <p>No workouts logged yet.</p>
-        <p><%= link_to "Log your first workout", new_workout_session_path, class: "text-link" %> and the progression engine starts building your history.</p>
+        <p>No workouts logged yet. Log one and the progression engine starts building your history.</p>
+        <%= link_to "Log your first workout", new_workout_session_path, class: "button button--inline" %>
       </div>
     <% end %>
   </section>

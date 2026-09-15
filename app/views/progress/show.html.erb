@@ -41,8 +41,9 @@
       <p class="evidence-note">Ticks mark minimum-effective (MEV), adaptive-target (MAV), and maximum-recoverable (MRV) weekly sets. Secondary muscles count as half a set.</p>
     <% else %>
       <div class="empty-state">
-        <p>Nothing logged this week yet, so there is no volume to count.</p>
-        <p><%= link_to "Log a workout", new_workout_session_path, class: "text-link" %> and each working set lands against the muscles it trains.</p>
+        <p>Nothing logged this week yet, so there is no volume to count. Each working set
+          lands against the muscles it trains.</p>
+        <%= link_to "Log a workout", new_workout_session_path, class: "button button--inline" %>
       </div>
     <% end %>
   </section>
@@ -76,7 +77,7 @@
     <% else %>
       <div class="empty-state">
         <p>No estimated-1RM trend yet — it needs at least two sessions of the same lift.</p>
-        <p><%= link_to "Log a workout", new_workout_session_path, class: "text-link" %> to start one.</p>
+        <%= link_to "Log a workout", new_workout_session_path, class: "button button--inline" %>
       </div>
     <% end %>
   </section>
@@ -86,13 +87,12 @@
       <div class="panel__header">
         <div>
           <p class="eyebrow">Body weight trend</p>
-          <h2>
-            <% if @weight_trend.size >= 2 %>
-              <%= weight(@weight_trend.last.ewma_kg) %>
-            <% else %>
-              Weight
-            <% end %>
-          </h2>
+          <%# The pair of cards share one slot, so they answer it the same way:
+              the latest value, or an em dash when there is none. This one used
+              to print the word "Weight" — a label where its neighbour printed a
+              number — and withheld the value until a second day arrived, though
+              the note below already says how many days there are. %>
+          <h2><%= @weight_trend.any? ? weight(@weight_trend.last.ewma_kg) : "—" %></h2>
         </div>
       </div>
       <div class="line-chart-wrap line-chart-wrap--weight">

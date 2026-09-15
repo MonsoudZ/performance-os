@@ -97,8 +97,18 @@
         <%= submit_tag "Search", class: "button button--secondary", name: nil %>
       <% end %>
 
-      <p class="evidence-note">Or enter one manually:</p>
-      <%= render "foods/form", food: @food, submit_label: "Add food" %>
+      <%# Seven fields, open, on the page somebody comes to in order to log —
+          they took as much room as the food log itself and pushed what the user
+          already has below the fold. Searching finds most foods, so typing one
+          out is the fallback and sits folded until it is wanted.
+          A <details> rather than Stimulus: nothing else has to know it is open,
+          and it works before any JavaScript runs. %>
+      <details class="disclosure">
+        <summary>Add a food manually</summary>
+        <div class="disclosure__body">
+          <%= render "foods/form", food: @food, submit_label: "Add food" %>
+        </div>
+      </details>
 
       <% if @custom_foods.any? %>
         <div class="compact-list">

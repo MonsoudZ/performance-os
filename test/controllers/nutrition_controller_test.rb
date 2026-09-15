@@ -84,6 +84,18 @@ class NutritionControllerTest < ActionDispatch::IntegrationTest
     assert_select ".trend-strip strong", text: "187.5"
   end
 
+  # Seven open fields on the page somebody comes to in order to log took as much
+  # room as the food log itself. Searching finds most foods; typing one out is
+  # the fallback, so it folds — but it stays on the page and stays reachable.
+  test "the manual food form is folded away, and the search that replaces it is not" do
+    get nutrition_path
+
+    assert_response :success
+    assert_select "details.disclosure form#form_food"
+    assert_select "details.disclosure[open]", 0
+    assert_select "details .food-search", 0
+  end
+
   private
 
   def create_total(metric_type, value)

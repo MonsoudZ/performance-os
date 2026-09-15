@@ -66,8 +66,9 @@
       </dl>
     <% else %>
       <div class="empty-state">
-        <p>This lift has no training target, so the progression engine won’t evaluate it.</p>
-        <p><%= link_to "Set a target", new_exercise_prescription_path, class: "text-link" %> to start tracking rep, RIR, and load progression.</p>
+        <p>This lift has no training target, so the progression engine won’t evaluate it.
+          A target starts tracking rep, RIR and load progression.</p>
+        <%= link_to "Set a target", new_exercise_prescription_path, class: "button button--inline" %>
       </div>
     <% end %>
 
@@ -162,7 +163,7 @@
     <% else %>
       <div class="empty-state">
         <p>You haven’t logged this exercise yet.</p>
-        <p><%= link_to "Log a workout", new_workout_session_path, class: "text-link" %> to start its history.</p>
+        <%= link_to "Log a workout", new_workout_session_path, class: "button button--inline" %>
       </div>
     <% end %>
   </section>

@@ -775,10 +775,28 @@ h1 {
   text-decoration: none;
 }
 
+/* An empty state is a placeholder, not a lost paragraph. Centred text with 36px
+   of padding above and below left one sentence floating in the middle of an
+   1106px-wide box on a page where everything else is left-aligned and measured,
+   and the panel was 150px taller than its own content. It reads down the same
+   left edge as the heading above it now, and stops at a readable measure. */
 .empty-state {
-  padding: 36px 0;
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  max-width: 54ch;
+  padding: 4px 0 8px;
   color: var(--muted);
-  text-align: center;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+/* The action gets a little air above it, because it is the point of the block
+   rather than another sentence. */
+.empty-state .button {
+  margin-top: 6px;
 }
 
 .page-heading {
@@ -2003,6 +2021,36 @@ body .turbo-progress-bar {
 }
 
 /* Food database search */
+.disclosure {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.disclosure > summary {
+  padding: 16px 0 4px;
+  color: var(--green);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure > summary::after {
+  content: " +";
+}
+
+.disclosure[open] > summary::after {
+  content: " –";
+}
+
+.disclosure__body {
+  padding-top: 16px;
+}
+
 .food-search {
   display: flex;
   gap: 10px;
