@@ -377,9 +377,10 @@ class WorkoutSessionsControllerTest < ActionDispatch::IntegrationTest
     get workout_session_path(workout)
 
     assert_response :success
-    # It carried nav-links__button, a topbar class that renders muted text with
-    # no background — a destructive action that looked like a caption.
+    # It carried a topbar class that renders muted text with no background — a
+    # destructive action that looked like a caption. The class itself is gone
+    # now, so asserting its absence would assert nothing; what still has to hold
+    # is that the control is styled as the destructive action it is.
     assert_select "form[action=?] button.text-button--danger", workout_session_path(workout)
-    assert_select ".page-heading__actions .nav-links__button", 0
   end
 end

@@ -1,0 +1,25 @@
+<%# One topbar menu. `links` is label => path; a block adds anything that is not
+    a plain link, like signing out. %>
+<% align = local_assigns.fetch(:align, "start") %>
+<% current = links.values.any? { |path| current_page?(path) } %>
+
+<div class="nav-menu" data-menu-target="menu">
+  <button type="button"
+    class="<%= class_names("nav-menu__trigger", "is-current" => current) %>"
+    data-menu-target="trigger"
+    data-action="menu#toggle"
+    aria-expanded="false"
+    aria-haspopup="true">
+    <%= label %>
+    <span class="nav-menu__caret" aria-hidden="true">▾</span>
+  </button>
+
+  <div class="<%= class_names("nav-menu__sheet", "nav-menu__sheet--end" => align == "end") %>"
+    data-menu-target="sheet"
+    hidden>
+    <% links.each do |text, path| %>
+      <%= link_to text, path, class: class_names("is-current" => current_page?(path)) %>
+    <% end %>
+    <%= yield if block_given? %>
+  </div>
+</div>

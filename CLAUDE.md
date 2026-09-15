@@ -553,6 +553,39 @@ go. What a new account is missing is answered in one place — `OnboardingProgre
 — which both `/onboarding` and the dashboard read, because the dashboard is the
 only route back to that checklist once a user has left it.
 
+## Navigation
+
+There are two of them and they must stay in step: `shared/_navigation` is the
+desktop topbar, `shared/_mobile_tab_bar` the phone's, and the 560px breakpoint
+hides one to show the other. A destination added to one and not the other either
+cannot be reached on that device or shows up twice.
+
+- **The topbar groups; it does not list.** Thirteen flat links wrapped onto three
+  rows at 1400px and four below 1180px, and every new page added one more. It is
+  `Today`, three `shared/_nav_menu` groups, the `Log workout` button and an
+  account menu — one row at every width down to the breakpoint. A new page joins
+  a group's `links` hash rather than the row.
+- A menu says whether the page you are on is inside it, so `Training` reads as
+  current on all six of its pages.
+- The menus are a Stimulus controller rather than `<details>`, which the phone
+  sheet still uses. A row of `<details>` stays open until clicked again, so
+  opening the next leaves the last hanging over the page; a menu bar wants one
+  open at a time, closing on Escape and on a click anywhere else.
+
+## The phone is the narrow case, and it is tested
+
+`ResponsiveLayoutTest` loads every authenticated page at 390px and fails if the
+document is wider than the viewport, naming the element that sticks out. Sideways
+scroll is invisible on a desktop and makes every page feel broken on the device
+this app is mostly used from.
+
+It is one property over every page rather than an assertion per view, and it does
+bite: a `flex-wrap: nowrap` added to fit a row on one line failed it immediately.
+Two things it does *not* catch, so do not assume it does — a wrapping flex row
+just wraps rather than overflowing, and two navigations showing at once is a
+duplication rather than an overflow, which is why the topbar-versus-tab-bar
+assertion is separate.
+
 ## Live updates and unsaved input
 
 Four pages subscribe to the user's stream (`turbo_stream_from Current.user`) and

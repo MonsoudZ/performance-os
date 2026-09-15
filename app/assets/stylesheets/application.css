@@ -94,7 +94,7 @@ input {
 }
 
 .nav-links a,
-.nav-links__button {
+.nav-menu__trigger {
   padding: 0;
   white-space: nowrap;
   color: var(--muted);
@@ -106,6 +106,19 @@ input {
   text-decoration: none;
 }
 
+.nav-links__link:hover,
+.nav-menu__trigger:hover,
+.nav-menu__sheet a:hover {
+  color: var(--ink);
+}
+
+/* The section you are in, named rather than only highlighted: the trigger says
+   "Training" whichever of its six pages you are on. */
+.nav-links__link.is-current,
+.nav-menu__trigger.is-current {
+  color: var(--green);
+}
+
 .nav-links .nav-links__primary {
   padding: 10px 14px;
   color: var(--lime);
@@ -115,6 +128,79 @@ input {
 
 .nav-links form {
   margin: 0;
+}
+
+.nav-menu {
+  position: relative;
+}
+
+.nav-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nav-menu__caret {
+  font-size: 0.7em;
+  line-height: 1;
+}
+
+.nav-menu__trigger[aria-expanded="true"] {
+  color: var(--ink);
+}
+
+.nav-menu__sheet {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  min-width: 190px;
+  padding: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(24, 33, 29, 0.14);
+}
+
+/* The account menu is the last thing on the row, so it opens inwards rather
+   than off the edge of the page. */
+.nav-menu__sheet--end {
+  right: 0;
+  left: auto;
+}
+
+.nav-menu__sheet a,
+.nav-menu__signout {
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.nav-menu__sheet a:hover,
+.nav-menu__signout:hover {
+  background: rgba(24, 33, 29, 0.06);
+}
+
+.nav-menu__sheet a.is-current {
+  color: var(--green);
+  background: rgba(36, 77, 63, 0.09);
+}
+
+.nav-menu__signout {
+  width: 100%;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 9px 9px;
+  margin-top: 6px;
+  padding-top: 13px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .hero {
@@ -241,6 +327,18 @@ h1 {
   box-shadow: inset 0 0 0 18px var(--paper);
 }
 
+[aria-busy="true"] .empty-orbit {
+  border-width: 2px;
+  border-top-color: var(--green);
+  animation: orbit 1.5s linear infinite;
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
@@ -259,6 +357,10 @@ h1 {
 .nutrition-workspace {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Grid stretches every item to the tallest in the row, which left 330px blank
+     below the weigh-in panel next to the seven-field food form. A panel is as
+     tall as what is in it. */
+  align-items: start;
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -523,8 +625,11 @@ h1 {
 
 .panel__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: start;
   justify-content: space-between;
+  /* Without these the heading and its action met in the middle on a phone. */
+  gap: 8px 20px;
   margin-bottom: 36px;
 }
 
@@ -1174,9 +1279,10 @@ h1 {
 
 .meal-group__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 18px;
+  gap: 4px 18px;
   margin-bottom: 10px;
 }
 
@@ -1536,6 +1642,10 @@ body .turbo-progress-bar {
   .flash--leaving {
     transition: none;
   }
+
+  [aria-busy="true"] .empty-orbit {
+    animation: none;
+  }
 }
 
 .flash--notice {
@@ -1578,8 +1688,14 @@ body .turbo-progress-bar {
   }
 
   .nutrition-entry {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+  }
+
+  /* The identity spans the row; the controls share the line under it rather
+     than taking one each. */
+  .nutrition-entry__identity {
+    grid-column: 1 / -1;
   }
 
   .nutrition-entry__form {
@@ -1587,7 +1703,7 @@ body .turbo-progress-bar {
   }
 
   .nutrition-entry__remove {
-    justify-self: start;
+    justify-self: end;
   }
 
   .target-shift {
@@ -1600,7 +1716,7 @@ body .turbo-progress-bar {
   }
 
   .nav-links a:not(.nav-links__primary),
-  .nav-links__button {
+  .nav-menu {
     display: none;
   }
 }

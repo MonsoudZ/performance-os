@@ -1,3 +1,7 @@
+<%# Thirteen flat links wrapped onto three rows at 1400px and four below 1180px,
+    and every page added one more. The phone already had the answer — four
+    destinations and a sheet for the rest — so the topbar groups the same way.
+    Each menu knows whether the page you are on lives inside it. %>
 <header class="topbar">
   <a class="brand" href="/">
     <span class="brand__mark">P</span>
@@ -5,22 +9,37 @@
   </a>
 
   <% if authenticated? %>
-    <nav class="nav-links" aria-label="Primary">
-      <%= link_to "Today", root_path %>
-      <%= link_to "Goal", goal_periods_path %>
-      <%= link_to "Workouts", workout_templates_path %>
-      <%= link_to "Training targets", exercise_prescriptions_path %>
-      <%= link_to "Exercises", exercises_path %>
-      <%= link_to "History", workout_sessions_path %>
-      <%= link_to "Blocks", mesocycles_path %>
-      <%= link_to "Progress", progress_path %>
-      <%= link_to "Conditioning", conditioning_sessions_path %>
-      <%= link_to "Nutrition", nutrition_path %>
-      <%= link_to "Meals", meals_path %>
-      <%= link_to "Weekly review", weekly_review_path %>
-      <%= link_to "Profile", edit_profile_path %>
+    <nav class="nav-links" aria-label="Primary" data-controller="menu">
+      <%= link_to "Today", root_path,
+        class: class_names("nav-links__link", "is-current" => current_page?(root_path)) %>
+
+      <%= render "shared/nav_menu", label: "Training", links: {
+        "Workouts" => workout_templates_path,
+        "Training targets" => exercise_prescriptions_path,
+        "Exercises" => exercises_path,
+        "History" => workout_sessions_path,
+        "Blocks" => mesocycles_path,
+        "Conditioning" => conditioning_sessions_path
+      } %>
+
+      <%= render "shared/nav_menu", label: "Nutrition", links: {
+        "Food log" => nutrition_path,
+        "Meals" => meals_path
+      } %>
+
+      <%= render "shared/nav_menu", label: "Review", links: {
+        "Progress" => progress_path,
+        "Weekly review" => weekly_review_path
+      } %>
+
       <%= link_to "Log workout", new_workout_session_path, class: "nav-links__primary" %>
-      <%= button_to "Sign out", session_path, method: :delete, class: "nav-links__button" %>
+
+      <%= render "shared/nav_menu", label: "Account", align: "end", links: {
+        "Goal" => goal_periods_path,
+        "Profile" => edit_profile_path
+      } do %>
+        <%= button_to "Sign out", session_path, method: :delete, class: "nav-menu__signout" %>
+      <% end %>
     </nav>
   <% end %>
 </header>
