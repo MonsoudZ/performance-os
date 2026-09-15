@@ -70,14 +70,18 @@
       <% if @recent_foods.any? %>
         <div class="recent-foods">
           <% @recent_foods.each do |recent| %>
+            <%# Ids are left off: Rails names a field after its model, so every
+                one-tap form here rendered the same four ids as the manual form
+                below, and Turbo matches morph-permanent elements by id. Nothing
+                addresses a hidden field by id anyway. %>
             <%= form_with model: Current.user.food_log_entries.new do |form| %>
-              <%= form.hidden_field :food_id, value: recent.food.id %>
-              <%= form.hidden_field :quantity_grams, value: recent.quantity_grams %>
-              <%= form.hidden_field :logged_at, value: now %>
+              <%= form.hidden_field :food_id, value: recent.food.id, id: nil %>
+              <%= form.hidden_field :quantity_grams, value: recent.quantity_grams, id: nil %>
+              <%= form.hidden_field :logged_at, value: now, id: nil %>
               <%# The meal it belongs to is the one happening now, not the one it
                   was last eaten at. Carrying the old meal over filed an entry
                   stamped 8pm under breakfast, and this page groups by meal. %>
-              <%= form.hidden_field :meal_type, value: meal_now %>
+              <%= form.hidden_field :meal_type, value: meal_now, id: nil %>
               <%= form.button class: "recent-food" do %>
                 <strong><%= recent.food.display_name %></strong>
                 <span><%= recent.quantity_grams %> g · <%= meal_now.humanize %></span>
@@ -100,7 +104,8 @@
       </div>
 
       <% if @foods.any? %>
-        <%= form_with model: @food_log_entry, class: "stacked-form" do |form| %>
+        <%= form_with model: @food_log_entry, id: "food_log_entry_form", class: "stacked-form",
+          data: { controller: "unsaved-input" } do |form| %>
           <label>
             <span>Food</span>
             <%= form.collection_select :food_id, @foods, :id, :display_name %>
@@ -142,9 +147,12 @@
                     out of it or the redirect goes nowhere. %>
                 <%= form_with url: meal_from_log_path, method: :post, class: "meal-group__save",
                   data: { turbo_frame: "_top" } do |form| %>
-                  <%= form.hidden_field :date, value: @nutrition_date.iso8601 %>
-                  <%= form.hidden_field :meal_type, value: meal_type %>
-                  <%= form.hidden_field :name,
+                  <%# One of these per meal group, and a model-less form names a
+                      field after itself — so breakfast and lunch both rendered
+                      `date`, `meal_type` and `name`. %>
+                  <%= form.hidden_field :date, value: @nutrition_date.iso8601, id: nil %>
+                  <%= form.hidden_field :meal_type, value: meal_type, id: nil %>
+                  <%= form.hidden_field :name, id: nil,
                     value: MealFromLoggedEntries.suggested_name(Current.user, entries) %>
                   <%= form.submit "Save as a meal", class: "text-button" %>
                 <% end %>
@@ -159,10 +167,12 @@
                     <small><%= entry.kcal.round %> kcal · <%= entry.protein_g.round %> g protein</small>
                   </div>
 
-                  <%= form_with model: entry, class: "nutrition-entry__form" do |form| %>
+                  <%= form_with model: entry, id: dom_id(entry, :form), class: "nutrition-entry__form",
+                    data: { controller: "unsaved-input" } do |form| %>
                     <label>
                       <span class="sr-only">Quantity in grams</span>
                       <%= form.number_field :quantity_grams,
+                        id: dom_id(entry, :quantity),
                         min: 1,
                         step: 0.1,
                         required: true,
@@ -172,6 +182,7 @@
                     <%= form.select :meal_type,
                       FoodLogEntry::MEAL_TYPES.map { |meal| [meal.humanize, meal] },
                       {},
+                      id: dom_id(entry, :meal_type),
                       aria: { label: "#{entry.food&.display_name || 'Food'} meal" } %>
                     <%= form.submit "Save", class: "text-button" %>
                   <% end %>

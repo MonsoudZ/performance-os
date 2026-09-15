@@ -97,7 +97,9 @@
       <%= form_with url: email_changes_path, method: :post, class: "stacked-form" do |form| %>
         <div class="form-grid">
           <label><span>New email address</span><%= email_field_tag :email_address, nil, required: true, autocomplete: "email" %></label>
-          <label><span>Current password</span><%= password_field_tag :password, nil, required: true, autocomplete: "current-password" %></label>
+          <%# Both this form and account deletion ask for `password`, so the name
+              stays and the id is what distinguishes them. %>
+          <label><span>Current password</span><%= password_field_tag :password, nil, id: "email_change_password", required: true, autocomplete: "current-password" %></label>
         </div>
         <%= form.submit "Send a confirmation", class: "button" %>
       <% end %>
@@ -181,7 +183,7 @@
       data: { turbo_confirm: "Delete your account and everything in it? This cannot be undone." } do |form| %>
       <label>
         <span>Confirm your password</span>
-        <%= password_field_tag :password, nil, required: true, autocomplete: "current-password" %>
+        <%= password_field_tag :password, nil, id: "account_deletion_password", required: true, autocomplete: "current-password" %>
       </label>
       <%= form.submit "Delete my account", class: "button button--danger" %>
     <% end %>

@@ -36,7 +36,8 @@
       </p>
 
       <%= form_with url: save_workout_session_as_workout_path(@workout_session), method: :post,
-        class: "stacked-form" do |form| %>
+        id: "save_as_workout_form", class: "stacked-form",
+        data: { controller: "unsaved-input" } do |form| %>
         <label>
           <span>Name</span>
           <%= text_field_tag :name, WorkoutTemplateFromSession.suggested_name(@workout_session), required: true %>

@@ -21,7 +21,8 @@
         </div>
       </div>
 
-      <%= form_with model: @body_metric, class: "stacked-form" do |form| %>
+      <%= form_with model: @body_metric, id: "body_metric_form", class: "stacked-form",
+        data: { controller: "unsaved-input" } do |form| %>
         <div class="form-grid">
           <label><span>Weight (<%= weight_unit %>)</span><%= form.number_field :weight_kg, value: weight_field_value(form.object.weight_kg), min: 0, step: measurement_step, required: true %></label>
           <label><span>Measured on</span><%= form.date_field :measured_on, required: true %></label>

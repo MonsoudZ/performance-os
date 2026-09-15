@@ -553,6 +553,35 @@ go. What a new account is missing is answered in one place — `OnboardingProgre
 — which both `/onboarding` and the dashboard read, because the dashboard is the
 only route back to that checklist once a user has left it.
 
+## Live updates and unsaved input
+
+Four pages subscribe to the user's stream (`turbo_stream_from Current.user`) and
+every recompute ends in `broadcast_refresh_to`, which the layout's
+`turbo_refresh_method_tag :morph` applies as a morph rather than a reload. A
+morph rewrites form fields from the server's render, so a refresh arriving while
+somebody is filling a form takes what they typed with it — a wearable sync
+landing mid-check-in blanked all four ratings, with nothing on screen to say why.
+
+- **A form on one of those pages opts into `unsaved-input`.** The controller puts
+  `data-turbo-permanent` on at the first keystroke and takes it off at submit, so
+  a form holds its ground only while there is something to lose and still takes
+  the server's render once it has been sent. It wires its own events rather than
+  listing them in `data-action`, so a view cannot half-subscribe.
+- **Ids must be unique, and Rails does not give you that for free.** Turbo matches
+  permanent elements with `getElementById`, so a duplicate makes a refresh
+  preserve whichever copy it finds first. `form_with model:` names a field after
+  the *model*, not the record, so a partial rendered in a loop repeats every id it
+  contains; a model-less `form_with` names fields after themselves. Pass
+  `id: dom_id(record, :field)` in a loop, or `id: nil` for a hidden field nothing
+  addresses. `ElementIdsTest` renders every authenticated page and fails on a
+  repeat.
+- **A system test must wait for `turbo:morph`, not for a timeout.** A broadcast
+  arrives over the socket with no request for Capybara to wait on, and a fixed
+  sleep lets a test pass by racing the refresh instead of surviving it — which is
+  how one of these passed against a deliberately broken controller.
+- A form inside the `nutrition_log` frame that redirects to a whole page needs
+  `data: { turbo_frame: "_top" }`, or the response has nowhere to render.
+
 ## Things that are easy to get wrong
 
 - Any URL a client supplies and the server later requests is an SSRF vector.

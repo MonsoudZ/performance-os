@@ -121,7 +121,9 @@
           <%= link_to "Edit or review past check-ins", readiness_inputs_path, class: "text-link" %>
         </div>
       <% else %>
-        <%= form_with model: @check_in, url: readiness_check_in_path, method: :post, class: "check-in__form" do |form| %>
+        <%= form_with model: @check_in, url: readiness_check_in_path, method: :post,
+          id: "check_in_form", class: "check-in__form",
+          data: { controller: "unsaved-input" } do |form| %>
           <% if @check_in.sleep_from_watch? %>
             <div class="synced-field">
               <span>Sleep</span>
