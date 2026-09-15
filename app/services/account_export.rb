@@ -54,6 +54,7 @@ class AccountExport
       "weight_trends" => rows(user.weight_trends),
       "expenditure_estimates" => rows(user.expenditure_estimates),
       "foods" => rows(user.foods),
+      "meals" => meals,
       "food_log_entries" => rows(user.food_log_entries),
       "wearable_devices" => rows(user.wearable_devices),
       "wearable_samples" => rows(user.wearable_samples),
@@ -106,6 +107,14 @@ class AccountExport
 
   # Set entries hang off their session and are reachable nowhere else, so they
   # are nested rather than given a section of their own.
+  # Items hang off their meal and are reachable nowhere else, so they nest rather
+  # than forming a section of their own — the same shape as a session's sets.
+  def meals
+    user.meals.order(:id).includes(:meal_items).map do |meal|
+      rows(Meal.where(id: meal.id)).first.merge("meal_items" => rows(meal.meal_items))
+    end
+  end
+
   def workout_sessions
     user.workout_sessions.order(:id).includes(:set_entries).map do |session|
       rows(WorkoutSession.where(id: session.id)).first.merge(

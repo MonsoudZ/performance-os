@@ -1,0 +1,48 @@
+<% content_for :title, "Meals · PerformanceOS" %>
+
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Meals</p>
+      <h1>What you eat, kept.</h1>
+      <p>A meal is a set of foods and portions you eat together, logged in one tap from the nutrition page.</p>
+    </div>
+    <%= link_to "Build a meal", new_meal_path, class: "button button--inline" %>
+  </section>
+
+  <% if @meals.any? %>
+    <section class="panel">
+      <ul class="session-list">
+        <% @meals.each do |meal| %>
+          <li class="session-list__item">
+            <div>
+              <p class="session-list__device"><%= meal.name %></p>
+              <p class="session-list__meta">
+                <%= meal.meal_items.map { |item| "#{item.food.display_name} #{item.quantity_grams.to_i} g" }.join(" · ") %>
+              </p>
+              <p class="session-list__meta">
+                <%= meal.kcal.round %> kcal · <%= meal.protein_g.round %> g protein
+              </p>
+            </div>
+            <div class="page-heading__actions">
+              <%= button_to "Log it", log_meal_path(meal), method: :post, class: "button button--inline" %>
+              <%= link_to "Edit", edit_meal_path(meal), class: "text-button" %>
+              <%= button_to "Delete", meal_path(meal), method: :delete,
+                form: { data: { turbo_confirm: "Delete #{meal.name}?" } },
+                class: "text-button text-button--danger" %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% else %>
+    <section class="panel">
+      <div class="empty-state">
+        <p>No meals yet. Build one, or save a meal you have already logged from the nutrition page.</p>
+        <%= link_to "Build a meal", new_meal_path, class: "button button--inline" %>
+      </div>
+    </section>
+  <% end %>
+</main>

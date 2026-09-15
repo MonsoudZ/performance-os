@@ -29,6 +29,12 @@ Rails.application.routes.draw do
     post :copy_yesterday, on: :collection
   end
   resources :body_metrics, only: %i[create destroy]
+  resources :meals, except: :show do
+    post :log, on: :member
+  end
+  # A meal already eaten is already recorded, so keeping it costs a name — the
+  # same move as saving a logged session as a workout.
+  post "meals/from_log", to: "meals#create_from_log", as: :meal_from_log
   resources :mesocycles, only: %i[index create] do
     patch :finish, on: :member
   end

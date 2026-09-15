@@ -44,6 +44,7 @@ class User < ApplicationRecord
   has_many :exercise_prescriptions, dependent: :destroy     # -> exercises
   has_many :exercises, dependent: :destroy
   has_many :food_log_entries, dependent: :destroy           # -> foods
+  has_many :meals, dependent: :destroy                      # -> foods
   has_many :foods, dependent: :destroy
   has_many :goal_periods, dependent: :destroy
   has_many :daily_readiness_inputs, dependent: :destroy

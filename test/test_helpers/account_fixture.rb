@@ -10,7 +10,7 @@ module AccountFixture
   ACCOUNT_MODELS = [
     Session, PushSubscription, CoachNarrative, CoachingDecision, ConditioningSession,
     WearableSample, WearableDevice, WorkoutSession, WorkoutTemplate, ExercisePrescription,
-    Exercise, FoodLogEntry, Food, GoalPeriod, DailyReadinessInput, ReadinessScore,
+    Exercise, FoodLogEntry, Meal, Food, GoalPeriod, DailyReadinessInput, ReadinessScore,
     BodyMetric, WeightTrend, ExpenditureEstimate, Mesocycle
   ].freeze
 
@@ -50,6 +50,10 @@ module AccountFixture
       food: food, logged_at: 1.day.ago, quantity_grams: 100, kcal: 380, protein_g: 13, carb_g: 67, fat_g: 7,
       copied_from_entry: original
     )
+
+    meal = user.meals.new(name: "Zzz Account Breakfast")
+    meal.meal_items.build(food: food, quantity_grams: 80, position: 1)
+    meal.save!
 
     device, = WearableDevice.issue_for!(
       user: user, platform: "ios_healthkit", external_id: "device-#{user.id}", name: "Watch"

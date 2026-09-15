@@ -1,0 +1,93 @@
+<main class="shell">
+  <%= render "shared/navigation" %>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Meal</p>
+      <h1><%= heading %></h1>
+      <p>A meal is a set of foods and portions you eat together. Log the whole thing in one tap from the nutrition page.</p>
+    </div>
+  </section>
+
+  <section class="panel form-panel">
+    <% if @meal.errors.any? %>
+      <div class="form-errors"><%= @meal.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%# Reuses the workout template editor's controller: adding, removing and
+        reordering nested rows is the same problem, so it is the same code. %>
+    <%= form_with model: @meal, class: "stacked-form stacked-form--wide",
+      data: { controller: "template-editor" } do |form| %>
+      <label>
+        <span>Meal name</span>
+        <%= form.text_field :name, placeholder: "Breakfast, Post-workout shake…", required: true %>
+      </label>
+
+      <section class="template-editor">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">What is in it</p>
+            <h2>Foods and portions.</h2>
+          </div>
+          <button type="button" class="button button--compact" data-action="template-editor#add">Add food</button>
+        </div>
+
+        <div class="template-editor__rows" data-template-editor-target="rows">
+          <%= form.fields_for :meal_items do |item_form| %>
+            <div class="template-editor__row" data-template-editor-target="row">
+              <%= item_form.hidden_field :id if item_form.object.persisted? %>
+              <%= item_form.hidden_field :position, data: { template_editor_target: "position" } %>
+              <label>
+                <span>Food</span>
+                <%= item_form.collection_select :food_id, @foods, :id, :display_name,
+                  { prompt: "Choose a food" }, required: true %>
+              </label>
+              <label>
+                <span>Grams</span>
+                <%= item_form.number_field :quantity_grams, min: 1, step: 0.1, required: true %>
+              </label>
+              <div class="template-editor__actions">
+                <button type="button" class="icon-button" data-action="template-editor#moveUp" aria-label="Move food up">↑</button>
+                <button type="button" class="icon-button" data-action="template-editor#moveDown" aria-label="Move food down">↓</button>
+                <button type="button" class="icon-button icon-button--danger" data-action="template-editor#remove" aria-label="Remove food">×</button>
+              </div>
+              <% if item_form.object.persisted? %>
+                <%= item_form.hidden_field :_destroy, value: "0", data: { template_editor_target: "destroy" } %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <template data-template-editor-target="template">
+          <div class="template-editor__row" data-template-editor-target="row">
+            <input type="hidden" name="meal[meal_items_attributes][NEW_RECORD][position]" data-template-editor-target="position">
+            <label>
+              <span>Food</span>
+              <select name="meal[meal_items_attributes][NEW_RECORD][food_id]" required>
+                <option value="">Choose a food</option>
+                <% @foods.each do |food| %>
+                  <option value="<%= food.id %>"><%= food.display_name %></option>
+                <% end %>
+              </select>
+            </label>
+            <label>
+              <span>Grams</span>
+              <input type="number" name="meal[meal_items_attributes][NEW_RECORD][quantity_grams]" min="1" step="0.1" required>
+            </label>
+            <div class="template-editor__actions">
+              <button type="button" class="icon-button" data-action="template-editor#moveUp" aria-label="Move food up">↑</button>
+              <button type="button" class="icon-button" data-action="template-editor#moveDown" aria-label="Move food down">↓</button>
+              <button type="button" class="icon-button icon-button--danger" data-action="template-editor#remove" aria-label="Remove food">×</button>
+            </div>
+          </div>
+        </template>
+      </section>
+
+      <p class="evidence-note">
+        Portions are stored, not macros — so correcting a food's numbers corrects every meal built on it
+        rather than leaving a stale copy behind.
+      </p>
+      <%= form.submit submit_label, class: "button" %>
+    <% end %>
+  </section>
+</main>

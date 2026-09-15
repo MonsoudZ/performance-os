@@ -1,6 +1,8 @@
 class FoodLogEntry < ApplicationRecord
   MEAL_TYPES = %w[breakfast lunch dinner snack].freeze
-  SOURCES = %w[manual copy].freeze
+  # A meal-logged entry records that it arrived as one, so the day's evidence
+  # does not pretend each item was typed in on its own.
+  SOURCES = %w[manual copy meal].freeze
 
   belongs_to :user
   belongs_to :food, optional: true

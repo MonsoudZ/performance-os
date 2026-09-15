@@ -20,6 +20,7 @@ module NutritionWorkspace
       .where(logged_at: Current.user.local_day_range(date.yesterday))
       .count
     @recent_foods = recent_foods
+    @meals = Current.user.meals.includes(meal_items: :food).order(:name)
     @nutrition_decision = Current.user.coaching_decisions
       .active_evidence
       .of_type("daily_nutrition")

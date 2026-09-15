@@ -49,6 +49,21 @@ class CheckConstraintsTest < ActiveSupport::TestCase
     assert_match(/expenditure_estimates_basis_check/, error.message)
   end
 
+  test "every food log source the app writes is accepted by the database" do
+    FoodLogEntry::SOURCES.each_with_index do |source, offset|
+      # A failure here means SOURCES gained an entry without a migration.
+      assert_nothing_raised { insert_entry(source: source, at: Time.current - offset.hours) }
+    end
+  end
+
+  test "a food log source the app does not write is rejected by the database" do
+    error = assert_raises(ActiveRecord::StatementInvalid) do
+      insert_entry(source: "imported", at: Time.current)
+    end
+
+    assert_match(/food_log_entries_source_check/, error.message)
+  end
+
   private
 
   def insert_sample(metric_type:, unit:, external_id:)
@@ -64,6 +79,16 @@ class CheckConstraintsTest < ActiveSupport::TestCase
     ExpenditureEstimate.connection.execute(<<~SQL)
       INSERT INTO expenditure_estimates (user_id, estimate_date, basis, confidence, estimated_tdee)
       VALUES (#{@user.id}, #{quote(on.iso8601)}, #{quote(basis)}, 'low', 2500)
+    SQL
+  end
+
+  def insert_entry(source:, at:)
+    FoodLogEntry.connection.execute(<<~SQL)
+      INSERT INTO food_log_entries
+        (user_id, logged_at, meal_type, source, quantity_grams, kcal, protein_g, carb_g, fat_g,
+         created_at, updated_at)
+      VALUES
+        (#{@user.id}, #{quote(at)}, 'breakfast', #{quote(source)}, 100, 100, 5, 10, 2, now(), now())
     SQL
   end
 

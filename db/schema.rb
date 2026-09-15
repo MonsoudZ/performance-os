@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_15_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -228,7 +228,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_200000) do
     t.index ["user_id"], name: "index_food_log_entries_on_user_id"
     t.check_constraint "meal_type::text = ANY (ARRAY['breakfast'::character varying::text, 'lunch'::character varying::text, 'dinner'::character varying::text, 'snack'::character varying::text])", name: "food_log_entries_meal_type_check"
     t.check_constraint "quantity_grams > 0::numeric AND kcal >= 0::numeric AND protein_g >= 0::numeric AND carb_g >= 0::numeric AND fat_g >= 0::numeric", name: "food_log_entries_values_check"
-    t.check_constraint "source::text = ANY (ARRAY['manual'::character varying::text, 'copy'::character varying::text])", name: "food_log_entries_source_check"
+    t.check_constraint "source::text = ANY (ARRAY['manual'::character varying::text, 'copy'::character varying::text, 'meal'::character varying::text])", name: "food_log_entries_source_check"
   end
 
   create_table "foods", force: :cascade do |t|
@@ -263,6 +263,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_200000) do
     t.index ["user_id"], name: "index_goal_periods_on_user_id"
     t.check_constraint "ended_on IS NULL OR ended_on >= started_on", name: "goal_periods_dates_check"
     t.check_constraint "goal_type::text = ANY (ARRAY['build_muscle'::character varying::text, 'lose_fat'::character varying::text, 'increase_strength'::character varying::text, 'athletic_performance'::character varying::text, 'vertical_jump'::character varying::text, 'marathon'::character varying::text, 'longevity'::character varying::text])", name: "goal_periods_goal_type_check"
+  end
+
+  create_table "meal_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "food_id", null: false
+    t.bigint "meal_id", null: false
+    t.integer "position", null: false
+    t.decimal "quantity_grams", precision: 7, scale: 1, null: false
+    t.datetime "updated_at", null: false
+    t.index ["food_id"], name: "index_meal_items_on_food_id"
+    t.index ["meal_id", "food_id"], name: "index_meal_items_on_meal_id_and_food_id", unique: true
+    t.index ["meal_id", "position"], name: "index_meal_items_on_meal_id_and_position"
+    t.index ["meal_id"], name: "index_meal_items_on_meal_id"
+    t.check_constraint "\"position\" > 0", name: "meal_items_position_check"
+    t.check_constraint "quantity_grams > 0::numeric", name: "meal_items_quantity_check"
+  end
+
+  create_table "meals", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "name"], name: "index_meals_on_user_id_and_name", unique: true
+    t.index ["user_id"], name: "index_meals_on_user_id"
   end
 
   create_table "mesocycles", force: :cascade do |t|
@@ -619,6 +643,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_200000) do
   add_foreign_key "food_log_entries", "users"
   add_foreign_key "foods", "users"
   add_foreign_key "goal_periods", "users"
+  add_foreign_key "meal_items", "foods"
+  add_foreign_key "meal_items", "meals"
+  add_foreign_key "meals", "users"
   add_foreign_key "mesocycles", "users"
   add_foreign_key "push_subscriptions", "users"
   add_foreign_key "readiness_scores", "users"

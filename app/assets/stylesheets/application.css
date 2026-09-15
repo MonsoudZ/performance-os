@@ -1136,6 +1136,22 @@ h1 {
   color: var(--muted);
 }
 
+/* A meal logs several foods at once, so it reads as a heavier tap than a
+   single food sitting beside it. */
+.recent-foods--meals {
+  margin-bottom: 14px;
+}
+
+.recent-food--meal {
+  border-color: var(--green);
+  box-shadow: inset 3px 0 0 var(--green);
+}
+
+/* Sits with the meal's own heading rather than with its entries. */
+.meal-group__save {
+  margin-left: auto;
+}
+
 .nutrition-entries {
   margin-bottom: 24px;
 }

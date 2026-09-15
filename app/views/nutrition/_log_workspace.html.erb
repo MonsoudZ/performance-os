@@ -52,10 +52,23 @@
         <% end %>
       </div>
 
+      <% now = Time.current %>
+      <% meal_now = FoodLogEntry.meal_type_for(now) %>
+      <% if @meals.any? %>
+        <div class="recent-foods recent-foods--meals">
+          <% @meals.each do |meal| %>
+            <%= button_to log_meal_path(meal), method: :post, class: "recent-food recent-food--meal",
+              form: { data: { turbo_stream: true } } do %>
+              <strong><%= meal.name %></strong>
+              <span><%= pluralize meal.meal_items.size, "food" %> · <%= meal_now.humanize %></span>
+              <small><%= meal.kcal.round %> kcal · <%= meal.protein_g.round %> g protein</small>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+
       <% if @recent_foods.any? %>
         <div class="recent-foods">
-          <% now = Time.current %>
-          <% meal_now = FoodLogEntry.meal_type_for(now) %>
           <% @recent_foods.each do |recent| %>
             <%= form_with model: Current.user.food_log_entries.new do |form| %>
               <%= form.hidden_field :food_id, value: recent.food.id %>
@@ -121,6 +134,21 @@
             <div class="meal-group__header">
               <h3><%= meal_type.humanize %></h3>
               <span><%= entries.sum(&:kcal).round %> kcal · <%= entries.sum(&:protein_g).round %> g protein</span>
+              <%# What you ate is already recorded, so keeping it costs a name —
+                  the same move as saving a logged session as a workout. %>
+              <% if entries.any? { |entry| entry.food_id.present? } %>
+                <%# Saving lands in the meal editor, which is a whole page — this
+                    form lives inside the nutrition_log frame, so it has to break
+                    out of it or the redirect goes nowhere. %>
+                <%= form_with url: meal_from_log_path, method: :post, class: "meal-group__save",
+                  data: { turbo_frame: "_top" } do |form| %>
+                  <%= form.hidden_field :date, value: @nutrition_date.iso8601 %>
+                  <%= form.hidden_field :meal_type, value: meal_type %>
+                  <%= form.hidden_field :name,
+                    value: MealFromLoggedEntries.suggested_name(Current.user, entries) %>
+                  <%= form.submit "Save as a meal", class: "text-button" %>
+                <% end %>
+              <% end %>
             </div>
 
             <div class="nutrition-entry-list">
