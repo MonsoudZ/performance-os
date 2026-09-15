@@ -572,6 +572,25 @@ cannot be reached on that device or shows up twice.
   opening the next leaves the last hanging over the page; a menu bar wants one
   open at a time, closing on Escape and on a click anywhere else.
 
+## Styling that only a browser can check
+
+`StylingTest` asserts two things that look fine in the markup and wrong on
+screen, because both are computed style rather than anything a controller test
+can see.
+
+- **A link's colour is a default, not a per-call-site chore.** Seven links across
+  the exercise, prescription, session, meal, onboarding and sign-up pages carried
+  no class, or one like `.text-button` that sets no colour, and rendered in the
+  browser's blue-and-underlined — an exercise name doing that inside an otherwise
+  styled card. The bare `a` rule decides it now and anything wanting different
+  still says so.
+- **Specificity beats order, and `.stacked-form` is the trap here.** The logger's
+  form carries that class, and `.stacked-form label > span` is one element more
+  specific than `.set-field > span`, so the rule meant to hide the per-field
+  labels never applied: every row printed "kg / Reps / RIR / Warm-up" above its
+  inputs, under a header row already naming the columns. The per-field label is
+  what the phone uses *instead* of that header, so both halves are asserted.
+
 ## The phone is the narrow case, and it is tested
 
 `ResponsiveLayoutTest` loads every authenticated page at 390px and fails if the

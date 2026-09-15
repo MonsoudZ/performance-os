@@ -38,6 +38,17 @@ input {
   font: inherit;
 }
 
+/* The app's link colour is the default, not something each call site has to
+   remember. Seven links across the exercise, prescription, session, meal and
+   sign-up pages carried no class, or one like .text-button that sets no colour,
+   and rendered in the browser's blue-and-underlined — including an exercise
+   name sitting inside a styled card. Anything wanting a different treatment
+   still sets it; this only decides what a link looks like when nothing does. */
+a {
+  color: var(--green);
+  text-decoration: none;
+}
+
 .shell {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
@@ -1127,7 +1138,14 @@ h1 {
   border-radius: 8px;
 }
 
-.set-field > span {
+/* The logger's form is a .stacked-form, whose `label > span` rule is one
+   element more specific than a bare `.set-field > span` and so won whatever the
+   order — printing "kg / Reps / RIR / Warm-up" above every field on every row,
+   under a header row already naming the columns. The label is for the phone,
+   where there is no header row; the desktop column heading is the label there.
+   Matched specificity, so this wins on order, which is what it looked like it
+   was doing all along. */
+.stacked-form .set-field > span {
   display: none;
 }
 
@@ -1821,7 +1839,7 @@ body .turbo-progress-bar {
     grid-column: 2 / -1;
   }
 
-  .set-field > span {
+  .stacked-form .set-field > span {
     display: block;
     margin-bottom: 5px;
     color: var(--muted);
