@@ -38,6 +38,14 @@ input {
   font: inherit;
 }
 
+/* Every checkbox and radio in the app drew itself in the operating system's
+   blue — the twenty on the daily check-in, the weekday picker, the equipment
+   list, the logger's warm-up boxes. One property paints all of them, and it is
+   the only way to reach a native control's own colour without rebuilding it. */
+:root {
+  accent-color: var(--green);
+}
+
 /* The app's link colour is the default, not something each call site has to
    remember. Seven links across the exercise, prescription, session, meal and
    sign-up pages carried no class, or one like .text-button that sets no colour,
@@ -905,6 +913,23 @@ h1 {
   box-shadow: 0 0 0 3px rgba(36, 77, 63, 0.1);
 }
 
+/* Form controls set `outline: none` and signalled focus with a border colour
+   and a 10%-opacity halo. Measured, that halo is 1.18:1 against the white it
+   sits on — invisible — and the border that does the work is one pixel. An
+   outline is 9.5:1 and, unlike a thicker border, costs no layout. Scoped to
+   :focus-visible so it appears for the keyboard and not on every click.
+
+   The `:not()`s are load-bearing, not decoration: they match the specificity of
+   the rule above that sets `outline: none`, which is the second time
+   `.stacked-form` has silently outranked a plainer selector here. */
+.stacked-form input:not([type="submit"]):not([type="checkbox"]):focus-visible,
+.stacked-form select:focus-visible,
+.stacked-form textarea:focus-visible,
+.input-with-unit input:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
 .form-errors {
   margin-bottom: 24px;
   padding: 12px 14px;
@@ -913,9 +938,23 @@ h1 {
   border-radius: 10px;
 }
 
+/* A page that is only a form reads as a narrow centred column. A form that is
+   one section among panels has to line up with them instead: on the block, goal
+   and conditioning pages it sat 130px inside its neighbours on both edges, at
+   920px between two 1180px panels. The fields still stop at a readable width —
+   they just do it inside a panel that matches the page. */
 .form-panel {
   max-width: 920px;
   margin: 0 auto;
+}
+
+.form-panel--section {
+  max-width: none;
+  margin: 0;
+}
+
+.form-panel--section .stacked-form {
+  max-width: 920px;
 }
 
 .form-grid {

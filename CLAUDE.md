@@ -598,12 +598,33 @@ can see.
   browser's blue-and-underlined — an exercise name doing that inside an otherwise
   styled card. The bare `a` rule decides it now and anything wanting different
   still says so.
-- **Specificity beats order, and `.stacked-form` is the trap here.** The logger's
-  form carries that class, and `.stacked-form label > span` is one element more
-  specific than `.set-field > span`, so the rule meant to hide the per-field
-  labels never applied: every row printed "kg / Reps / RIR / Warm-up" above its
-  inputs, under a header row already naming the columns. The per-field label is
-  what the phone uses *instead* of that header, so both halves are asserted.
+- **Specificity beats order, and `.stacked-form` is the trap here — twice now.**
+  The logger's form carries that class, and `.stacked-form label > span` is one
+  element more specific than `.set-field > span`, so the rule meant to hide the
+  per-field labels never applied: every row printed "kg / Reps / RIR / Warm-up"
+  above its inputs, under a header row already naming the columns. The per-field
+  label is what the phone uses *instead* of that header, so both halves are
+  asserted. The focus ring hit the same wall:
+  `.stacked-form input:not([type="submit"]):not([type="checkbox"])` sets
+  `outline: none`, and a plain `.stacked-form input:focus-visible` is *lower*
+  specificity, so the ring silently did nothing. Its `:not()`s are load-bearing.
+- **A keyboard user has to be able to see where they are.** Controls here set
+  `outline: none` and signalled focus with a border colour and a 10%-opacity
+  halo, which measures 1.18:1 against the white behind it — invisible. Focus is
+  a 2px `outline` on `:focus-visible` (9.5:1, and unlike a thicker border it
+  costs no layout). Note that `:focus-visible` is the one state a test cannot
+  fake: Chrome decides it from *how* the element was focused, so the test presses
+  Tab. `element.focus()` from a script leaves every field reporting no ring.
+- **Native controls need `accent-color` or they are the operating system's
+  blue** — twenty of them on the daily check-in alone, plus the weekday picker,
+  the equipment list and the logger's warm-up boxes. One property on `:root`
+  paints all of them, and it is the only way to reach a native control's own
+  colour without rebuilding it.
+- **Panels on a page share both edges.** `.form-panel` centres itself at 920px,
+  which is right when the page *is* a form and wrong when the form is one section
+  among panels — on the block, goal and conditioning pages it sat 130px inside
+  its neighbours on both sides. `.form-panel--section` lines the panel up and
+  caps the fields instead.
 
 ## The phone is the narrow case, and it is tested
 
