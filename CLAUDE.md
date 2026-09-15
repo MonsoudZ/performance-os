@@ -196,6 +196,16 @@ from a day that only synced steps, and the same reason that is forbidden: a scor
 built from nothing is worse than no score. Reducing the taps here means finding
 something that measures the user, not something that guesses for them.
 
+## A lift with no target is the quiet failure
+
+`DoubleProgressionEvaluator` skips any exercise it cannot find a prescription
+for, so no decision is ever written for that lift, and `WorkoutLogPrefill` falls
+back to the heaviest working set last time. It logs fine and never progresses —
+the app repeating your numbers back at you, which is the one failure it exists to
+prevent. Nothing said so until `TrainingTargetCoverage` did: the templates page
+marks each uncovered lift and says what it costs, because the split is where you
+would notice.
+
 ## Training targets and blocks
 
 An `ExercisePrescription` stores a baseline; a `Mesocycle` owns the scheme. What

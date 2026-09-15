@@ -23,13 +23,29 @@
           </div>
 
           <ol class="template-exercises">
-            <% template.workout_template_exercises.each do |item| %>
+            <% template.workout_template_exercises.sort_by(&:position).each do |item| %>
               <li>
                 <span><%= item.position %></span>
                 <strong><%= item.exercise.name %></strong>
+                <%# A lift with no target still logs, but the progression engine
+                    never evaluates it and the logger falls back to repeating
+                    last time's heaviest set. Nothing used to say so. %>
+                <% unless @coverage.covers?(item.exercise) %>
+                  <span class="template-exercises__gap">No target</span>
+                <% end %>
               </li>
             <% end %>
           </ol>
+
+          <% uncovered = @coverage.uncovered_in(template) %>
+          <% if uncovered.any? %>
+            <p class="evidence-note template-card__gap">
+              <%= pluralize uncovered.size, "lift" %> here <%= uncovered.one? ? "has" : "have" %>
+              no training target, so <%= uncovered.one? ? "it is" : "they are" %> logged but never
+              progressed — the logger just repeats last time's heaviest set.
+              <%= link_to "Set a target", new_exercise_prescription_path, class: "text-link" %>
+            </p>
+          <% end %>
 
           <div class="template-card__actions">
             <%= link_to "Start workout",

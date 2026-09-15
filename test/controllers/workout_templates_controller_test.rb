@@ -131,4 +131,45 @@ class WorkoutTemplatesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+  # A lift with no training target logs fine and never progresses: the evaluator
+  # skips it and the logger repeats last time's heaviest set. The split is where
+  # you would notice, so that is where it is said.
+  test "the split marks the lifts that have no training target" do
+    curl = Exercise.find_or_create_by!(name: "Zzz Gap Curl") { |e| e.modality = "dumbbell" }
+    template = template_for([ @squat, curl ], "Zzz Gap Lower")
+    prescribe(@squat)
+
+    get workout_templates_path
+
+    assert_response :success
+    assert_select ".template-exercises__gap", 1
+    assert_select ".template-card__gap", /1 lift here has no training target/
+    assert_not_nil template
+  end
+
+  test "a workout whose lifts all have targets says nothing" do
+    template_for([ @squat ], "Zzz Covered Day")
+    prescribe(@squat)
+
+    get workout_templates_path
+
+    assert_response :success
+    assert_select ".template-card__gap", 0
+  end
+
+  private
+
+  def template_for(exercises, name)
+    template = @user.workout_templates.new(name: name, weekdays: [ 1 ])
+    exercises.each_with_index { |exercise, index| template.workout_template_exercises.build(exercise:, position: index + 1) }
+    template.save!
+    template
+  end
+
+  def prescribe(exercise)
+    @user.exercise_prescriptions.create!(
+      exercise: exercise, rep_min: 6, rep_max: 8, target_rir_min: 1, target_rir_max: 2,
+      increment_kg: 2.5, working_sets: 3, started_on: Date.current - 7
+    )
+  end
 end

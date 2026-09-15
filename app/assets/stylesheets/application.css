@@ -1879,7 +1879,23 @@ body .turbo-progress-bar {
 
   .template-editor__actions,
   .today-workout__actions,
-  .template-card__actions {
+  /* A lift the progression engine will skip, marked where the split is read. */
+.template-exercises__gap {
+  padding: 2px 8px;
+  color: #81291f;
+  background: #ffe3dc;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.template-card__gap {
+  margin-top: 12px;
+}
+
+.template-card__actions {
     flex-wrap: wrap;
   }
 

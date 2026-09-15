@@ -5,6 +5,7 @@ class WorkoutTemplatesController < ApplicationController
     @workout_templates = Current.user.workout_templates
       .includes(workout_template_exercises: :exercise)
       .order(:name)
+    @coverage = TrainingTargetCoverage.new(Current.user)
   end
 
   def new
