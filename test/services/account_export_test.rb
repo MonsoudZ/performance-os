@@ -114,6 +114,19 @@ class AccountExportTest < ActiveSupport::TestCase
     assert_equal "performance-os-export-#{@user.local_date.iso8601}.json", AccountExport.new(@user).filename
   end
 
+  # A native session's token digest is a credential like the password digest.
+  # It is excluded by exact column name, and `token_digest` does not cover it.
+  test "a native API token never appears in the export" do
+    populate_account(@user)
+    session = @user.sessions.first
+    session.issue_api_token!
+
+    export = AccountExport.new(@user.reload).to_json
+
+    assert_not export.include?("api_token_digest"), "the column name should not be in the file"
+    assert_not export.include?(session.reload.api_token_digest), "nor the digest itself"
+  end
+
   private
 
   def populate(user)

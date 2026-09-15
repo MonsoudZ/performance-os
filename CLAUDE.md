@@ -325,6 +325,34 @@ one rule that changes a target depend on somebody remembering it.
   derives the bound from `effective_on` when the field is absent. Old rows are
   held to the same rule rather than living forever by accident.
 
+## The native API
+
+`Api::V1::BaseController` authenticates a bearer token against a `Session` row,
+so a phone is a signed-in device like any other: it appears in the list at
+`/profile/edit`, it is ended from there, and `Current.user` works from an API
+request exactly as it does from a browser one.
+
+- **A token expires with the session that issued it.** There is deliberately no
+  token expiry column — `Session::IDLE_TIMEOUT` and `ABSOLUTE_LIFETIME` are the
+  only two clocks, and `authenticate_api_token` scopes to `active`. A third
+  clock would be one more thing to drift out of step, and ending a device from
+  the signed-in list has to end its token in the same breath.
+- **SHA-256, not bcrypt.** The token is 256 random bits rather than something a
+  person chose, so there is nothing to slow an attacker down over, and a plain
+  digest makes the lookup one indexed read. Only the digest is stored; the token
+  is shown once.
+- **`api_token_digest` is a credential**, so it is in
+  `AccountExport::EXCLUDED_COLUMNS`. It has to be named there separately —
+  `except:` matches a column name exactly, so `token_digest` (the wearable
+  device's) does not cover it.
+- **Measurements cross this boundary in stored units**, like the export and for
+  the same reason: it is a record being transported, not a rendering. The
+  profile carries `unit_system` so the client converts at its own display edge.
+- Sign-in has its own `Rack::Attack` throttle. The web one keys on `/session`
+  and would never see `/api/v1/session`.
+- The exercise catalog stays public and IP-throttled — a client needs it before
+  it has anywhere to sign in to.
+
 ## Wearable ingestion
 
 Samples arrive at `POST /api/v1/wearable_sync` authenticated by a per-device

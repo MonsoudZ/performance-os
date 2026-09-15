@@ -23,7 +23,10 @@ class AccountExport
 
   # Secrets, not data. Excluded from every section by name, so a column added to
   # any table cannot quietly export one.
-  EXCLUDED_COLUMNS = %w[password_digest token_digest p256dh_key auth_key].freeze
+  # `api_token_digest` is named separately from `token_digest`: `except:` matches
+  # a column name exactly, so the wearable device's exclusion does not cover the
+  # session's, and a native token would have ridden out in the file.
+  EXCLUDED_COLUMNS = %w[password_digest token_digest api_token_digest p256dh_key auth_key].freeze
 
   def initialize(user)
     @user = user

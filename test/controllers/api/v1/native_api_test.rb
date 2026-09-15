@@ -1,0 +1,263 @@
+require "test_helper"
+
+# The native client's whole surface, driven the way the phone drives it: sign
+# in, read the plan, log a workout, sign out.
+#
+# The thing worth guarding hardest is the token. It names a Session row, so it
+# has to die with that row — on both of the session's clocks, and the moment the
+# user ends that device from the signed-in list.
+class Api::V1::NativeApiTest < ActionDispatch::IntegrationTest
+  setup do
+    Rack::Attack.reset!
+    @user = users(:one)
+    @squat = Exercise.find_or_create_by!(name: "Zzz Api Squat") { |e| e.modality = "barbell" }
+    @curl = Exercise.find_or_create_by!(name: "Zzz Api Curl") { |e| e.modality = "dumbbell" }
+  end
+
+  teardown { Rack::Attack.reset! }
+
+  # ---- signing in -------------------------------------------------------
+
+  test "signing in returns a token and creates a device the web can see" do
+    assert_difference "@user.sessions.count", 1 do
+      post api_v1_session_path, params: { email_address: @user.email_address, password: "password" }, as: :json
+    end
+
+    assert_response :created
+    body = response.parsed_body
+    assert_match Session::API_TOKEN_PATTERN, body.fetch("token")
+    assert_equal @user.id, body.dig("user", "id")
+    # The same row backs /profile/edit, so the phone is listed with the laptop.
+    assert_equal @user.sessions.order(:id).last.id, body.dig("session", "id")
+  end
+
+  test "the token is returned once and only its digest is kept" do
+    token = sign_in_natively
+
+    session = @user.sessions.order(:id).last
+    assert_not_equal token, session.api_token_digest
+    assert_equal Digest::SHA256.hexdigest(token), session.api_token_digest
+  end
+
+  test "a wrong password gets no token and creates no session" do
+    assert_no_difference "@user.sessions.count" do
+      post api_v1_session_path, params: { email_address: @user.email_address, password: "wrong" }, as: :json
+    end
+
+    assert_response :unauthorized
+    assert_nil response.parsed_body["token"]
+  end
+
+  test "signing in is throttled by IP like the web form is" do
+    Rack::Attack::LOGIN_LIMIT.times do
+      post api_v1_session_path, params: { email_address: @user.email_address, password: "wrong" },
+        headers: throttle_headers, as: :json
+      assert_response :unauthorized
+    end
+
+    post api_v1_session_path, params: { email_address: @user.email_address, password: "password" },
+      headers: throttle_headers, as: :json
+
+    assert_response :too_many_requests
+  end
+
+  # ---- what the token is worth ------------------------------------------
+
+  test "no token, a malformed one and a made-up one are all unauthorized" do
+    [ nil, "Bearer nonsense", "Bearer pos_#{'a' * 43}" ].each do |header|
+      get api_v1_profile_path, headers: header ? { "Authorization" => header } : {}, as: :json
+      assert_response :unauthorized, "#{header.inspect} should not authenticate"
+    end
+  end
+
+  # The point of tying the token to the session rather than giving it a clock of
+  # its own: one row, one lifetime, and the list at /profile/edit really does
+  # end the device.
+  test "ending the device from the signed-in list kills its token" do
+    token = sign_in_natively
+    get api_v1_profile_path, headers: auth(token), as: :json
+    assert_response :success
+
+    @user.sessions.order(:id).last.destroy!
+
+    get api_v1_profile_path, headers: auth(token), as: :json
+    assert_response :unauthorized
+  end
+
+  test "a session idle past its timeout stops authenticating" do
+    token = sign_in_natively
+    @user.sessions.order(:id).last.update_column(:last_active_at, Session::IDLE_TIMEOUT.ago - 1.day)
+
+    get api_v1_profile_path, headers: auth(token), as: :json
+
+    assert_response :unauthorized
+  end
+
+  test "a session past its absolute lifetime stops authenticating even if used daily" do
+    token = sign_in_natively
+    @user.sessions.order(:id).last.update_columns(
+      created_at: Session::ABSOLUTE_LIFETIME.ago - 1.day, last_active_at: Time.current
+    )
+
+    get api_v1_profile_path, headers: auth(token), as: :json
+
+    assert_response :unauthorized
+  end
+
+  test "signing out destroys the session rather than blanking the token" do
+    token = sign_in_natively
+
+    assert_difference "@user.sessions.count", -1 do
+      delete api_v1_session_path, headers: auth(token), as: :json
+    end
+
+    assert_response :no_content
+    get api_v1_profile_path, headers: auth(token), as: :json
+    assert_response :unauthorized
+  end
+
+  test "signing in again replaces the first token rather than leaving two live" do
+    first = sign_in_natively
+    session = @user.sessions.order(:id).last
+    second = session.issue_api_token!
+
+    get api_v1_profile_path, headers: auth(first), as: :json
+    assert_response :unauthorized
+
+    get api_v1_profile_path, headers: auth(second), as: :json
+    assert_response :success
+  end
+
+  # ---- the profile ------------------------------------------------------
+
+  test "the profile carries no credentials and says which units the client should render" do
+    get api_v1_profile_path, headers: auth(sign_in_natively), as: :json
+
+    assert_response :success
+    user = response.parsed_body.fetch("user")
+    assert_equal @user.unit_system, user.fetch("unit_system")
+    assert_equal @user.time_zone, user.fetch("time_zone")
+    %w[password_digest password pending_email_address].each do |secret|
+      assert_not response.body.include?(secret), "#{secret} must not cross this boundary"
+    end
+  end
+
+  # ---- workouts ---------------------------------------------------------
+
+  test "a workout carries its lifts in order, with the targets in force today" do
+    prescribe(@squat, working_sets: 3)
+    template = build_template("Zzz Api Lower", [ @squat, @curl ])
+
+    get api_v1_workout_templates_path, headers: auth(sign_in_natively), as: :json
+
+    assert_response :success
+    workout = response.parsed_body.fetch("data").find { |t| t.fetch("id") == template.id }
+    assert_equal [ 1, 2 ], workout.fetch("exercises").pluck("position")
+
+    squat, curl = workout.fetch("exercises")
+    assert_equal 3, squat.dig("targets", "working_sets")
+    assert_equal false, squat.fetch("uncovered")
+
+    # The lift with no target still ships, and says so — the progression engine
+    # will not evaluate it, and the client should be able to tell the user.
+    assert_nil curl.fetch("targets")
+    assert_equal true, curl.fetch("uncovered")
+  end
+
+  test "another account's workout is a 404, not a 403" do
+    theirs = users(:two).workout_templates.create!(
+      name: "Zzz Api Theirs", weekdays: [ 1 ],
+      workout_template_exercises_attributes: [ { exercise_id: @squat.id, position: 1 } ]
+    )
+
+    get api_v1_workout_template_path(theirs), headers: auth(sign_in_natively), as: :json
+
+    assert_response :not_found
+  end
+
+  test "logging a workout stores the sets and queues the progression engine" do
+    prescribe(@squat, working_sets: 2)
+    token = sign_in_natively
+
+    assert_difference "WorkoutSession.count", 1 do
+      assert_enqueued_with(job: WorkoutProgressionRecomputeJob) do
+        post api_v1_workout_sessions_path, headers: auth(token), as: :json, params: {
+          workout_session: {
+            performed_at: Time.current.iso8601,
+            session_rpe: 8,
+            set_entries_attributes: [
+              { exercise_id: @squat.id, set_index: 1, weight_kg: 100, reps: 8, rir: 1 },
+              { exercise_id: @squat.id, set_index: 2, weight_kg: 100, reps: 8, rir: 1 }
+            ]
+          }
+        }
+      end
+    end
+
+    assert_response :created
+    sets = response.parsed_body.dig("data", "sets")
+    assert_equal [ 1, 2 ], sets.pluck("set_index")
+    assert_equal [ 100.0, 100.0 ], sets.pluck("weight_kg")
+  end
+
+  # set_index restarts per lift, so a session sorted by it alone interleaves.
+  test "a logged session comes back grouped by lift rather than interleaved" do
+    token = sign_in_natively
+    session = @user.workout_sessions.create!(performed_at: Time.current)
+    [ [ @squat, 1 ], [ @squat, 2 ], [ @curl, 1 ], [ @curl, 2 ] ].each do |exercise, index|
+      session.set_entries.create!(exercise: exercise, set_index: index, weight_kg: 60, reps: 8, rir: 2)
+    end
+
+    get api_v1_workout_session_path(session), headers: auth(token), as: :json
+
+    assert_response :success
+    names = response.parsed_body.dig("data", "sets").map { |set| set.dig("exercise", "name") }
+    assert_equal [ "Zzz Api Squat", "Zzz Api Squat", "Zzz Api Curl", "Zzz Api Curl" ], names
+  end
+
+  test "a workout with no sets is refused with its reasons" do
+    post api_v1_workout_sessions_path, headers: auth(sign_in_natively), as: :json,
+      params: { workout_session: { performed_at: nil } }
+
+    assert_response :unprocessable_entity
+    assert response.parsed_body.fetch("details").any?
+  end
+
+  test "every training endpoint refuses an unauthenticated request" do
+    [ api_v1_profile_path, api_v1_workout_templates_path, api_v1_workout_sessions_path ].each do |path|
+      get path, as: :json
+      assert_response :unauthorized, "#{path} must require a token"
+    end
+  end
+
+  private
+
+  def sign_in_natively
+    post api_v1_session_path, params: { email_address: @user.email_address, password: "password" }, as: :json
+    response.parsed_body.fetch("token")
+  end
+
+  def auth(token)
+    { "Authorization" => "Bearer #{token}" }
+  end
+
+  def throttle_headers
+    { "X-Forwarded-For" => "203.0.113.55, 10.0.0.9", "REMOTE_ADDR" => "10.0.0.9" }
+  end
+
+  def prescribe(exercise, working_sets: 3)
+    @user.exercise_prescriptions.create!(
+      exercise: exercise, rep_min: 6, rep_max: 8, target_rir_min: 1, target_rir_max: 2,
+      increment_kg: 2.5, working_sets: working_sets, started_on: Date.current - 7
+    )
+  end
+
+  def build_template(name, exercises)
+    @user.workout_templates.create!(
+      name: name, weekdays: [ 1 ],
+      workout_template_exercises_attributes: exercises.each_with_index.map { |e, i|
+        { exercise_id: e.id, position: i + 1 }
+      }
+    )
+  end
+end

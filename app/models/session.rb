@@ -37,6 +37,12 @@ class Session < ApplicationRecord
     [ /\bLinux\b/, "Linux" ]
   ].freeze
 
+  # A native client holds one of these instead of a cookie. The prefix makes a
+  # leaked token recognisable on sight and greppable in logs; the 43 characters
+  # after it are `SecureRandom.urlsafe_base64(32)`, which is 256 bits.
+  API_TOKEN_PREFIX = "pos_".freeze
+  API_TOKEN_PATTERN = /\Apos_[A-Za-z0-9_-]{43}\z/
+
   belongs_to :user
 
   scope :active, -> {
@@ -49,6 +55,33 @@ class Session < ApplicationRecord
     where(last_active_at: ...IDLE_TIMEOUT.ago).or(where(created_at: ...ABSOLUTE_LIFETIME.ago))
   }
   scope :recently_used_first, -> { order(last_active_at: :desc) }
+
+  # Scoped to `active`, so a token is worth exactly as much as the session that
+  # issued it: the same idle and absolute clocks end both, and ending a device
+  # from the signed-in list ends its token in the same breath. There is no
+  # separate token expiry to drift out of step with those two.
+  #
+  # SHA-256 rather than bcrypt, unlike a password: there is nothing to guess
+  # here — the token is 256 random bits, not something a person chose — and a
+  # plain digest makes the lookup one indexed read.
+  def self.authenticate_api_token(token)
+    return unless token&.match?(API_TOKEN_PATTERN)
+
+    active.find_by(api_token_digest: digest_api_token(token))
+  end
+
+  def self.digest_api_token(token)
+    Digest::SHA256.hexdigest(token)
+  end
+
+  # Returned once and never recoverable: only the digest is stored. Issuing
+  # again replaces the old token, so a device that signs in twice invalidates
+  # its first token rather than leaving two live.
+  def issue_api_token!
+    token = "#{API_TOKEN_PREFIX}#{SecureRandom.urlsafe_base64(32)}"
+    update!(api_token_digest: self.class.digest_api_token(token))
+    token
+  end
 
   def expired?
     last_active_at < IDLE_TIMEOUT.ago || created_at < ABSOLUTE_LIFETIME.ago

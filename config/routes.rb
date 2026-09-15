@@ -61,8 +61,18 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      # Public and throttled: the catalog belongs to nobody, and a client needs
+      # it before it has anywhere to sign in to.
       resources :exercises, only: :index
+
       resource :wearable_sync, only: :create, controller: "wearable_sync"
+
+      # A native client signs in here and holds the token it gets back. The
+      # session it creates is a device in the user's list like any other.
+      resource :session, only: %i[create destroy], controller: "sessions"
+      resource :profile, only: :show, controller: "profiles"
+      resources :workout_templates, only: %i[index show]
+      resources :workout_sessions, only: %i[index show create]
     end
   end
 

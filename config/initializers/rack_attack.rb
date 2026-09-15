@@ -8,6 +8,11 @@ class Rack::Attack
       ActionDispatch::Request.new(request.env).remote_ip
   end
 
+  # The native sign-in is the same credential-stuffing target as the web form
+  # and needs its own throttle: the web one keys on a different path and would
+  # never see these.
+  API_LOGIN_PATH = %r{\A/api/v1/session/?\z}
+
   LOGIN_PATH = %r{\A/session/?\z}
   LOGIN_LIMIT = 5
   LOGIN_PERIOD = 20.minutes
@@ -30,6 +35,14 @@ class Rack::Attack
     else
       ActiveSupport::Cache::MemoryStore.new
     end
+
+  throttle(
+    "api/v1/session/ip",
+    limit: LOGIN_LIMIT,
+    period: LOGIN_PERIOD
+  ) do |request|
+    CLIENT_IP.call(request) if request.post? && request.path.match?(API_LOGIN_PATH)
+  end
 
   throttle(
     "api/v1/exercises/ip",
