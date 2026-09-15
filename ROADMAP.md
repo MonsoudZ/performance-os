@@ -591,6 +591,21 @@ risk they carry, not by size.
   it fail, and the journey itself runs in a browser: log, save, find it under
   Workouts with both exercises on it.
 
+- [x] **The logger opens on what you are likely to do.** Every row used to start
+  at the *top* of the rep range — the one number double progression says you have
+  not earned yet — so a typical set was three fields to correct. Measured on a
+  repeat session: four of nine fields needed editing; now none do.
+
+  The rule follows the progression model rather than guessing. Repeating a load,
+  each row opens on what that set actually did, because you are trying to beat
+  last time and matching it should cost nothing. After an increase the reps reset
+  to `rep_min`, which is what earning the increase costs — pretending otherwise
+  asks the user to correct the app on every row.
+
+  Both branches were checked by breaking them and watching the test that names
+  each one fail. Weight was already progression-aware; this is reps and RIR
+  catching up.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute

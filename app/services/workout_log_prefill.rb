@@ -16,15 +16,18 @@ class WorkoutLogPrefill
       last_sets = last_working_sets_for(plan.exercise)
       target_weight = target_weight_for(plan.prescription, last_sets)
 
+      heavier = heavier_than_last?(target_weight, last_sets)
+
       planned_sets(plan).times.map do |index|
+        last_set = last_sets[index]
         entry = workout_session.set_entries.build(
           exercise: plan.exercise,
           set_index: index + 1,
           weight_kg: target_weight,
-          reps: plan.targets&.rep_max,
-          rir: plan.targets&.target_rir_min
+          reps: prefilled_reps(plan.targets, last_set, heavier),
+          rir: prefilled_rir(plan.targets, last_set, heavier)
         )
-        Context.new(entry:, prescription: plan.prescription, targets: plan.targets, last_set: last_sets[index])
+        Context.new(entry:, prescription: plan.prescription, targets: plan.targets, last_set:)
       end
     end
   end
@@ -128,6 +131,42 @@ class WorkoutLogPrefill
     else
       exercise_plans.map { |plan| plan.exercise.id }.uniq
     end
+  end
+
+  # What the row says before anybody types, and the reason the logger is not
+  # three numbers per set.
+  #
+  # Every row used to open at the *top* of the rep range, which is the one
+  # number double progression says you have not earned yet — so most sets were
+  # typed over. What the rule actually expects depends on whether the load moved:
+  #
+  #   same load   you are trying to beat last time, so last time is the guess
+  #   heavier     the reps reset to the bottom of the range; that is what
+  #               earning the increase costs, and pretending otherwise asks the
+  #               user to correct the app rather than the other way round
+  #
+  # With no prior set there is nothing to go on, so the target stands.
+  #
+  # Prefilling at all means somebody can save numbers they did not do. That is
+  # already true of this form; the change is that the plausible guess replaces
+  # the optimistic one, which is the safer of the two to leave unread.
+  def prefilled_reps(targets, last_set, heavier)
+    return targets&.rep_min || last_set&.reps if heavier
+
+    last_set&.reps || targets&.rep_max
+  end
+
+  def prefilled_rir(targets, last_set, heavier)
+    return targets&.target_rir_min if heavier
+
+    last_set&.rir || targets&.target_rir_min
+  end
+
+  def heavier_than_last?(target_weight, last_sets)
+    previous = last_sets.filter_map(&:weight_kg).max
+    return false if target_weight.blank? || previous.blank?
+
+    target_weight.to_d > previous.to_d
   end
 
   def target_weight_for(prescription, last_sets)

@@ -148,6 +148,25 @@ rebuilding the workout by hand.
 - The template is what gets created, so the action lives on
   `WorkoutTemplatesController` even though the route hangs off a session.
 
+## What the logger opens with
+
+`WorkoutLogPrefill` decides what is already in each row, and it is the
+difference between logging a set and typing one.
+
+- **Weight** comes from the latest `double_progression` decision for that
+  prescription, falling back to the heaviest working set last time.
+- **Reps and RIR depend on whether the load moved.** Repeating a load, the guess
+  is what *that set* actually did — you are trying to beat last time, so
+  matching it should cost no typing. After an increase, the reps reset to
+  `rep_min`: that is what earning the increase costs under double progression,
+  and opening at `rep_max` asks the user to correct the app on every row, which
+  is what it used to do.
+- With no prior set the target stands, and a set planned beyond what was done
+  last time falls back to the target rather than blanking.
+- Prefilling at all means somebody can save numbers they did not do. That was
+  already true; the change is that the plausible guess replaced the optimistic
+  one, which is the safer of the two to leave unread.
+
 ## Training targets and blocks
 
 An `ExercisePrescription` stores a baseline; a `Mesocycle` owns the scheme. What

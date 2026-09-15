@@ -46,8 +46,50 @@ class WorkoutLogPrefillTest < ActiveSupport::TestCase
 
     assert_equal 3, contexts.size
     assert_equal [ 102.5, 102.5, 102.5 ], contexts.map { |context| context.entry.weight_kg.to_f }
-    assert_equal [ 8, 8, 8 ], contexts.map { |context| context.entry.reps }
+    # The load went up, so the reps reset to the bottom of the range. That is
+    # what earning the increase costs; opening at the top would be asking the
+    # user to correct the app on every row.
+    assert_equal [ 6, 6, 6 ], contexts.map { |context| context.entry.reps }
     assert_equal [ 8, 8, 7 ], contexts.map { |context| context.last_set.reps }
+  end
+
+  # The common case: the load has not moved, so the guess is what you did last
+  # time and a set you match needs no typing at all.
+  test "repeating a load opens each row on what that set actually did" do
+    prior = @user.workout_sessions.create!(performed_at: 1.day.ago)
+    [ [ 7, 2 ], [ 7, 1 ], [ 6, 0 ] ].each_with_index do |(reps, rir), index|
+      prior.set_entries.create!(exercise: @exercise, set_index: index + 1, weight_kg: 100, reps:, rir:)
+    end
+
+    workout = @user.workout_sessions.new(performed_at: Time.current)
+    contexts = WorkoutLogPrefill.new(@user, workout_session: workout, log_date: Date.current).call
+
+    assert_equal [ 100.0, 100.0, 100.0 ], contexts.map { |context| context.entry.weight_kg.to_f }
+    assert_equal [ 7, 7, 6 ], contexts.map { |context| context.entry.reps }
+    assert_equal [ 2.0, 1.0, 0.0 ], contexts.map { |context| context.entry.rir.to_f }
+  end
+
+  test "with nothing to go on the target stands" do
+    workout = @user.workout_sessions.new(performed_at: Time.current)
+
+    contexts = WorkoutLogPrefill.new(@user, workout_session: workout, log_date: Date.current).call
+
+    assert contexts.any?
+    assert contexts.all? { |context| context.last_set.nil? }
+    assert_equal [ 8 ], contexts.map { |context| context.entry.reps }.uniq
+  end
+
+  # A fourth set planned against three done last time has no prior to copy, so
+  # it falls back rather than blanking.
+  test "a set beyond what was done last time falls back to the target" do
+    prior = @user.workout_sessions.create!(performed_at: 1.day.ago)
+    prior.set_entries.create!(exercise: @exercise, set_index: 1, weight_kg: 100, reps: 7, rir: 2)
+    @prescription.update!(working_sets: 3)
+
+    workout = @user.workout_sessions.new(performed_at: Time.current)
+    contexts = WorkoutLogPrefill.new(@user, workout_session: workout, log_date: Date.current).call
+
+    assert_equal [ 7, 8, 8 ], contexts.map { |context| context.entry.reps }
   end
 
   test "prefilled rows come from the block's scheme, not the stored target" do
