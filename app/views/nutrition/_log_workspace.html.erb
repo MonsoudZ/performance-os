@@ -54,15 +54,20 @@
 
       <% if @recent_foods.any? %>
         <div class="recent-foods">
+          <% now = Time.current %>
+          <% meal_now = FoodLogEntry.meal_type_for(now) %>
           <% @recent_foods.each do |recent| %>
             <%= form_with model: Current.user.food_log_entries.new do |form| %>
-              <%= form.hidden_field :food_id, value: recent.food_id %>
+              <%= form.hidden_field :food_id, value: recent.food.id %>
               <%= form.hidden_field :quantity_grams, value: recent.quantity_grams %>
-              <%= form.hidden_field :logged_at, value: Time.current %>
-              <%= form.hidden_field :meal_type, value: recent.meal_type %>
+              <%= form.hidden_field :logged_at, value: now %>
+              <%# The meal it belongs to is the one happening now, not the one it
+                  was last eaten at. Carrying the old meal over filed an entry
+                  stamped 8pm under breakfast, and this page groups by meal. %>
+              <%= form.hidden_field :meal_type, value: meal_now %>
               <%= form.button class: "recent-food" do %>
                 <strong><%= recent.food.display_name %></strong>
-                <span><%= recent.quantity_grams %> g · <%= recent.meal_label %></span>
+                <span><%= recent.quantity_grams %> g · <%= meal_now.humanize %></span>
                 <small><%= recent.kcal.round %> kcal · <%= recent.protein_g.round %> g protein</small>
               <% end %>
             <% end %>

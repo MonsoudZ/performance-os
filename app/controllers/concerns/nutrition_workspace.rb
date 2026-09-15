@@ -29,12 +29,6 @@ module NutritionWorkspace
   end
 
   def recent_foods
-    Current.user.food_log_entries
-      .where.not(food_id: nil)
-      .includes(:food)
-      .order(logged_at: :desc)
-      .limit(30)
-      .uniq(&:food_id)
-      .first(6)
+    FrequentFoods.new(Current.user).call
   end
 end

@@ -167,6 +167,35 @@ difference between logging a set and typing one.
   already true; the change is that the plausible guess replaced the optimistic
   one, which is the safer of the two to leave unread.
 
+## One-tap food
+
+`FrequentFoods` decides which foods the nutrition page offers as a single tap,
+and at what portion.
+
+- **Ranked by how often a food is logged**, not by what was logged last. Pure
+  recency meant a few unusual meals pushed the staples off the list exactly when
+  they were wanted. `WINDOW_DAYS` bounds it so something dropped from the
+  rotation stops being offered.
+- **The portion is the memory worth keeping** — the last quantity logged for that
+  food, so nobody retypes "80" every morning.
+- **The meal is the one happening now**, from `FoodLogEntry.meal_type_for`, not
+  the meal the food was last eaten at. Carrying the old one over filed an entry
+  stamped 8pm under breakfast, and this page groups by meal, so the record
+  contradicted its own timestamp.
+
+## The check-in is not prefilled, deliberately
+
+`ReadinessEvaluator` scores sleep quality, soreness, fatigue and stress, and
+those four are the part only the user knows. Sleep *hours* prefills from the
+watch because the watch measured it; the four ratings are `required` and start
+empty, and should stay that way.
+
+Prefilling them from yesterday would make "save without reading" record a day
+that was never answered — the same mistake as materialising a readiness check-in
+from a day that only synced steps, and the same reason that is forbidden: a score
+built from nothing is worse than no score. Reducing the taps here means finding
+something that measures the user, not something that guesses for them.
+
 ## Training targets and blocks
 
 An `ExercisePrescription` stores a baseline; a `Mesocycle` owns the scheme. What

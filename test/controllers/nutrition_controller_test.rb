@@ -10,6 +10,27 @@ class NutritionControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
+  # Tapping a recent food files it under the meal happening now. It used to
+  # carry over the meal it was last eaten at, so an entry stamped 8pm landed in
+  # the breakfast group — the record contradicting its own timestamp.
+  test "a one-tap food is filed under the meal happening now" do
+    oats = @user.foods.create!(name: "Zzz Oats", kcal: 380, protein_g: 13, carb_g: 67, fat_g: 7, serving_grams: 100)
+    @user.food_log_entries.create!(
+      food: oats, logged_at: Time.current.in_time_zone(@user.time_zone).change(hour: 7),
+      meal_type: "breakfast", quantity_grams: 80, source: "manual", **oats.macros_for(80)
+    )
+
+    travel_to Time.current.in_time_zone(@user.time_zone).change(hour: 20) do
+      get nutrition_path
+
+      assert_response :success
+      assert_select ".recent-foods form input[name=?][value=?]", "food_log_entry[meal_type]", "dinner"
+      assert_select ".recent-foods form input[name=?][value=?]", "food_log_entry[meal_type]", "breakfast", count: 0
+      # The portion is what was remembered, and it is still offered.
+      assert_select ".recent-foods form input[name=?][value=?]", "food_log_entry[quantity_grams]", "80.0"
+    end
+  end
+
   test "says where an expenditure estimate came from" do
     @user.expenditure_estimates.create!(
       estimate_date: @user.local_date, estimated_tdee: 2_400, confidence: "low", basis: "wearable_energy"

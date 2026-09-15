@@ -606,6 +606,25 @@ risk they carry, not by size.
   each one fail. Weight was already progression-aware; this is reps and RIR
   catching up.
 
+- [x] **One-tap food offers what you actually eat, under the right meal.** The
+  nutrition page already had copy-yesterday, one-tap recents that remember the
+  portion, and search-and-log, so the gap was narrower than "food logging is
+  manual" suggested — but two things were wrong with it.
+
+  The suggestions were the six most recently logged distinct foods, so a few
+  unusual meals pushed the staples off the list exactly when they were wanted.
+  `FrequentFoods` ranks by how often a food is logged inside a bounded window
+  instead, which pins the staples and drops what has left the rotation.
+
+  And tapping one carried over the meal it was *last* eaten at, so a food last
+  logged at breakfast and tapped at 8pm was stored with a 20:00 timestamp filed
+  under breakfast — a record contradicting itself, in a page that groups by meal.
+  It takes the meal happening now.
+
+  The check-in was looked at and deliberately left alone: see CLAUDE.md. Its four
+  ratings are the part only the user knows, and prefilling them would make "save
+  without reading" record a day nobody answered.
+
 ## Developer experience
 
 - [x] **`CLAUDE.md` written.** Covers the evaluator contract, the recompute
