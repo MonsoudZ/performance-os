@@ -584,7 +584,17 @@ cannot be reached on that device or shows up twice.
 - The menus are a Stimulus controller rather than `<details>`, which the phone
   sheet still uses. A row of `<details>` stays open until clicked again, so
   opening the next leaves the last hanging over the page; a menu bar wants one
-  open at a time, closing on Escape and on a click anywhere else.
+  open at a time, closing on Escape, on a click anywhere else, and on focus
+  leaving it — tabbing past the last link used to leave it open over the page
+  with nothing inside it focused to say so.
+- **Testing the menus cannot use `page.driver.send_keys`.** It fires a click on
+  the document before it types, which is a genuine outside click, so the menu
+  under test closes before the key lands. Every early version of
+  `NavKeyboardTest` "found" bugs that were only that — including a convincing
+  one where Tab appeared to skip six links. Dispatch the key as an event to test
+  the controller's own handlers, and assert the parts the browser does natively
+  (Tab moving focus, Enter clicking a button) structurally instead: with a menu
+  open, the next tabbable elements after the trigger are its own links.
 
 ## Styling that only a browser can check
 
@@ -608,6 +618,13 @@ can see.
   `.stacked-form input:not([type="submit"]):not([type="checkbox"])` sets
   `outline: none`, and a plain `.stacked-form input:focus-visible` is *lower*
   specificity, so the ring silently did nothing. Its `:not()`s are load-bearing.
+- **Text is checked against what is actually behind it.** `StylingTest` walks the
+  visible text on every page, composites each translucent layer down to the page
+  colour, and fails anything under AA for its size — 3:1 for large or bold-large,
+  4.5:1 otherwise. The palette cannot answer this on its own: `--muted` cleared
+  4.85:1 on a card and 4.45:1 on the page itself, so most of the small print in
+  the app sat just under the bar on most of its pages, and one white-on-green
+  label was at 4.40:1. Both were fixed by measuring, not by eye.
 - **A keyboard user has to be able to see where they are.** Controls here set
   `outline: none` and signalled focus with a border colour and a 10%-opacity
   halo, which measures 1.18:1 against the white behind it — invisible. Focus is

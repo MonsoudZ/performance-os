@@ -12,13 +12,16 @@ export default class extends Controller {
   connect() {
     this.closeOnOutsideClick = this.closeOnOutsideClick.bind(this)
     this.closeOnEscape = this.closeOnEscape.bind(this)
+    this.closeOnFocusLeaving = this.closeOnFocusLeaving.bind(this)
     document.addEventListener("click", this.closeOnOutsideClick)
     document.addEventListener("keydown", this.closeOnEscape)
+    this.element.addEventListener("focusout", this.closeOnFocusLeaving)
   }
 
   disconnect() {
     document.removeEventListener("click", this.closeOnOutsideClick)
     document.removeEventListener("keydown", this.closeOnEscape)
+    this.element.removeEventListener("focusout", this.closeOnFocusLeaving)
   }
 
   toggle(event) {
@@ -31,6 +34,21 @@ export default class extends Controller {
 
   closeOnOutsideClick(event) {
     if (!this.element.contains(event.target)) this.closeAll()
+  }
+
+  // Tabbing past the last link used to leave the menu open behind you, covering
+  // the page, with nothing focused inside it to say so. A mouse user gets the
+  // click handler; this is the same courtesy for the keyboard.
+  //
+  // `relatedTarget` is what is about to take focus. It is null when focus
+  // leaves the document altogether — switching windows — and a menu that shut
+  // itself every time you alt-tabbed would be its own annoyance, so that case
+  // is left to the click handler.
+  closeOnFocusLeaving(event) {
+    if (!event.relatedTarget) return
+    if (this.element.contains(event.relatedTarget)) return
+
+    this.closeAll()
   }
 
   closeOnEscape(event) {

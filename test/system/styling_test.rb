@@ -7,6 +7,63 @@ class StylingTest < ApplicationSystemTestCase
 
   BROWSER_DEFAULT_LINK = "rgb(0, 0, 238)".freeze
 
+  # Walks the visible text on a page and returns anything under the AA
+  # threshold for its size: 3:1 for large or bold-large text, 4.5:1 otherwise.
+  CONTRAST_AUDIT = <<~JS
+    (() => {
+      const parse = (value) => {
+        const m = value.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?\\)/)
+        return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null
+      }
+      const over = (fg, bg) => ({
+        r: fg.r * fg.a + bg.r * (1 - fg.a),
+        g: fg.g * fg.a + bg.g * (1 - fg.a),
+        b: fg.b * fg.a + bg.b * (1 - fg.a),
+        a: 1
+      })
+      const luminance = (c) => {
+        const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b)
+      }
+      const ratio = (a, b) => {
+        const la = luminance(a), lb = luminance(b)
+        return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
+      }
+      // Composite every translucent layer between the text and the page.
+      const backdrop = (el) => {
+        const layers = []
+        for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+          const bg = parse(getComputedStyle(node).backgroundColor)
+          if (bg && bg.a > 0) { layers.push(bg); if (bg.a === 1) break }
+        }
+        layers.push({ r: 242, g: 240, b: 232, a: 1 })
+        return layers.reverse().reduce((under, layer) => over(layer, under))
+      }
+      const failures = []
+      document.querySelectorAll("body *").forEach((el) => {
+        const ownText = [ ...el.childNodes ].some((n) => n.nodeType === 3 && n.textContent.trim())
+        if (!ownText) return
+        const box = el.getBoundingClientRect()
+        if (!box.width || !box.height) return
+        const style = getComputedStyle(el)
+        if (style.visibility === "hidden" || style.opacity === "0") return
+        const fg = parse(style.color)
+        if (!fg) return
+        const bg = backdrop(el)
+        const size = parseFloat(style.fontSize)
+        const large = size >= 24 || (parseInt(style.fontWeight, 10) >= 700 && size >= 18.66)
+        const need = large ? 3 : 4.5
+        const contrast = ratio(over(fg, bg), bg)
+        if (contrast < need) {
+          failures.push({ text: el.textContent.trim().slice(0, 32), ratio: contrast,
+                          need: need, size: size, color: style.color })
+        }
+      })
+      return failures
+    })()
+  JS
+
+
   setup do
     @user = users(:one)
     populate_account(@user)
@@ -131,6 +188,26 @@ class StylingTest < ApplicationSystemTestCase
 
     assert_equal "rgb(36, 77, 63)",
       page.evaluate_script("getComputedStyle(document.querySelector('input[type=checkbox]')).accentColor")
+  end
+
+  # Text has to be readable against what is actually behind it, which is not a
+  # question the palette can answer on its own: --muted cleared 4.85:1 on a card
+  # and only 4.45:1 on the page itself, so most of the small print in the app sat
+  # just under AA on most of its pages. Composited for real — alpha colours over
+  # whatever they land on — rather than compared as hex values.
+  test "every piece of text meets WCAG AA against what is behind it" do
+    sign_in @user
+    page.driver.resize(1400, 1100)
+
+    failures = pages.flat_map do |path|
+      visit path
+      page.evaluate_script(CONTRAST_AUDIT).map do |row|
+        format("%s: %.2f:1 (needs %s) %s %spx — %p",
+          path, row["ratio"], row["need"], row["color"], row["size"].round(1), row["text"])
+      end
+    end
+
+    assert_empty failures
   end
 
   private

@@ -1,6 +1,10 @@
 :root {
   --ink: #18211d;
-  --muted: #66716b;
+  /* Measured against every background it renders on, not chosen by eye:
+     #66716b cleared 4.85:1 on a card but only 4.45:1 on the page itself, which
+     is most of the small print in the app sitting just under AA. This clears
+     4.91:1 there and 5.36:1 on a card. */
+  --muted: #606a65;
   --paper: #f2f0e8;
   --card: #fbfaf5;
   --line: rgba(24, 33, 29, 0.14);
@@ -1607,7 +1611,8 @@ h1 {
   justify-content: space-between;
   padding-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.58);
+  /* 0.58 was 4.40:1 on the green behind it; this is 5.19:1. */
+  color: rgba(255, 255, 255, 0.66);
   font-size: 0.76rem;
 }
 
