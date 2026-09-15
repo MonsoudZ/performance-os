@@ -85,6 +85,29 @@ class WorkoutLoggingTest < ApplicationSystemTestCase
     assert_equal %w[1 2 3 4], indexes, "set numbers are contiguous after an insert"
   end
 
+  # The existing duplicate test prescribes one lift, so "the new row is last" is
+  # true there whether or not it lands in the right place. With two lifts it is
+  # not: a third bench set was going in below the squats and numbering itself 3,
+  # which reads as a shuffle of a workout nobody performed that way.
+  test "another set of a lift goes under that lift, not at the end of the session" do
+    prescribe(@bench, working_sets: 2)
+    sign_in @user
+    visit new_workout_session_path
+
+    assert_equal [ "Zzz System Bench 1", "Zzz System Bench 2",
+                   "Zzz System Squat 1", "Zzz System Squat 2", "Zzz System Squat 3" ], logged_rows
+
+    all(".set-table__row").first.find("button[aria-label='Add matching set']").click
+
+    assert_equal [ "Zzz System Bench 1", "Zzz System Bench 2", "Zzz System Bench 3",
+                   "Zzz System Squat 1", "Zzz System Squat 2", "Zzz System Squat 3" ], logged_rows
+
+    # And a movement that is not in the session yet still joins at the end.
+    all(".set-table__row").last.find("button[aria-label='Add matching set']").click
+
+    assert_equal "Zzz System Squat 4", logged_rows.last
+  end
+
   test "removing a set renumbers the remaining rows" do
     sign_in @user
     visit new_workout_session_path
@@ -154,6 +177,12 @@ class WorkoutLoggingTest < ApplicationSystemTestCase
   end
 
   private
+
+  def logged_rows
+    all(".set-table__row").map do |row|
+      "#{row[:'data-exercise-name']} #{row.find("[data-workout-log-target='setIndex']", visible: :all).value}"
+    end
+  end
 
   def prescribe(exercise, working_sets: 3)
     @user.exercise_prescriptions.create!(

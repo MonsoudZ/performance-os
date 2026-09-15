@@ -33,7 +33,7 @@ class WorkoutSessionsController < ApplicationController
 
   def show
     @workout_session = Current.user.workout_sessions.includes(set_entries: :exercise).find(params[:id])
-    @set_entries = @workout_session.set_entries.sort_by(&:set_index)
+    @set_entries = @workout_session.ordered_set_entries
     # Editing re-evaluates progression and writes a fresh decision, so show only
     # the latest decision per exercise.
     @decisions = session_decisions.active_evidence.to_a.uniq { |decision| decision.inputs["exercise_id"] }
@@ -45,7 +45,7 @@ class WorkoutSessionsController < ApplicationController
 
   def edit
     @workout_session = Current.user.workout_sessions.includes(set_entries: :exercise).find(params[:id])
-    @set_entries = @workout_session.set_entries.sort_by(&:set_index)
+    @set_entries = @workout_session.ordered_set_entries
   end
 
   def update
@@ -59,7 +59,7 @@ class WorkoutSessionsController < ApplicationController
       WorkoutProgressionRecomputeJob.perform_later(@workout_session)
       redirect_to workout_session_path(@workout_session), notice: "Workout updated. Re-evaluating progression…"
     else
-      @set_entries = @workout_session.set_entries.sort_by(&:set_index)
+      @set_entries = @workout_session.ordered_set_entries
       render :edit, status: :unprocessable_entity
     end
   end

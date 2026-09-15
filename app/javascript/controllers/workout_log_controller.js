@@ -11,6 +11,10 @@ export default class extends Controller {
     this.updateVolume()
   }
 
+  // Another set of *this* lift, so it belongs under this lift's last set — not
+  // at the bottom of the session, below whatever else is being trained today.
+  // Appending there put a third bench set after the squats and numbered it 3,
+  // which read as a shuffle of a workout nobody performed that way.
   duplicateSet(event) {
     const row = event.target.closest("[data-workout-log-target='row']")
     this.appendRow({
@@ -19,7 +23,11 @@ export default class extends Controller {
       weight: row.querySelector("[data-workout-log-target='weight']")?.value,
       reps: row.querySelector("[data-workout-log-target='reps']")?.value,
       rir: row.querySelector("[data-workout-log-target='rir']")?.value
-    })
+    }, this.lastRowFor(row.dataset.exerciseId))
+  }
+
+  lastRowFor(exerciseId) {
+    return this.rowTargets.filter((row) => row.dataset.exerciseId === exerciseId).at(-1)
   }
 
   removeSet(event) {
@@ -87,14 +95,21 @@ export default class extends Controller {
     this.resultsTarget.replaceChildren()
   }
 
-  appendRow({ exerciseId, exerciseName, weight = "", reps = "", rir = "" }) {
+  // `after` is the row to slot in behind; without one the row goes at the end,
+  // which is right for a movement that is not in the session yet.
+  appendRow({ exerciseId, exerciseName, weight = "", reps = "", rir = "" }, after = null) {
     const html = this.templateTarget.innerHTML
       .replaceAll("NEW_RECORD", this.nextIndex)
       .replaceAll("EXERCISE_ID", exerciseId)
       .replaceAll("EXERCISE_NAME", exerciseName)
 
-    this.rowsTarget.insertAdjacentHTML("beforeend", html)
-    const row = this.rowTargets[this.rowTargets.length - 1]
+    if (after) {
+      after.insertAdjacentHTML("afterend", html)
+    } else {
+      this.rowsTarget.insertAdjacentHTML("beforeend", html)
+    }
+
+    const row = after ? after.nextElementSibling : this.rowTargets[this.rowTargets.length - 1]
     row.querySelector("[data-workout-log-target='weight']").value = weight
     row.querySelector("[data-workout-log-target='reps']").value = reps
     row.querySelector("[data-workout-log-target='rir']").value = rir
