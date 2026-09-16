@@ -46,6 +46,21 @@ module Api
       rescue ActiveRecord::RecordNotFound
         not_found
       end
+
+      # A day boundary is the user's own, never UTC's, so "today" here means
+      # today where they are — the same rule the coach budget and the weekly
+      # review follow.
+      #
+      # A date that will not parse is refused rather than quietly read as today.
+      # A client with a broken date would otherwise go on reading and writing
+      # the wrong day without either end noticing.
+      def set_requested_date
+        @date = params[:date].present? ? Date.iso8601(params[:date].to_s) : current_user.local_date
+      rescue ArgumentError
+        render json: { error: "Invalid date" }, status: :bad_request
+      end
+
+      attr_reader :date
     end
   end
 end

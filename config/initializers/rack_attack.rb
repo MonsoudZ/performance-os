@@ -22,6 +22,11 @@ class Rack::Attack
   FOOD_SEARCH_PATH = %r{\A/foods/search/?\z}
   FOOD_SEARCH_LIMIT = 20
   FOOD_SEARCH_PERIOD = 1.minute
+
+  # The native food search spends the same outbound request as the web one and
+  # needs its own throttle for the same reason the native sign-in does: the web
+  # rule keys on a path this never matches.
+  API_FOOD_SEARCH_PATH = %r{\A/api/v1/foods/search(?:\.[a-z0-9]+)?/?\z}
   REGISTRATION_PATH = %r{\A/registration/?\z}
   REGISTRATION_LIMIT = 10
   REGISTRATION_PERIOD = 1.hour
@@ -94,6 +99,22 @@ class Rack::Attack
   ) do |request|
     if request.get? && request.path.match?(FOOD_SEARCH_PATH)
       request.cookies["session_id"].presence || CLIENT_IP.call(request)
+    end
+  end
+
+  # Keyed on the token's digest, not the token. The digest is what the database
+  # already stores and is worthless to anyone who learns it, so counting against
+  # it puts no credential into the throttle store — and it means the limit
+  # follows the device rather than the network it is on, so a gym's shared wifi
+  # does not make one phone's typing count against another's.
+  throttle(
+    "api/v1/foods/search/device",
+    limit: FOOD_SEARCH_LIMIT,
+    period: FOOD_SEARCH_PERIOD
+  ) do |request|
+    if request.get? && request.path.match?(API_FOOD_SEARCH_PATH)
+      token = request.get_header("HTTP_AUTHORIZATION").to_s.delete_prefix("Bearer ")
+      token.present? ? Session.digest_api_token(token) : CLIENT_IP.call(request)
     end
   end
 

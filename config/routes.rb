@@ -73,6 +73,24 @@ Rails.application.routes.draw do
       resource :profile, only: :show, controller: "profiles"
       resources :workout_templates, only: %i[index show]
       resources :workout_sessions, only: %i[index show create]
+
+      # The day's eating in one request, and the writes that change it.
+      resource :nutrition, only: :show, controller: "nutrition"
+      resources :foods, only: %i[index create] do
+        # Every call here is an outbound request to Open Food Facts, so it
+        # carries its own throttle in Rack::Attack.
+        get :search, on: :collection
+      end
+      resources :food_log_entries, only: %i[create update destroy] do
+        post :copy_yesterday, on: :collection
+      end
+      resources :meals, only: :index do
+        post :log, on: :member
+      end
+
+      # The four ratings are the part only the user knows, so this reads back
+      # what was answered and never guesses the rest.
+      resource :readiness_check_in, only: %i[show create], controller: "readiness_check_ins"
     end
   end
 

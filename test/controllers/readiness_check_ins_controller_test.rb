@@ -45,6 +45,33 @@ class ReadinessCheckInsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # Answering the check-in must not throw away where the night's figure came
+  # from: the row still holds the watch's measurement, so it is still mixed
+  # evidence, and the dashboard goes on saying so.
+  test "checking in on a watch-synced night keeps the sleep figure attributed" do
+    @user.daily_readiness_inputs.create!(
+      metric_date: @user.local_date, sleep_minutes: 447, source: "healthkit"
+    )
+
+    post readiness_check_in_path, params: {
+      daily_readiness_input: { sleep_quality: 4, soreness: 2, fatigue: 2, stress: 3 }
+    }
+
+    input = @user.daily_readiness_inputs.sole
+    assert_equal "mixed", input.source
+    assert input.sleep_from_watch?, "the watch still measured this night"
+  end
+
+  test "a check-in with nothing measured behind it is plainly manual" do
+    post readiness_check_in_path, params: {
+      daily_readiness_input: { sleep_hours: 7.5, sleep_quality: 4, soreness: 2, fatigue: 2, stress: 3 }
+    }
+
+    input = @user.daily_readiness_inputs.sole
+    assert_equal "manual", input.source
+    assert_not input.sleep_from_watch?, "typing the hours in is not the watch measuring them"
+  end
+
   test "uses the signed-in user's local calendar day" do
     @user.update!(time_zone: "America/Denver")
 

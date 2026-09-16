@@ -2,6 +2,9 @@ class DailyReadinessInput < ApplicationRecord
   # The subjective taps the user provides; objective metrics come from the watch.
   SUBJECTIVE_FIELDS = %i[sleep_quality soreness fatigue stress].freeze
 
+  # The sources that mean part of this row was measured rather than typed.
+  WATCH_SOURCES = %w[healthkit mixed].freeze
+
   belongs_to :user
 
   validates :metric_date, presence: true, uniqueness: { scope: :user_id }
@@ -20,7 +23,22 @@ class DailyReadinessInput < ApplicationRecord
   end
 
   def sleep_from_watch?
-    sleep_minutes.present? && source.in?(%w[healthkit mixed])
+    sleep_minutes.present? && source.in?(WATCH_SOURCES)
+  end
+
+  # What this row's source becomes once the user has answered it.
+  #
+  # A row that already holds watch data stays "mixed". Which kind of evidence
+  # arrived first does not change what the row holds, and deciding this from the
+  # objective metrics alone demoted a watch-synced night to "manual" the moment
+  # the user checked in — after which `sleep_from_watch?` was false and the
+  # dashboard stopped saying where the sleep figure came from, still showing it.
+  def source_after_check_in
+    watch_evidence? ? "mixed" : "manual"
+  end
+
+  def watch_evidence?
+    source.in?(WATCH_SOURCES) || hrv_sdnn_ms.present? || resting_hr.present?
   end
 
   # Sleep is stored in minutes but entered in hours, the same store-canonical /

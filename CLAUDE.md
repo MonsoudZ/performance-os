@@ -353,6 +353,44 @@ request exactly as it does from a browser one.
 - The exercise catalog stays public and IP-throttled — a client needs it before
   it has anywhere to sign in to.
 
+### Nutrition and the check-in over the API
+
+Both write through the same services and the same recompute pipeline the web
+uses, so a day logged from the phone is indistinguishable from one logged in a
+browser. Four things here are worth keeping:
+
+- **The four readiness ratings are refused, not defaulted.** On the web their
+  `required` attributes stop an empty check-in; that markup does not reach a
+  native client, so `Api::V1::ReadinessCheckInsController` names
+  `DailyReadinessInput::SUBJECTIVE_FIELDS` and rejects a post missing any of
+  them. Without it a phone could post an empty body and have the day scored from
+  nothing — the same failure as materialising a check-in from a day that only
+  synced steps. `ReadinessCheckInSerializer` reads the other half of the rule:
+  an unanswered rating comes back null and nothing fills it in.
+- **The day's numbers are read off the `daily_nutrition` decision**, as the
+  nutrition page reads them, rather than summed again in the serializer. Summing
+  separately would put a second, differently-derived total beside the one the
+  audit page shows. The decision is a recompute behind after a log and there is
+  none at all until something recomputes the day, which is what the web does too;
+  the entries themselves are always live.
+- **A logged entry's macros are computed from the food and the portion.** The
+  client says what and how much; the server says what that is worth. Accepting
+  both would let a portion and its macros disagree, and the entry is the evidence
+  a nutrition decision is built from.
+- **`/api/v1/foods/search` spends an outbound Open Food Facts request**, so it
+  carries its own `Rack::Attack` throttle — the web rule keys on `/foods/search`
+  and would never see it. It counts against the token's **digest**, not the
+  token: the digest is what the database already stores and is worthless to
+  whoever learns it, and keying on the device rather than the IP means a gym's
+  shared address does not make one phone's typing count against another's.
+
+`DailyReadinessInput#source_after_check_in` is shared by the web and API
+check-in writers so the two cannot drift. A row that already holds watch data
+stays `mixed` when the user answers it: deciding this from the objective metrics
+alone demoted a watch-synced night to `manual`, after which `sleep_from_watch?`
+was false and the dashboard stopped saying where the sleep figure it was still
+showing had come from.
+
 ## Wearable ingestion
 
 Samples arrive at `POST /api/v1/wearable_sync` authenticated by a per-device

@@ -20,7 +20,7 @@ class ReadinessCheckInsController < ApplicationController
     begin
       input = Current.user.daily_readiness_inputs.find_or_initialize_by(metric_date: Current.user.local_date)
       input.assign_attributes(readiness_params)
-      input.source = input.hrv_sdnn_ms.present? || input.resting_hr.present? ? "mixed" : "manual"
+      input.source = input.source_after_check_in
       input.save
       input
     rescue ActiveRecord::RecordNotUnique
