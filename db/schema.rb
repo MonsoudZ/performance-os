@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_15_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_16_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -76,6 +76,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_180000) do
     t.index ["user_id", "decision_type", "created_at"], name: "index_decisions_on_user_type_and_created_at"
     t.index ["user_id"], name: "index_coaching_decisions_on_user_id"
     t.check_constraint "confidence::text = ANY (ARRAY['low'::character varying::text, 'moderate'::character varying::text, 'high'::character varying::text])", name: "coaching_decisions_confidence_check"
+    t.check_constraint "decision_type::text = ANY (ARRAY['daily_readiness'::character varying::text, 'double_progression'::character varying::text, 'daily_nutrition'::character varying::text, 'nutrition_adjustment'::character varying::text, 'weekly_review'::character varying::text, 'daily_training'::character varying::text])", name: "coaching_decisions_decision_type_check"
     t.check_constraint "retracted_at IS NULL AND retraction_reason IS NULL OR retracted_at IS NOT NULL AND retraction_reason IS NOT NULL", name: "coaching_decisions_retraction_check"
   end
 

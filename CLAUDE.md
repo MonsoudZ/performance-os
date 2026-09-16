@@ -38,11 +38,17 @@ Recommendations are rows in `coaching_decisions`, linked parent-to-child through
 | `daily_readiness` | `ReadinessEvaluator` | — |
 | `double_progression` | `DoubleProgressionEvaluator` | — |
 | `daily_nutrition` | `NutritionEvaluator` | — |
+| `nutrition_adjustment` | `NutritionAdjustmentEvaluator` | `weekly_review` |
 | `weekly_review` | `WeeklyEvidenceReview` | `readiness`, `progression`, `nutrition` |
 | `daily_training` | `DailyTrainingOrchestrator` | `readiness`, `progression`, `nutrition` |
 
-Those five types and four roles are also enforced by check constraints; adding
-one means a migration.
+Those six types (`CoachingDecision::DECISION_TYPES`) and four roles are enforced
+by check constraints and by the model; adding one means a migration. The types
+were unconstrained for a while although this said otherwise, so a decision
+written with one letter wrong was accepted by both — and then missed by every
+`of_type` lookup, which means it existed, counted towards nothing and answered
+no question. `CheckConstraintsTest` now also asserts the list and the evaluators
+name the same six.
 
 To correct a decision, **retract** it (`decision.retract!(reason:)`) and write a
 new one. Retracted decisions stay in the table and stay visible to the user — a
@@ -77,6 +83,23 @@ Each one follows the same shape, and new ones should:
    round-trip the snapshot through `JSON.parse(...to_json)` so it has the shapes
    Postgres hands back, and make sure `inputs` really does hold everything the
    rule read, or a re-run can short-circuit onto a conclusion that has moved on.
+
+   **An id is only enough for a row that cannot change under it.** A decision is
+   immutable, so naming one by id is complete; a prescription is superseded
+   rather than edited, so the same holds. Anything editable in place has to be
+   snapshotted by *value*, and two evaluators got this wrong:
+
+   - `NutritionEvaluator` named the day's entries by id, so correcting a portion
+     or swapping a food left the id set identical and the re-run short-circuited.
+     The page reads its totals off the decision, so the correction never reached
+     the user. From `rule_version` 2.0.0 the totals are in `inputs` as well —
+     the ids are the trace back to the evidence, the totals are what the rule
+     actually read.
+   - `WeeklyEvidenceReview` named the expenditure estimate by date.
+     `ExpenditureEstimator` keeps one estimate per date and re-derives it
+     whenever the evidence moves, so the date stays put while the figure and its
+     confidence change — and the review reads both, one into its evidence and
+     one into its own confidence. `rule_version` 2.0.0 snapshots what it said.
 4. Set `confidence` from how much evidence actually existed, not from how
    confident the wording sounds.
 

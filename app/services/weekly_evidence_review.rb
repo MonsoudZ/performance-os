@@ -1,6 +1,11 @@
 class WeeklyEvidenceReview
   RULE_KEY = "weekly_evidence_review.v1"
-  RULE_VERSION = "1.0.0"
+  # 2.0.0 snapshots what the expenditure estimate said rather than only which
+  # date it was for. `ExpenditureEstimator` keeps one estimate per date and
+  # re-derives it whenever the evidence behind it moves, so the date stays put
+  # while the figure and its confidence change — and this review reads both, one
+  # into its evidence and one into its own confidence.
+  RULE_VERSION = "2.0.0"
   REVIEW_DAYS = 7
   RATE_BANDS = {
     "build_muscle" => { "minimum" => 0.25, "maximum" => 0.5 },
@@ -113,7 +118,19 @@ class WeeklyEvidenceReview
       "progression_decision_ids" => progression_decisions.map(&:id),
       "nutrition_decision_ids" => nutrition_decisions.map(&:id),
       "weight_trends" => weight_trends.map { |trend| [ trend.trend_date, trend.ewma_kg ] },
-      "expenditure_estimate_date" => latest_expenditure&.estimate_date
+      "expenditure" => expenditure_snapshot
+    }
+  end
+
+  # The date is not enough on its own: one estimate per date, re-derived in
+  # place, means the same date can carry a different answer tomorrow.
+  def expenditure_snapshot
+    return unless latest_expenditure
+
+    {
+      "estimate_date" => latest_expenditure.estimate_date,
+      "estimated_tdee" => latest_expenditure.estimated_tdee.to_f,
+      "confidence" => latest_expenditure.confidence
     }
   end
 

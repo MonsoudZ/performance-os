@@ -1,4 +1,18 @@
 class CoachingDecision < ApplicationRecord
+  # Every kind of conclusion the engine writes. A type outside this list is a
+  # decision nothing can find: every lookup goes through `of_type`, so one
+  # letter wrong made a recommendation that existed, counted towards nothing and
+  # answered no question — the opposite of the traceability the whole table is
+  # for. The database enforces the same list, so adding one means a migration.
+  DECISION_TYPES = %w[
+    daily_readiness
+    double_progression
+    daily_nutrition
+    nutrition_adjustment
+    weekly_review
+    daily_training
+  ].freeze
+
   belongs_to :user
   has_many :child_links,
     class_name: "CoachingDecisionLink",
@@ -14,6 +28,7 @@ class CoachingDecision < ApplicationRecord
   has_many :parent_decisions, through: :parent_links, source: :parent_decision
 
   validates :decision_type, :rule_key, :rule_version, presence: true
+  validates :decision_type, inclusion: { in: DECISION_TYPES }
   validates :confidence, inclusion: { in: %w[low moderate high] }
   validates :retraction_reason, presence: true, if: :retracted_at?
 

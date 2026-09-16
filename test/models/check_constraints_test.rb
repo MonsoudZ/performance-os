@@ -64,7 +64,44 @@ class CheckConstraintsTest < ActiveSupport::TestCase
     assert_match(/food_log_entries_source_check/, error.message)
   end
 
+  test "every decision type the engine writes is accepted by the database" do
+    CoachingDecision::DECISION_TYPES.each do |decision_type|
+      # A failure here means DECISION_TYPES gained an entry without a migration.
+      assert_nothing_raised { insert_decision(decision_type) }
+    end
+
+    assert_equal CoachingDecision::DECISION_TYPES.size, @user.coaching_decisions.count
+  end
+
+  # A type one letter wrong is a decision every `of_type` lookup misses: it
+  # exists, counts towards nothing and answers no question.
+  test "a decision type the engine does not write is rejected by the database" do
+    error = assert_raises(ActiveRecord::StatementInvalid) { insert_decision("daily_readines") }
+
+    assert_match(/coaching_decisions_decision_type_check/, error.message)
+  end
+
+  test "the engine only ever writes a type on the list" do
+    written = [
+      ReadinessEvaluator, DoubleProgressionEvaluator, NutritionEvaluator,
+      NutritionAdjustmentEvaluator, WeeklyEvidenceReview, DailyTrainingOrchestrator
+    ].flat_map { |evaluator| File.read("app/services/#{evaluator.name.underscore}.rb").scan(/decision_type: "([a-z_]+)"/) }.flatten.uniq
+
+    assert_equal CoachingDecision::DECISION_TYPES.sort, written.sort,
+      "an evaluator writes a type the list does not name, or the list names one nothing writes"
+  end
+
   private
+
+  # Straight past the model, like the rest of this file: the validation is not
+  # what is under test.
+  def insert_decision(decision_type)
+    @user.coaching_decisions.insert!(
+      { decision_type: decision_type, rule_key: "probe", rule_version: "1.0.0",
+        confidence: "low", inputs: {}, output: {}, citations: [],
+        created_at: Time.current, updated_at: Time.current }
+    )
+  end
 
   def insert_sample(metric_type:, unit:, external_id:)
     WearableSample.connection.execute(<<~SQL)

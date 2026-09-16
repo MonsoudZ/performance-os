@@ -1,6 +1,11 @@
 class NutritionEvaluator
   RULE_KEY = "daily_nutrition.v1"
-  RULE_VERSION = "1.0.0"
+  # 2.0.0 puts the day's totals into `inputs`. They were only in `output`, and
+  # the snapshot named the entries by id alone — so correcting a portion, or
+  # swapping the food on an entry, left the id set identical and the re-run
+  # short-circuited onto the old conclusion. The page reads its totals off the
+  # decision, so a corrected portion never reached the user.
+  RULE_VERSION = "2.0.0"
 
   def initialize(user, nutrition_date: nil)
     @user = user
@@ -55,7 +60,11 @@ class NutritionEvaluator
   def input_snapshot
     {
       "nutrition_date" => nutrition_date,
+      # Which entries, and what they came to. The ids alone are the trace; the
+      # totals are what the rule actually read, and an entry can be corrected
+      # without the id set moving at all.
       "food_log_entry_ids" => entries.map(&:id),
+      "totals" => totals,
       "goal_period_id" => active_goal&.id,
       "weight_trend_date" => latest_weight_trend&.trend_date,
       "expenditure_estimate_date" => latest_expenditure&.estimate_date,

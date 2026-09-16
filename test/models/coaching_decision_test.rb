@@ -218,4 +218,28 @@ class CoachingDecisionTest < ActiveSupport::TestCase
     record.save!
     record
   end
+  # The database refuses this too, and both matter: the constraint is what makes
+  # it true of every writer, the validation is what turns it into a sentence
+  # rather than a 500. A type one letter wrong is a decision every `of_type`
+  # lookup misses — it exists, counts towards nothing and answers no question.
+  test "a decision type the engine does not write is refused" do
+    decision = users(:one).coaching_decisions.new(
+      decision_type: "daily_readines", rule_key: "x", rule_version: "1.0.0",
+      confidence: "low", inputs: {}, output: {}, citations: []
+    )
+
+    assert_not decision.valid?
+    assert_includes decision.errors[:decision_type], "is not included in the list"
+  end
+
+  test "every type the engine writes is one the model accepts" do
+    CoachingDecision::DECISION_TYPES.each do |decision_type|
+      decision = users(:one).coaching_decisions.new(
+        decision_type: decision_type, rule_key: "x", rule_version: "1.0.0",
+        confidence: "low", inputs: {}, output: {}, citations: []
+      )
+
+      assert decision.valid?, "#{decision_type}: #{decision.errors.full_messages.to_sentence}"
+    end
+  end
 end

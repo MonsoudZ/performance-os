@@ -56,6 +56,60 @@ class WeeklyEvidenceReviewTest < ActiveSupport::TestCase
     end
   end
 
+  # `ExpenditureEstimator` keeps one estimate per date and re-derives it
+  # whenever the evidence behind it moves, so the date stays put while the
+  # figure changes. Snapshotting only the date meant the review kept reporting
+  # a number that had been superseded — and `NutritionAdjustmentEvaluator`
+  # reads this verdict to set the calorie target.
+  test "a re-derived expenditure estimate is a new conclusion" do
+    create_complete_week(start_weight: 80, end_weight: 80.8)
+    estimate = @user.expenditure_estimates.create!(
+      estimate_date: @period_end, estimated_tdee: 2_600, basis: "energy_balance",
+      confidence: "moderate", intake_kcal: 2_500, trend_weight_kg: 80
+    )
+
+    first = WeeklyEvidenceReview.new(@user, period_end: @period_end).call
+    assert_in_delta 2_600.0, first.output.dig("evidence", "adaptive_tdee"), 0.1
+
+    estimate.update!(estimated_tdee: 3_200, confidence: "high")
+    second = WeeklyEvidenceReview.new(@user, period_end: @period_end).call
+
+    assert_not_equal first.id, second.id, "the estimate moved, so the review has to"
+    assert_in_delta 3_200.0, second.output.dig("evidence", "adaptive_tdee"), 0.1
+    assert_equal "high", second.output.dig("evidence", "adaptive_tdee_confidence")
+  end
+
+  # The figure moves on its own far more often than its confidence does, so
+  # snapshotting only the confidence would miss the ordinary case.
+  test "the expenditure figure moving on its own is a new conclusion" do
+    create_complete_week(start_weight: 80, end_weight: 80.8)
+    estimate = @user.expenditure_estimates.create!(
+      estimate_date: @period_end, estimated_tdee: 2_600, basis: "energy_balance",
+      confidence: "moderate", intake_kcal: 2_500, trend_weight_kg: 80
+    )
+    first = WeeklyEvidenceReview.new(@user, period_end: @period_end).call
+
+    estimate.update!(estimated_tdee: 3_200)
+
+    second = WeeklyEvidenceReview.new(@user, period_end: @period_end).call
+    assert_not_equal first.id, second.id
+    assert_in_delta 3_200.0, second.output.dig("evidence", "adaptive_tdee"), 0.1
+  end
+
+  test "a week that has not moved still writes nothing new" do
+    create_complete_week(start_weight: 80, end_weight: 80.8)
+    @user.expenditure_estimates.create!(
+      estimate_date: @period_end, estimated_tdee: 2_600, basis: "energy_balance",
+      confidence: "moderate", intake_kcal: 2_500, trend_weight_kg: 80
+    )
+
+    first = WeeklyEvidenceReview.new(@user, period_end: @period_end).call
+
+    assert_no_difference "CoachingDecision.count" do
+      assert_equal first.id, WeeklyEvidenceReview.new(@user, period_end: @period_end).call.id
+    end
+  end
+
   private
 
   def create_complete_week(start_weight:, end_weight:)
