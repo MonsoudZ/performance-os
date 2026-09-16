@@ -22,7 +22,6 @@ class ExercisePrescription < ApplicationRecord
   scope :active_on, ->(date) {
     where("started_on <= ? AND (ended_on IS NULL OR ended_on >= ?)", date, date)
   }
-  scope :current, -> { active_on(Date.current) }
 
   def target_label
     "#{working_sets} × #{rep_min}–#{rep_max} @ #{target_rir_min.to_f.round(1)}–#{target_rir_max.to_f.round(1)} RIR"

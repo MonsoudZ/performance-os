@@ -17,10 +17,7 @@ class WorkoutTemplateFromSession
   def self.suggested_name(workout_session)
     base = workout_session.template_name.presence ||
       workout_session.performed_at.strftime("%A workout")
-    taken = workout_session.user.workout_templates.pluck(:name)
-    return base unless taken.include?(base)
-
-    (2..).each { |suffix| return "#{base} #{suffix}" unless taken.include?("#{base} #{suffix}") }
+    AvailableName.for(base, taken: workout_session.user.workout_templates.pluck(:name))
   end
 
   def call

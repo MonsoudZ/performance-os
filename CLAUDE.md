@@ -129,6 +129,27 @@ adding an entry and re-running it is the whole job.
   `nil` on the last page. One request stopped being enough the moment the catalog
   passed 100.
 
+## What a logged workout was asked for
+
+`WorkoutSession#attach_template` links a session to the workout it was run from
+*and* freezes what that workout was asking for on the day it was logged. The
+snapshot is the point rather than the link: a later block change must not be
+able to rewrite what a logged session was asked to do, which is the same promise
+the decision trail rests on. It resolves targets on the **session's own date**,
+not today, like every other rule that reads a target.
+
+This lived in a `WorkoutSessionsController` private method, so a session logged
+from the phone set the foreign key and stored `{}` — no planned set count, no
+name, and `template_name: null` in the API's own response for a workout run from
+a named template.
+
+`WorkoutSession` also validates that its template belongs to its user. The web
+looked its template up through `Current.user.workout_templates`, so a foreign id
+came back nil; the API permitted `workout_template_id` straight through and
+stored it, so a phone could point its workout at another account's split. Both
+now go through the scoped lookup, and the validation is the backstop for any
+writer that reaches past it.
+
 ## A session and a workout are the same shape
 
 A `WorkoutTemplate` and a logged `WorkoutSession` both answer "which exercises,
@@ -139,10 +160,11 @@ rebuilding the workout by hand.
 - **Warming up on something is not training it**, so an exercise with only
   warm-up sets is left out — unless the whole session was warm-ups, which is
   still worth saving as what it was rather than failing as an empty workout.
-- **The suggested name steps around one already taken.** Running a template and
-  saving the result is the ordinary case, so a prefilled name that collides would
-  be a validation error on something the user never typed. A name they *do* type
-  is never silently renamed.
+- **The suggested name steps around one already taken** (`AvailableName.for`,
+  shared with `MealFromLoggedEntries`). Running a template and saving the result
+  is the ordinary case, so a prefilled name that collides would be a validation
+  error on something the user never typed. A name they *do* type is never
+  silently renamed, and never goes through that helper.
 - Saving lands in the template editor, because the day to schedule it on is the
   one thing a session cannot supply.
 - The template is what gets created, so the action lives on
@@ -274,7 +296,11 @@ Conversion happens at exactly two boundaries:
 - **In**: `MeasurementParams#to_canonical_units` — controllers name their
   measurement fields explicitly. Do not infer them from a `_kg` suffix; a silent
   name-based rule would capture the next column that happens to match and
-  corrupt stored training data.
+  corrupt stored training data. Nested attributes are handled in **both**
+  spellings — a hash keyed by row index from a form, a plain array from anything
+  building JSON. The check used to be `respond_to?(:each_value)`, which
+  recognised only the first, so the same logical payload was converted or not
+  depending on how it was written and nothing said which.
 
 Two rules make measurements trustworthy, and both have tests that will fail if
 you break them:
@@ -355,6 +381,30 @@ one rule that changes a target depend on somebody remembering it.
   evaluator's short-circuit means they are never rewritten, so the resolver
   derives the bound from `effective_on` when the field is absent. Old rows are
   held to the same rule rather than living forever by accident.
+
+## Every request runs inside the user's clock
+
+`UserTimeZone#use_user_time_zone` wraps every action in `Time.use_zone`, and
+both base controllers include it. That wrapping is not an optimisation to
+remember — it is what makes the day-boundary rules true. Most of them read
+`Time.current` and are correct only because of it: which meal a log is filed
+under, which day a recompute lands on, when the coach budget refills.
+
+`ApplicationController` had it and `Api::V1::BaseController` did not, so the same
+rule meant two different things on the two surfaces. A 19:30 log in Denver was
+filed under dinner from a browser and under **snack** from the phone, because
+19:30 in Denver is 01:30 UTC and `FoodLogEntry.meal_type_for` reads the hour it
+is handed. The phone's own nutrition endpoint reported the meal happening now as
+dinner in the same round trip, because that one asked `user.local_time`
+directly — so the API contradicted itself.
+
+The API declares the callback **after** `authenticate_session!`, because
+callbacks fire in declaration order and the clock cannot be read off a user
+nobody has looked up yet. Signing in runs in UTC, which is right: there is no
+user yet, and nothing reachable without one has a day boundary in it.
+
+A rule that needs a date without a request behind it — a job, an evaluator —
+still asks `user.local_date` explicitly rather than relying on the wrapping.
 
 ## The native API
 

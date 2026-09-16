@@ -23,11 +23,23 @@ module MeasurementParams
 
     convert_measurements(attributes, weights, lengths, distances)
 
-    if nested && attributes[nested].respond_to?(:each_value)
-      attributes[nested].each_value { |child| convert_measurements(child, weights, lengths, distances) }
+    nested_children(attributes, nested).each do |child|
+      convert_measurements(child, weights, lengths, distances)
     end
 
     attributes
+  end
+
+  # Nested attributes arrive two ways — a hash keyed by row index from a form,
+  # a plain array from anything building JSON — and both mean the same thing.
+  # Testing `respond_to?(:each_value)` recognised only the first, so the same
+  # logical payload was converted or not depending on how it was spelled, and
+  # nothing said which.
+  def nested_children(attributes, nested)
+    children = nested && attributes[nested]
+    return [] if children.blank?
+
+    children.respond_to?(:each_value) ? children.each_value.to_a : Array(children)
   end
 
   def convert_measurements(attributes, weights, lengths, distances)

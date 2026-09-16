@@ -30,6 +30,7 @@ module Api
 
       def create
         session = current_user.workout_sessions.new(workout_session_params)
+        session.attach_template(requested_template)
 
         if session.save
           WorkoutProgressionRecomputeJob.perform_later(session)
@@ -41,6 +42,14 @@ module Api
       end
 
       private
+
+      # Looked up through the user's own templates rather than assigned from the
+      # id, so a foreign one comes back nil the way it does on the web. The model
+      # refuses it as well: this is the path that should never produce one, and
+      # that is the backstop for every other path.
+      def requested_template
+        current_user.workout_templates.find_by(id: params.dig(:workout_session, :workout_template_id))
+      end
 
       # Weights arrive in kilograms and are stored as they arrive. Nothing is
       # converted here, and that is the rule for this whole boundary: a native
@@ -60,7 +69,6 @@ module Api
           :performed_at,
           :session_rpe,
           :notes,
-          :workout_template_id,
           set_entries_attributes: [ :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup ]
         )
       end

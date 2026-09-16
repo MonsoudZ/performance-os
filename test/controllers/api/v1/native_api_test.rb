@@ -269,6 +269,111 @@ class Api::V1::NativeApiTest < ActionDispatch::IntegrationTest
     assert_equal [ BigDecimal("100"), BigDecimal("100") ], stored
   end
 
+  # The snapshot is what freezes what a workout was asked for on the day it was
+  # logged, so a later block change cannot rewrite it. The web built one in a
+  # controller private method, so a session logged from the phone set the
+  # foreign key and stored `{}` — and the API's own response said
+  # `template_name: null` for a workout run from a named template.
+  test "a workout run from a template records what it was asked for" do
+    prescribe(@squat, working_sets: 4)
+    template = build_template("Zzz Api Snapshot", [ @squat ])
+
+    post api_v1_workout_sessions_path, headers: auth(sign_in_natively), as: :json, params: {
+      workout_session: {
+        performed_at: Time.current.iso8601,
+        workout_template_id: template.id,
+        set_entries_attributes: [ { exercise_id: @squat.id, set_index: 1, weight_kg: 100, reps: 5, rir: 2 } ]
+      }
+    }
+
+    assert_response :created
+    assert_equal "Zzz Api Snapshot", response.parsed_body.dig("data", "template_name")
+
+    session = WorkoutSession.order(:id).last
+    assert_equal template.id, session.workout_template_id
+    assert_equal "Zzz Api Snapshot", session.template_snapshot.fetch("name")
+    assert_equal 4, session.planned_working_sets
+  end
+
+  # The snapshot is a record of what was asked for *then*, so it resolves the
+  # targets on the session's own date. Building it from today would let a
+  # prescription changed since rewrite what a backdated workout was asked to do
+  # — which is the one thing freezing it exists to prevent.
+  test "a backdated workout records the targets that were in force that day" do
+    @user.exercise_prescriptions.create!(
+      exercise: @squat, rep_min: 6, rep_max: 8, target_rir_min: 1, target_rir_max: 2,
+      increment_kg: 2.5, working_sets: 3, started_on: Date.current - 30, ended_on: Date.current - 10
+    )
+    @user.exercise_prescriptions.create!(
+      exercise: @squat, rep_min: 6, rep_max: 8, target_rir_min: 1, target_rir_max: 2,
+      increment_kg: 2.5, working_sets: 5, started_on: Date.current - 9
+    )
+    template = build_template("Zzz Api Backdated", [ @squat ])
+
+    post api_v1_workout_sessions_path, headers: auth(sign_in_natively), as: :json, params: {
+      workout_session: {
+        performed_at: (Time.current - 20.days).iso8601,
+        workout_template_id: template.id,
+        set_entries_attributes: [ { exercise_id: @squat.id, set_index: 1, weight_kg: 100, reps: 7, rir: 2 } ]
+      }
+    }
+
+    assert_response :created
+    # Three, as prescribed twenty days ago — not the five prescribed since.
+    assert_equal 3, WorkoutSession.order(:id).last.planned_working_sets
+  end
+
+  # The web looked its template up through the user's own; the API permitted the
+  # id straight through and stored it, so a phone could point its workout at
+  # somebody else's split.
+  test "a workout cannot be pointed at another account's template" do
+    theirs = users(:two).workout_templates.create!(
+      name: "Zzz Api Not Mine", weekdays: [ 1 ],
+      workout_template_exercises_attributes: [ { exercise_id: @squat.id, position: 1 } ]
+    )
+
+    post api_v1_workout_sessions_path, headers: auth(sign_in_natively), as: :json, params: {
+      workout_session: {
+        performed_at: Time.current.iso8601,
+        workout_template_id: theirs.id,
+        set_entries_attributes: [ { exercise_id: @squat.id, set_index: 1, weight_kg: 100, reps: 5, rir: 2 } ]
+      }
+    }
+
+    assert_response :created
+    assert_nil WorkoutSession.order(:id).last.workout_template_id
+  end
+
+  # The backstop, for any writer that reaches past the scoped lookup.
+  test "a session holding another account's template is invalid" do
+    theirs = users(:two).workout_templates.create!(
+      name: "Zzz Api Also Not Mine", weekdays: [ 1 ],
+      workout_template_exercises_attributes: [ { exercise_id: @squat.id, position: 1 } ]
+    )
+    session = @user.workout_sessions.new(performed_at: Time.current, workout_template: theirs)
+
+    assert_not session.valid?
+    assert_match(/not available/i, session.errors.full_messages.join(" "))
+  end
+
+  # Both spellings of nested attributes mean the same thing, so both have to be
+  # converted or neither — the converter recognised only the hash form, so a
+  # payload was or was not converted depending on how it was written.
+  test "a metric user's weights survive both spellings of the same payload" do
+    token = sign_in_natively
+    set = { exercise_id: @squat.id, set_index: 1, weight_kg: 102.5, reps: 5, rir: 2 }
+
+    stored = [ [ set ], { "0" => set } ].map do |spelling|
+      post api_v1_workout_sessions_path, headers: auth(token), as: :json, params: {
+        workout_session: { performed_at: Time.current.iso8601, set_entries_attributes: spelling }
+      }
+      assert_response :created
+      SetEntry.order(:id).last.weight_kg
+    end
+
+    assert_equal [ BigDecimal("102.5"), BigDecimal("102.5") ], stored
+  end
+
   test "every training endpoint refuses an unauthenticated request" do
     [ api_v1_profile_path, api_v1_workout_templates_path, api_v1_workout_sessions_path ].each do |path|
       get path, as: :json

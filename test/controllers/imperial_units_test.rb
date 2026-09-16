@@ -17,6 +17,24 @@ class ImperialUnitsTest < ActionDispatch::IntegrationTest
     assert_in_delta 90.72, BodyMetric.order(:id).last.weight_kg.to_f, 0.01
   end
 
+  # Nested attributes reach a form as a hash keyed by row index and reach
+  # anything building JSON as an array, and they mean the same thing. The
+  # converter recognised only the hash, so the same pounds converted or did not
+  # depending on how the payload was spelled.
+  test "pounds are converted whichever way the nested sets are spelled" do
+    set = { exercise_id: @exercise.id, set_index: 1, weight_kg: 225, reps: 5, rir: 2 }
+
+    stored = [ { "0" => set }, [ set ] ].map do |spelling|
+      post workout_sessions_path, params: {
+        workout_session: { performed_at: Time.current.iso8601, set_entries_attributes: spelling }
+      }
+      SetEntry.order(:id).last.weight_kg.to_f
+    end
+
+    assert_in_delta 102.06, stored.first, 0.01
+    assert_equal stored.first, stored.last, "both spellings are the same payload"
+  end
+
   test "a metric user's body weight is stored unchanged" do
     sign_in_as(users(:one))
 

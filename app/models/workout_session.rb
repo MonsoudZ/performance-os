@@ -7,6 +7,25 @@ class WorkoutSession < ApplicationRecord
 
   validates :performed_at, presence: true
   validates :session_rpe, numericality: { in: 0..10 }, allow_nil: true
+  validate :workout_template_belongs_to_user
+
+  # Link this session to the workout it was run from, and freeze what that
+  # workout was asking for on the day it was logged.
+  #
+  # The snapshot is the point rather than the link: a later block change must not
+  # be able to rewrite what a logged session was asked to do, which is the same
+  # promise the whole decision trail rests on. This lived in a controller private
+  # method, so a session logged from the phone set the foreign key and stored an
+  # empty snapshot — no planned set count, no name, and `template_name` null in
+  # the API's own response.
+  def attach_template(template)
+    return if template.blank? || performed_at.blank?
+
+    self.workout_template = template
+    self.template_snapshot = WorkoutTemplateSnapshot.new(
+      template, log_date: user.local_date_at(performed_at)
+    ).call
+  end
 
   # The order the session reads in, everywhere it is displayed.
   #
@@ -46,6 +65,16 @@ class WorkoutSession < ApplicationRecord
   end
 
   private
+
+  # The web looked its template up through `Current.user.workout_templates`, so
+  # a foreign id simply came back nil; the API permitted `workout_template_id`
+  # straight through and stored it. A session pointing into another account's
+  # data is not this account's to hold, whichever writer sets it.
+  def workout_template_belongs_to_user
+    return if workout_template.blank? || workout_template.user_id == user_id
+
+    errors.add(:workout_template, "is not available to this user")
+  end
 
   def blank_working_set?(attributes)
     attributes.values_at("weight_kg", "reps", "rir").all?(&:blank?)

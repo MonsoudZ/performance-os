@@ -14,10 +14,7 @@ class MealFromLoggedEntries
   # use because saving breakfast on two different days is the ordinary case.
   def self.suggested_name(user, entries)
     base = entries.first&.meal_label.presence || "Meal"
-    taken = user.meals.pluck(:name)
-    return base unless taken.include?(base)
-
-    (2..).each { |suffix| return "#{base} #{suffix}" unless taken.include?("#{base} #{suffix}") }
+    AvailableName.for(base, taken: user.meals.pluck(:name))
   end
 
   def call

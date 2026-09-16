@@ -10,7 +10,13 @@ module Api
     # web app already reads through `Current.user` — evaluators, services,
     # recompute helpers — works unchanged from here.
     class BaseController < ActionController::API
+      include UserTimeZone
+
+      # Declared after the authentication callback so it runs inside it:
+      # callbacks fire in declaration order, and the clock cannot be read off a
+      # user nobody has looked up yet.
       before_action :authenticate_session!
+      around_action :use_user_time_zone
 
       private
 

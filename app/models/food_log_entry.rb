@@ -25,7 +25,6 @@ class FoodLogEntry < ApplicationRecord
 
   before_validation :infer_meal_type, if: -> { meal_type.blank? && logged_at.present? }
 
-  scope :on_date, ->(date) { where(logged_at: date.all_day) }
 
   def self.meal_type_for(time)
     case time.hour

@@ -58,8 +58,7 @@ class MealsController < ApplicationController
 
   # Keep a meal already eaten, the way a logged session becomes a workout.
   def create_from_log
-    date = Date.parse(params[:date].to_s)
-    entries = entries_for(date, params[:meal_type])
+    entries = entries_for(Date.iso8601(params[:date].to_s), params[:meal_type])
     meal = MealFromLoggedEntries.new(Current.user, entries, name: params[:name]).call
 
     if meal.persisted?
@@ -67,6 +66,10 @@ class MealsController < ApplicationController
     else
       redirect_to nutrition_path, alert: meal.errors.full_messages.to_sentence
     end
+  rescue Date::Error
+    # A date that will not parse means the form was tampered with rather than
+    # mistyped, but an error page is still the wrong answer to it.
+    redirect_to nutrition_path, alert: "That is not a date."
   end
 
   private
