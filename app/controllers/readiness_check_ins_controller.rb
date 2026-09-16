@@ -20,7 +20,7 @@ class ReadinessCheckInsController < ApplicationController
     begin
       input = Current.user.daily_readiness_inputs.find_or_initialize_by(metric_date: Current.user.local_date)
       input.assign_attributes(readiness_params)
-      input.source = input.source_after_check_in
+      input.source = input.derived_source
       input.save
       input
     rescue ActiveRecord::RecordNotUnique

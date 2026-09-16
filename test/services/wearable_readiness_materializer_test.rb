@@ -30,6 +30,26 @@ class WearableReadinessMaterializerTest < ActiveSupport::TestCase
     assert_equal "mixed", readiness.source
   end
 
+  # A night the watch measured is watch data even though nothing about the row
+  # says so once it is in the column — sleep somebody typed looks identical — so
+  # the materializer has to declare its own write rather than leave the row to
+  # work it out. A sleep-only sync that came back "manual" would make
+  # `sleep_from_watch?` false and stop the dashboard saying where the figure
+  # came from.
+  test "a night only sleep synced for is the watch's, and is not an answered day" do
+    date = Date.new(2026, 6, 9)
+    create_sample("sleep-1", "sleep_asleep", Time.utc(2026, 6, 9, 9), 447)
+
+    readiness, = WearableReadinessMaterializer.new(@user, metric_date: date).call
+
+    assert_equal "healthkit", readiness.source
+    assert_equal 447, readiness.sleep_minutes
+    assert readiness.sleep_from_watch?
+    # Scoring a day nobody answered is the failure this whole rule exists to
+    # prevent, so it must not read as checked in.
+    assert_not readiness.checked_in?
+  end
+
   test "unlocks objective baselines after seven prior observations" do
     7.times do |index|
       date = Date.new(2026, 6, 1) + index.days

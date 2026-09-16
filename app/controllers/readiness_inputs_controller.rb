@@ -10,7 +10,13 @@ class ReadinessInputsController < ApplicationController
   end
 
   def update
-    if @input.update(readiness_params)
+    @input.assign_attributes(readiness_params)
+    # Answering a day the watch had synced makes it a row holding both kinds of
+    # evidence; leaving `source` alone left it reading "healthkit" while
+    # `checked_in?` said the user had answered it.
+    @input.source = @input.derived_source
+
+    if @input.save
       ReadinessRecomputeJob.perform_later(@input)
       redirect_to readiness_inputs_path, notice: "Check-in for #{@input.metric_date.strftime("%b %-d")} updated."
     else

@@ -20,9 +20,12 @@ class WearableReadinessMaterializer
     readiness_input.assign_attributes(
       hrv_sdnn_ms: median_value("hrv_sdnn_ms"),
       resting_hr: median_value("resting_hr_bpm")&.round,
-      sleep_minutes: sleep_minutes,
-      source: readiness_source(readiness_input)
+      sleep_minutes: sleep_minutes
     )
+    # This write is watch data by construction — a night the watch measured is
+    # indistinguishable from one somebody typed once it is in the column — so it
+    # says so rather than leaving the row to guess.
+    readiness_input.source = readiness_input.derived_source(measured: true)
     readiness_input.save!
 
     score, decision = ReadinessEvaluator.new(readiness_input).call
@@ -54,12 +57,5 @@ class WearableReadinessMaterializer
   def sleep_minutes
     total = samples("sleep_asleep").sum(:value)
     total.positive? ? total.round : nil
-  end
-
-  def readiness_source(readiness_input)
-    subjective_present = %i[sleep_quality soreness fatigue stress].any? do |attribute|
-      readiness_input.public_send(attribute).present?
-    end
-    subjective_present ? "mixed" : "healthkit"
   end
 end

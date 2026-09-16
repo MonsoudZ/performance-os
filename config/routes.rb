@@ -96,6 +96,8 @@ Rails.application.routes.draw do
       # The four ratings are the part only the user knows, so this reads back
       # what was answered and never guesses the rest.
       resource :readiness_check_in, only: %i[show create], controller: "readiness_check_ins"
+      # Correcting an earlier day is a different question from answering today's.
+      resources :readiness_inputs, only: %i[index update]
     end
   end
 

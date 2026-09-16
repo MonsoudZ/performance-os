@@ -456,12 +456,42 @@ day a weigh-in was *measured on*, not today, exactly as the web does.
   it, and is **not** accepted on write: nothing in the app reads it yet, and a
   write path would only manufacture data no rule consumes.
 
-`DailyReadinessInput#source_after_check_in` is shared by the web and API
-check-in writers so the two cannot drift. A row that already holds watch data
-stays `mixed` when the user answers it: deciding this from the objective metrics
-alone demoted a watch-synced night to `manual`, after which `sleep_from_watch?`
-was false and the dashboard stopped saying where the sleep figure it was still
-showing had come from.
+### Correcting a check-in after its day
+
+Answering today and correcting an earlier day are different questions — "how are
+you" against "what did you mean to put" — so they are different endpoints, and
+only the first requires all four ratings. `Api::V1::ReadinessInputsController`
+takes a correction naming one rating and leaves the rest alone.
+
+**What it will not do is empty one.** A day the user answered would go on being
+scored, from less than they actually know — the same failure as scoring a day
+nobody answered, reached from the other side. The web form's `required`
+attributes make this unreachable there and nothing else makes it unreachable
+here, so `ReadinessAnswers#blanked_ratings` refuses any rating the request names
+and then leaves blank. Both API endpoints share that concern, along with the
+rule that a blank `sleep_hours` is dropped rather than assigned.
+
+## What a check-in's `source` says
+
+`manual` is a row nothing measured, `healthkit` a row nobody has answered,
+`mixed` a row holding both — and which kind of evidence arrived first never
+changes which of the three it is. Every writer asks
+`DailyReadinessInput#derived_source`, because three of them used to decide for
+themselves and all three disagreed:
+
+- `WearableReadinessMaterializer` had it right.
+- The check-in controllers read only the objective metrics, so answering a
+  watch-synced night demoted it to `manual` — after which `sleep_from_watch?`
+  was false and the dashboard stopped saying where the sleep figure it was still
+  showing had come from.
+- `ReadinessInputsController` never set it at all, so answering that same night
+  from `/readiness_inputs` left it reading `healthkit` while `checked_in?` said
+  the user had answered it.
+
+`derived_source(measured:)` is the one subtlety. A night the watch measured is
+indistinguishable from one somebody typed once it is in `sleep_minutes`, so a
+writer that knows it is bringing watch data says so; the materializer passes
+`measured: true` and everything else lets the row answer for itself.
 
 ## Wearable ingestion
 

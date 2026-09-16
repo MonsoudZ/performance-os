@@ -9,6 +9,8 @@ module Api
     # day scored from nothing, which is the same failure as materialising a
     # check-in from a day that only synced steps.
     class ReadinessCheckInsController < BaseController
+      include ReadinessAnswers
+
       REQUIRED_RATINGS = DailyReadinessInput::SUBJECTIVE_FIELDS
 
       before_action :set_requested_date, only: :show
@@ -31,7 +33,7 @@ module Api
       # and it lives at /readiness_inputs.
       def create
         missing = REQUIRED_RATINGS.reject { |field| readiness_params[field].present? }
-        return incomplete(missing) if missing.any?
+        return unanswerable(missing, "is required") if missing.any?
 
         input = save_today_check_in
 
@@ -62,8 +64,8 @@ module Api
         attempts = 0
         begin
           input = current_user.daily_readiness_inputs.find_or_initialize_by(metric_date: current_user.local_date)
-          input.assign_attributes(check_in_attributes)
-          input.source = input.source_after_check_in
+          input.assign_attributes(readiness_attributes)
+          input.source = input.derived_source
           input.save
           input
         rescue ActiveRecord::RecordNotUnique
@@ -71,22 +73,6 @@ module Api
 
           retry
         end
-      end
-
-      # A blank sleep figure is dropped rather than assigned. There is no form
-      # here to distinguish "I cleared this" from "I left it out", and the watch
-      # may already have measured the night — erasing that on a check-in that
-      # never mentioned it would throw away evidence to record an absence.
-      def check_in_attributes
-        attributes = readiness_params.to_h
-        attributes.delete("sleep_hours") if attributes["sleep_hours"].blank?
-        attributes
-      end
-
-      def readiness_params
-        params.require(:daily_readiness_input).permit(
-          :sleep_hours, :sleep_quality, :soreness, :fatigue, :stress
-        )
       end
 
       def serialize(input)
@@ -99,13 +85,6 @@ module Api
           score: nil,
           decision: nil
         ).as_json
-      end
-
-      def incomplete(missing)
-        render json: {
-          error: "Check-in is incomplete",
-          details: missing.map { |field| "#{field.to_s.humanize} is required" }
-        }, status: :unprocessable_entity
       end
     end
   end

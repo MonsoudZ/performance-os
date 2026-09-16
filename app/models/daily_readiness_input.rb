@@ -26,19 +26,35 @@ class DailyReadinessInput < ApplicationRecord
     sleep_minutes.present? && source.in?(WATCH_SOURCES)
   end
 
-  # What this row's source becomes once the user has answered it.
+  # What this row's source is, read off what the row actually holds.
   #
-  # A row that already holds watch data stays "mixed". Which kind of evidence
-  # arrived first does not change what the row holds, and deciding this from the
-  # objective metrics alone demoted a watch-synced night to "manual" the moment
-  # the user checked in — after which `sleep_from_watch?` was false and the
-  # dashboard stopped saying where the sleep figure came from, still showing it.
-  def source_after_check_in
-    watch_evidence? ? "mixed" : "manual"
+  # "manual" is a row nothing measured, "healthkit" a row nobody has answered,
+  # "mixed" a row holding both — and which kind of evidence arrived first never
+  # changes which of the three it is.
+  #
+  # Every writer asks this rather than deciding for itself, because three of
+  # them used to and all three disagreed. The materializer had it right. The
+  # check-in controllers read only the objective metrics, so answering a
+  # watch-synced night demoted it to "manual" and the dashboard stopped saying
+  # where the sleep figure it was still showing had come from. The edit screen
+  # never set it at all, so answering that same night from /readiness_inputs
+  # left it reading "healthkit" while `checked_in?` said it was answered.
+  #
+  # `measured:` is for a writer that knows it is bringing watch data with it:
+  # sleep the watch measured looks identical to sleep somebody typed, so the
+  # row cannot work that out on its own and the materializer has to say so.
+  def derived_source(measured: watch_evidence?)
+    return "manual" unless measured
+
+    answered_any? ? "mixed" : "healthkit"
   end
 
   def watch_evidence?
     source.in?(WATCH_SOURCES) || hrv_sdnn_ms.present? || resting_hr.present?
+  end
+
+  def answered_any?
+    SUBJECTIVE_FIELDS.any? { |field| public_send(field).present? }
   end
 
   # Sleep is stored in minutes but entered in hours, the same store-canonical /
