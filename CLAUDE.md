@@ -348,6 +348,16 @@ request exactly as it does from a browser one.
 - **Measurements cross this boundary in stored units**, like the export and for
   the same reason: it is a record being transported, not a rendering. The
   profile carries `unit_system` so the client converts at its own display edge.
+  **So an API controller never calls `MeasurementParams#to_canonical_units`** —
+  that is the web forms' converter, and a form posts whatever unit it displayed.
+  `Api::V1::WorkoutSessionsController` did call it, which read an imperial
+  user's kilograms as pounds: a round trip through the phone turned 100 kg into
+  45.36. Worse, it only did so for a payload whose nested sets arrived as a hash
+  keyed by index, because the converter's nested branch tests
+  `respond_to?(:each_value)` and an array does not answer to that — so the same
+  logical payload stored two different weights depending on how the client
+  spelled it, and the array form a JSON client reaches for first was the one
+  that looked correct.
 - Sign-in has its own `Rack::Attack` throttle. The web one keys on `/session`
   and would never see `/api/v1/session`.
 - The exercise catalog stays public and IP-throttled — a client needs it before
@@ -383,6 +393,27 @@ browser. Four things here are worth keeping:
   token: the digest is what the database already stores and is worthless to
   whoever learns it, and keying on the device rather than the IP means a gym's
   shared address does not make one phone's typing count against another's.
+
+### Weighing in over the API
+
+A weigh-in is the evidence behind the calorie target — it feeds the weight
+trend, the trend feeds the adaptive expenditure estimate, and that feeds
+`NutritionTargetResolver` — so `Api::V1::BodyMetricsController` recomputes the
+day a weigh-in was *measured on*, not today, exactly as the web does.
+
+- **`source` is not accepted from the client.** A row claiming `healthkit` is
+  one the next sync overwrites: `WearableBodyMassMaterializer` finds its row by
+  (date, source) and re-derives it. A weight somebody typed has to be a row
+  nothing else owns, so the controller forces `manual` and the serializer
+  reports `derived` so a client can say that removing a watch-derived row only
+  makes it come back.
+- **The trend ships alongside the raw readings.** Every rule downstream reads the
+  smoothed `ewma_kg`, never `raw_kg` — a single morning reading moves with water
+  and yesterday's salt — but a client drawing only the trend cannot show the user
+  the reading it is asking them to trust.
+- `body_fat_pct` is serialized because the column exists and the export carries
+  it, and is **not** accepted on write: nothing in the app reads it yet, and a
+  write path would only manufacture data no rule consumes.
 
 `DailyReadinessInput#source_after_check_in` is shared by the web and API
 check-in writers so the two cannot drift. A row that already holds watch data

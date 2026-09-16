@@ -7,7 +7,6 @@ module Api
     # one logged in a browser. It does not evaluate inline — the job does — so
     # the client gets its 201 back without waiting for the engine.
     class WorkoutSessionsController < BaseController
-      include MeasurementParams
       include TrainingRecomputable
 
       PER_PAGE = 25
@@ -43,20 +42,26 @@ module Api
 
       private
 
-      # Weights arrive in kilograms, like everything else on this boundary, but
-      # they go through the same conversion helper the web forms use so there is
-      # exactly one place that decides what a measurement field is.
+      # Weights arrive in kilograms and are stored as they arrive. Nothing is
+      # converted here, and that is the rule for this whole boundary: a native
+      # request is a record being transported, so the client converts at its own
+      # display edge using the `unit_system` on the profile.
+      #
+      # `MeasurementParams#to_canonical_units` is the web forms' converter and
+      # belongs to them. Calling it here read an imperial user's kilograms as
+      # pounds — a round trip through the phone turned 100 kg into 45.36 — and
+      # it did so only for a payload whose nested sets arrived as a hash keyed by
+      # index, because its nested branch tests `respond_to?(:each_value)` and an
+      # array does not answer to that. So the same logical payload stored two
+      # different weights depending on how the client spelled it, and the array
+      # form a JSON client reaches for first was the one that looked correct.
       def workout_session_params
-        to_canonical_units(
-          params.require(:workout_session).permit(
-            :performed_at,
-            :session_rpe,
-            :notes,
-            :workout_template_id,
-            set_entries_attributes: [ :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup ]
-          ),
-          weights: [ :weight_kg ],
-          nested: :set_entries_attributes
+        params.require(:workout_session).permit(
+          :performed_at,
+          :session_rpe,
+          :notes,
+          :workout_template_id,
+          set_entries_attributes: [ :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup ]
         )
       end
     end

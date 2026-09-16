@@ -88,6 +88,9 @@ Rails.application.routes.draw do
         post :log, on: :member
       end
 
+      # A weigh-in, and the trend and expenditure estimate it feeds.
+      resources :body_metrics, only: %i[index create destroy]
+
       # The four ratings are the part only the user knows, so this reads back
       # what was answered and never guesses the rest.
       resource :readiness_check_in, only: %i[show create], controller: "readiness_check_ins"

@@ -223,6 +223,52 @@ class Api::V1::NativeApiTest < ActionDispatch::IntegrationTest
     assert response.parsed_body.fetch("details").any?
   end
 
+  # A native request is a record being transported, not a form being submitted,
+  # so the number means kilograms whoever sent it. Running it through the web
+  # form's converter read an imperial user's kilograms as pounds, and a round
+  # trip through the phone turned 100 kg into 45.36.
+  test "a weight crosses this boundary in kilograms whatever the user's units" do
+    imperial = users(:two)
+    assert_equal "imperial", imperial.unit_system
+    post api_v1_session_path, params: { email_address: imperial.email_address, password: "password" }, as: :json
+    token = response.parsed_body.fetch("token")
+
+    # Deliberately the hash-of-index spelling: that is the one the converter
+    # reached, so an array here would pass against the very bug this guards.
+    post api_v1_workout_sessions_path, headers: auth(token), as: :json, params: {
+      workout_session: {
+        performed_at: Time.current.iso8601,
+        set_entries_attributes: { "0" => { exercise_id: @squat.id, set_index: 1, weight_kg: 100, reps: 5, rir: 2 } }
+      }
+    }
+
+    assert_response :created
+    assert_equal 100.0, response.parsed_body.dig("data", "sets", 0, "weight_kg")
+    assert_equal BigDecimal("100"), SetEntry.order(:id).last.weight_kg
+  end
+
+  # The converter's nested branch tests `respond_to?(:each_value)`, which an
+  # array does not answer to, so it converted one spelling of the same payload
+  # and silently skipped the other. Two clients sending the same workout stored
+  # two different weights, and the array form — the one a JSON client reaches for
+  # first — was the one that happened to look right.
+  test "the same sets are stored the same way however the client spells them" do
+    imperial = users(:two)
+    post api_v1_session_path, params: { email_address: imperial.email_address, password: "password" }, as: :json
+    token = response.parsed_body.fetch("token")
+    set = { exercise_id: @squat.id, set_index: 1, weight_kg: 100, reps: 5, rir: 2 }
+
+    stored = [ [ set ], { "0" => set } ].map do |spelling|
+      post api_v1_workout_sessions_path, headers: auth(token), as: :json, params: {
+        workout_session: { performed_at: Time.current.iso8601, set_entries_attributes: spelling }
+      }
+      assert_response :created
+      SetEntry.order(:id).last.weight_kg
+    end
+
+    assert_equal [ BigDecimal("100"), BigDecimal("100") ], stored
+  end
+
   test "every training endpoint refuses an unauthenticated request" do
     [ api_v1_profile_path, api_v1_workout_templates_path, api_v1_workout_sessions_path ].each do |path|
       get path, as: :json
