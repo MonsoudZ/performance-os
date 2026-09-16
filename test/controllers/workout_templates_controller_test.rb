@@ -30,6 +30,29 @@ class WorkoutTemplatesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workout_templates_path
   end
 
+  # This behaviour predates the shared rule and is pinned here because the meal
+  # editor now depends on the same code for it.
+  test "reordering the lifts in a workout survives the save" do
+    template = @user.workout_templates.create!(
+      name: "Zzz Reorderable", weekdays: [ 1 ],
+      workout_template_exercises_attributes: [
+        { exercise_id: @squat.id, position: 1 }, { exercise_id: @bench.id, position: 2 }
+      ]
+    )
+    first, second = template.workout_template_exercises.order(:position).to_a
+
+    patch workout_template_path(template), params: { workout_template: {
+      name: template.name, weekdays: [ "1" ],
+      workout_template_exercises_attributes: {
+        "0" => { id: second.id, exercise_id: second.exercise_id, position: 1 },
+        "1" => { id: first.id, exercise_id: first.exercise_id, position: 2 }
+      }
+    } }
+
+    assert_equal [ @bench.id, @squat.id ],
+      template.workout_template_exercises.reload.order(:position).pluck(:exercise_id)
+  end
+
   test "rejects another user's custom exercise" do
     foreign_exercise = Exercise.create!(user: users(:two), name: "Private Press", modality: "other")
 

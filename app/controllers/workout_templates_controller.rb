@@ -16,7 +16,7 @@ class WorkoutTemplatesController < ApplicationController
 
   def create
     @workout_template = Current.user.workout_templates.new(workout_template_params)
-    normalize_positions
+    @workout_template.renumber_items
 
     if @workout_template.save
       redirect_to workout_templates_path, notice: "#{@workout_template.name} created."
@@ -45,7 +45,7 @@ class WorkoutTemplatesController < ApplicationController
 
   def update
     @workout_template.assign_attributes(workout_template_params)
-    normalize_positions
+    @workout_template.renumber_items
 
     if @workout_template.save
       redirect_to workout_templates_path, notice: "#{@workout_template.name} updated."
@@ -74,13 +74,6 @@ class WorkoutTemplatesController < ApplicationController
     )
     permitted[:weekdays] = Array(permitted[:weekdays]).reject(&:blank?).map(&:to_i)
     permitted
-  end
-
-  def normalize_positions
-    @workout_template.workout_template_exercises
-      .reject(&:marked_for_destruction?)
-      .sort_by { |item| item.position || Float::INFINITY }
-      .each_with_index { |item, index| item.position = index + 1 }
   end
 
   def prepare_form

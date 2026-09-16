@@ -183,6 +183,37 @@ and at what portion.
   stamped 8pm under breakfast, and this page groups by meal, so the record
   contradicted its own timestamp.
 
+### The order the rows read in
+
+A meal's foods and a workout's exercises answer the same question — what order
+do these read in — and the editor is literally the same Stimulus controller,
+with the same move buttons writing a hidden `position` per row. The rule that
+turns those into stored positions is `OrderedItems#renumber_items`, declared
+once and called by every writer: `ordered_by_position :meal_items` and
+`ordered_by_position :workout_template_exercises`.
+
+It lived in two controllers before that and they drifted. The workout's copy
+sorted by the position the form submitted; the meal's copy ignored it and
+numbered by whatever order the association happened to be loaded in. A persisted
+record loads its children in their *old* position order and nested attributes
+update them in place, so the meal editor's move buttons wrote a new order that
+the save then threw away — three buttons that did nothing, on a screen whose own
+comment said it was the same code as the one where they worked.
+
+**A new writer calls `renumber_items`**; it must not number rows itself.
+
+## A meal must not list the same food twice
+
+`MealItem` validates that too, but only against rows already in the table: two
+new items naming the same food both pass and then collide on the unique index,
+which reached the user as a 500 from the editor rather than as a sentence about
+their form. `Meal#foods_are_distinct` is the in-memory half — the invariant is
+about the *set* of items, so it belongs to the meal rather than to any one item.
+
+Combining rather than repeating is also what a meal means: eating oats twice in
+one sitting is one portion of oats, which is exactly what `MealFromLoggedEntries`
+does when it builds a meal out of a logged day.
+
 ## The check-in is not prefilled, deliberately
 
 `ReadinessEvaluator` scores sleep quality, soreness, fatigue and stress, and
@@ -393,6 +424,16 @@ browser. Four things here are worth keeping:
   token: the digest is what the database already stores and is worthless to
   whoever learns it, and keying on the device rather than the IP means a gym's
   shared address does not make one phone's typing count against another's.
+
+### Building a meal over the API
+
+`Api::V1::MealsController` takes the same nested-attributes shape the web editor
+posts, so there is one set of rules about what a meal is rather than two. That
+shape has a contract: an item carrying an `id` is updated, one without is added,
+one carrying `_destroy` is removed, and **an item left out is kept**. A client
+sending a shorter list is editing the items it named, not declaring the meal's
+new contents — making omission mean deletion would turn a partial payload into
+data loss.
 
 ### Weighing in over the API
 

@@ -25,12 +25,72 @@ class MealsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ @oats.id, 1 ], [ @whey.id, 2 ] ], meal.meal_items.map { |item| [ item.food_id, item.position ] }
   end
 
+  # The editor has move-up and move-down buttons and a hidden position per row,
+  # and saving threw the new order away: a persisted meal loads its foods in
+  # their old position order, nested attributes update them in place, and the
+  # controller then renumbered by that stale order rather than by what was
+  # submitted. The workout template editor — literally the same Stimulus
+  # controller — had always sorted by the submitted position, which is what made
+  # the two look identical while behaving differently.
+  test "reordering the foods in a meal survives the save" do
+    meal = meal_for(@user, "Zzz Reorderable")
+    first, second = meal.meal_items.order(:position).to_a
+    assert_equal [ @oats.id, @whey.id ], [ first.food_id, second.food_id ]
+
+    patch meal_path(meal), params: { meal: {
+      name: meal.name,
+      meal_items_attributes: {
+        "0" => { id: second.id, food_id: second.food_id, quantity_grams: 30, position: 1 },
+        "1" => { id: first.id, food_id: first.food_id, quantity_grams: 80, position: 2 }
+      }
+    } }
+
+    assert_equal [ @whey.id, @oats.id ], meal.meal_items.reload.order(:position).map(&:food_id)
+  end
+
+  test "a newly added food lands at the end rather than jumping the order" do
+    meal = meal_for(@user, "Zzz Appendable")
+    existing = meal.meal_items.order(:position).to_a
+    extra = food("Zzz Meals Rice")
+
+    patch meal_path(meal), params: { meal: {
+      name: meal.name,
+      meal_items_attributes: {
+        "0" => { id: existing.first.id, food_id: existing.first.food_id, quantity_grams: 80, position: 1 },
+        "1" => { id: existing.second.id, food_id: existing.second.food_id, quantity_grams: 30, position: 2 },
+        # No position: the row the user has just added has nothing stored yet.
+        "2" => { food_id: extra.id, quantity_grams: 120 }
+      }
+    } }
+
+    assert_equal [ @oats.id, @whey.id, extra.id ], meal.meal_items.reload.order(:position).map(&:food_id)
+    assert_equal [ 1, 2, 3 ], meal.meal_items.reload.order(:position).map(&:position)
+  end
+
   test "a meal with no foods is rejected rather than saved empty" do
     assert_no_difference "Meal.count" do
       post meals_path, params: { meal: { name: "Zzz Empty" } }
     end
 
     assert_response :unprocessable_entity
+  end
+
+  # Two rows naming the same food used to reach the database, which rejected
+  # them on the unique index — so picking the same food twice in the editor was
+  # a 500 rather than a sentence about the form.
+  test "picking the same food twice is an error the form can show" do
+    assert_no_difference "Meal.count" do
+      post meals_path, params: { meal: {
+        name: "Zzz Doubled",
+        meal_items_attributes: {
+          "0" => { food_id: @oats.id, quantity_grams: 80 },
+          "1" => { food_id: @oats.id, quantity_grams: 40 }
+        }
+      } }
+    end
+
+    assert_response :unprocessable_entity
+    assert_select ".form-errors", /same food twice/i
   end
 
   test "another account's meal is a 404" do

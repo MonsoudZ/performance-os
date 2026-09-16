@@ -16,7 +16,7 @@ class MealsController < ApplicationController
 
   def create
     @meal = Current.user.meals.new(meal_params)
-    normalize_positions
+    @meal.renumber_items
 
     if @meal.save
       redirect_to meals_path, notice: "#{@meal.name} saved."
@@ -32,7 +32,7 @@ class MealsController < ApplicationController
 
   def update
     @meal.assign_attributes(meal_params)
-    normalize_positions
+    @meal.renumber_items
 
     if @meal.save
       redirect_to meals_path, notice: "#{@meal.name} updated."
@@ -81,13 +81,6 @@ class MealsController < ApplicationController
 
   def meal_params
     params.require(:meal).permit(:name, meal_items_attributes: %i[id food_id quantity_grams position _destroy])
-  end
-
-  # Positions are what order the foods read in; the form does not ask for them.
-  def normalize_positions
-    @meal.meal_items.reject(&:marked_for_destruction?).each_with_index do |item, index|
-      item.position = index + 1
-    end
   end
 
   def entries_for(date, meal_type)

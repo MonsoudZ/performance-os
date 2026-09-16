@@ -1,4 +1,10 @@
 class WorkoutTemplate < ApplicationRecord
+  include OrderedItems
+
+  # The order the lifts are performed in, from the order the editor's rows
+  # arrive in.
+  ordered_by_position :workout_template_exercises
+
   WEEKDAYS = Date::DAYNAMES.each_with_index.to_h.freeze
 
   belongs_to :user

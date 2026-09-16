@@ -84,9 +84,11 @@ Rails.application.routes.draw do
       resources :food_log_entries, only: %i[create update destroy] do
         post :copy_yesterday, on: :collection
       end
-      resources :meals, only: :index do
+      resources :meals, only: %i[index show create update destroy] do
         post :log, on: :member
       end
+      # A meal already eaten is already recorded, so keeping it costs a name.
+      post "meals/from_log", to: "meals#create_from_log", as: :meal_from_log
 
       # A weigh-in, and the trend and expenditure estimate it feeds.
       resources :body_metrics, only: %i[index create destroy]
