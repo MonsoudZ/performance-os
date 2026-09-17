@@ -1,6 +1,6 @@
 class WorkoutSessionsController < ApplicationController
   include MeasurementParams
-  include TrainingRecomputable
+  include WorkoutSessionWrites
 
   PER_PAGE = 25
 
@@ -51,11 +51,7 @@ class WorkoutSessionsController < ApplicationController
     @workout_session = Current.user.workout_sessions.find(params[:id])
 
     if @workout_session.update(workout_session_params)
-      WorkoutProgressionRetractor.new(
-        @workout_session,
-        reason: "workout_session_corrected"
-      ).call
-      WorkoutProgressionRecomputeJob.perform_later(@workout_session)
+      withdraw_and_reevaluate(@workout_session)
       redirect_to workout_session_path(@workout_session), notice: "Workout updated. Re-evaluating progression…"
     else
       @set_entries = @workout_session.ordered_set_entries
@@ -64,13 +60,7 @@ class WorkoutSessionsController < ApplicationController
   end
 
   def destroy
-    workout_session = Current.user.workout_sessions.find(params[:id])
-    WorkoutProgressionRetractor.new(
-      workout_session,
-      reason: "workout_session_deleted"
-    ).call
-    workout_session.destroy!
-    recompute_training_plan
+    withdraw_and_delete(Current.user.workout_sessions.find(params[:id]))
     redirect_to root_path, notice: "Workout deleted."
   end
 

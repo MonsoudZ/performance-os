@@ -72,7 +72,7 @@ Rails.application.routes.draw do
       resource :session, only: %i[create destroy], controller: "sessions"
       resource :profile, only: :show, controller: "profiles"
       resources :workout_templates, only: %i[index show]
-      resources :workout_sessions, only: %i[index show create]
+      resources :workout_sessions, only: %i[index show create update destroy]
 
       # The day's eating in one request, and the writes that change it.
       resource :nutrition, only: :show, controller: "nutrition"

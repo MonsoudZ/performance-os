@@ -508,6 +508,20 @@ sending a shorter list is editing the items it named, not declaring the meal's
 new contents — making omission mean deletion would turn a partial payload into
 data loss.
 
+### Correcting a workout over the API
+
+A workout is the evidence a progression decision was built on, so changing one
+costs more than the row. `WorkoutSessionWrites` holds both cases and both
+surfaces call it: a **correction** withdraws the decisions built on the session
+and asks the evaluator again; a **deletion** withdraws them and replaces them
+with nothing, because the evidence is gone. Either way they stay in the table as
+withdrawn — a recommendation taken back is part of the record.
+`WorkoutProgressionRetractor` walks up the DAG, so a weekly review resting on a
+withdrawn progression is withdrawn too.
+
+The API's `set_entries_attributes` permits `id` and `_destroy` for this reason:
+without them a correction could only add sets, never change or remove one.
+
 ### Weighing in over the API
 
 A weigh-in is the evidence behind the calorie target — it feeds the weight
@@ -525,9 +539,14 @@ day a weigh-in was *measured on*, not today, exactly as the web does.
   smoothed `ewma_kg`, never `raw_kg` — a single morning reading moves with water
   and yesterday's salt — but a client drawing only the trend cannot show the user
   the reading it is asking them to trust.
-- `body_fat_pct` is serialized because the column exists and the export carries
-  it, and is **not** accepted on write: nothing in the app reads it yet, and a
-  write path would only manufacture data no rule consumes.
+- `body_fat_pct` is accepted on write and converts in neither direction: a
+  percentage is the same number in both unit systems, so `MeasurementParams` is
+  told about the weight only. It still renders through `Units.format_amount`,
+  because the trailing-zero rule is not about units — a scale reporting 18.0 and
+  one reporting 18.25 should both read as themselves. Nothing downstream reads
+  it: it is a record the user can keep, not evidence any rule reasons from. It
+  is also not a `WearableSample::METRIC_UNITS` metric, so a scale reporting it
+  still cannot sync it.
 
 ### Correcting a check-in after its day
 

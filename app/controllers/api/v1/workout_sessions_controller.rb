@@ -7,7 +7,7 @@ module Api
     # one logged in a browser. It does not evaluate inline — the job does — so
     # the client gets its 201 back without waiting for the engine.
     class WorkoutSessionsController < BaseController
-      include TrainingRecomputable
+      include WorkoutSessionWrites
 
       PER_PAGE = 25
 
@@ -41,6 +41,35 @@ module Api
         end
       end
 
+      # Correcting a workout logged from the phone. The sets are the evidence a
+      # progression decision was built on, so changing them withdraws those
+      # conclusions and asks the evaluator again — the same two steps the web
+      # edit takes, through the same helper.
+      def update
+        session = current_user.workout_sessions.includes(set_entries: :exercise).find(params[:id])
+
+        if session.update(workout_session_params)
+          withdraw_and_reevaluate(session)
+          render json: { data: WorkoutSessionSerializer.new(session.reload).as_json }
+        else
+          render json: { error: "Invalid workout", details: session.errors.full_messages },
+            status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        not_found
+      end
+
+      # Nothing replaces the decisions a deleted workout produced: the evidence
+      # is gone. They stay in the table as withdrawn, which is the record of
+      # what was taken back.
+      def destroy
+        withdraw_and_delete(current_user.workout_sessions.find(params[:id]))
+
+        head :no_content
+      rescue ActiveRecord::RecordNotFound
+        not_found
+      end
+
       private
 
       # Looked up through the user's own templates rather than assigned from the
@@ -69,7 +98,9 @@ module Api
           :performed_at,
           :session_rpe,
           :notes,
-          set_entries_attributes: [ :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup ]
+          # `id` and `_destroy` are what make an edit possible: without them a
+          # correction could only add sets, never change or remove one.
+          set_entries_attributes: [ :id, :exercise_id, :set_index, :weight_kg, :reps, :rir, :is_warmup, :_destroy ]
         )
       end
     end

@@ -374,6 +374,91 @@ class Api::V1::NativeApiTest < ActionDispatch::IntegrationTest
     assert_equal [ BigDecimal("102.5"), BigDecimal("102.5") ], stored
   end
 
+  # A workout is the evidence a progression decision was built on, so correcting
+  # one has to withdraw what was concluded from it. The phone could log a
+  # workout and not correct it, so a mistyped set was a browser trip.
+  test "correcting a workout withdraws what was concluded from it and asks again" do
+    prescribe(@squat, working_sets: 1)
+    token = sign_in_natively
+    post api_v1_workout_sessions_path, headers: auth(token), as: :json, params: {
+      workout_session: {
+        performed_at: Time.current.iso8601,
+        set_entries_attributes: [ { exercise_id: @squat.id, set_index: 1, weight_kg: 100, reps: 8, rir: 1 } ]
+      }
+    }
+    session = WorkoutSession.order(:id).last
+    perform_enqueued_jobs { WorkoutProgressionRecomputeJob.perform_later(session) }
+    decision = @user.coaching_decisions.of_type("double_progression").order(:id).last
+    assert_not decision.retracted_at?, "a decision to withdraw"
+
+    entry = session.set_entries.sole
+    assert_enqueued_with(job: WorkoutProgressionRecomputeJob) do
+      patch api_v1_workout_session_path(session), headers: auth(token), as: :json, params: {
+        workout_session: { set_entries_attributes: [ { id: entry.id, weight_kg: 60, reps: 5 } ] }
+      }
+    end
+
+    assert_response :success
+    assert_equal 60.0, response.parsed_body.dig("data", "sets", 0, "weight_kg")
+    assert decision.reload.retracted_at?, "the conclusion rested on numbers that moved"
+    assert_equal "workout_session_corrected", decision.retraction_reason
+  end
+
+  test "a correction can remove a set, not only change one" do
+    token = sign_in_natively
+    session = @user.workout_sessions.create!(performed_at: Time.current)
+    keep = session.set_entries.create!(exercise: @squat, set_index: 1, weight_kg: 100, reps: 5, rir: 2)
+    drop = session.set_entries.create!(exercise: @squat, set_index: 2, weight_kg: 100, reps: 5, rir: 2)
+
+    assert_difference "SetEntry.count", -1 do
+      patch api_v1_workout_session_path(session), headers: auth(token), as: :json, params: {
+        workout_session: { set_entries_attributes: [ { id: drop.id, _destroy: true } ] }
+      }
+    end
+
+    assert_response :success
+    assert_equal [ keep.id ], session.set_entries.reload.pluck(:id)
+  end
+
+  # The evidence is gone, so nothing replaces the decisions it produced — they
+  # stay as withdrawn, which is the record of what was taken back.
+  test "deleting a workout withdraws its decisions without replacing them" do
+    prescribe(@squat, working_sets: 1)
+    token = sign_in_natively
+    session = @user.workout_sessions.create!(performed_at: Time.current)
+    session.set_entries.create!(exercise: @squat, set_index: 1, weight_kg: 100, reps: 8, rir: 1)
+    perform_enqueued_jobs { WorkoutProgressionRecomputeJob.perform_later(session) }
+    decision = @user.coaching_decisions.of_type("double_progression").order(:id).last
+
+    assert_difference "WorkoutSession.count", -1 do
+      assert_no_enqueued_jobs only: WorkoutProgressionRecomputeJob do
+        delete api_v1_workout_session_path(session), headers: auth(token), as: :json
+      end
+    end
+
+    assert_response :no_content
+    assert decision.reload.retracted_at?
+    assert_equal "workout_session_deleted", decision.retraction_reason
+    # Withdrawn, not erased: a recommendation taken back is part of the record.
+    assert CoachingDecision.exists?(decision.id)
+  end
+
+  test "another account's workout cannot be read, corrected or deleted" do
+    theirs = users(:two).workout_sessions.create!(performed_at: Time.current)
+    token = sign_in_natively
+
+    get api_v1_workout_session_path(theirs), headers: auth(token), as: :json
+    assert_response :not_found
+
+    patch api_v1_workout_session_path(theirs), headers: auth(token), as: :json,
+      params: { workout_session: { session_rpe: 3 } }
+    assert_response :not_found
+
+    delete api_v1_workout_session_path(theirs), headers: auth(token), as: :json
+    assert_response :not_found
+    assert theirs.reload.persisted?
+  end
+
   test "every training endpoint refuses an unauthenticated request" do
     [ api_v1_profile_path, api_v1_workout_templates_path, api_v1_workout_sessions_path ].each do |path|
       get path, as: :json
