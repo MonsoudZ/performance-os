@@ -199,6 +199,23 @@ class Api::V1::NativeBodyApiTest < ActionDispatch::IntegrationTest
     assert response.parsed_body.fetch("details").any?
   end
 
+  test "body fat crosses the boundary as the percentage it is" do
+    weigh_in(82.4, extra: { body_fat_pct: 18.4 })
+
+    assert_response :created
+    assert_equal 18.4, response.parsed_body.dig("data", "body_fat_pct")
+    assert_equal BigDecimal("18.4"), BodyMetric.order(:id).last.body_fat_pct
+  end
+
+  test "an impossible body fat percentage is refused with its reason" do
+    assert_no_difference "BodyMetric.count" do
+      weigh_in(82.4, extra: { body_fat_pct: 140 })
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/body fat/i, response.parsed_body.fetch("details").join(" "))
+  end
+
   # ---- removing one -----------------------------------------------------
 
   test "removing a backdated weigh-in recomputes the day it was on" do

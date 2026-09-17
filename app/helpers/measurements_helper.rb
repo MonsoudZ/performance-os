@@ -32,6 +32,16 @@ module MeasurementsHelper
     "#{weight_amount(kg, precision:)} #{weight_unit}"
   end
 
+  # A percentage is the same number to everybody, so nothing is converted here.
+  # It goes through the same formatter only for the trailing-zero trimming every
+  # stored figure gets: a scale reporting 18.0 and one reporting 18.25 both read
+  # as themselves rather than being padded to a width neither measured.
+  def body_fat(pct)
+    return if pct.nil?
+
+    "#{Units.format_amount(pct)}%"
+  end
+
   def length_amount(cm, precision: nil)
     return if cm.nil?
 

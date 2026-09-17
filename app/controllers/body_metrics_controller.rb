@@ -23,7 +23,10 @@ class BodyMetricsController < ApplicationController
 
   def body_metric_params
     to_canonical_units(
-      params.require(:body_metric).permit(:measured_on, :weight_kg),
+      # Body fat is a percentage and is named here for completeness, not for
+      # conversion: it means the same thing in both unit systems, so the
+      # converter is told about the weight only.
+      params.require(:body_metric).permit(:measured_on, :weight_kg, :body_fat_pct),
       weights: [ :weight_kg ]
     )
   end

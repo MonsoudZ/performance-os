@@ -48,4 +48,33 @@ class BodyMetricsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
     assert BodyMetric.exists?(foreign.id)
   end
+  # The column, its validation and its check constraint all existed with nothing
+  # writing to them. A percentage is the same number in both unit systems, so it
+  # is the one figure on this form the converter must leave alone.
+  test "body fat is recorded alongside the weight, unconverted" do
+    sign_in_as(users(:two)) # imperial, so a converted figure would show
+
+    post body_metrics_path, params: {
+      body_metric: { measured_on: Date.current, weight_kg: 200, body_fat_pct: 18.4 }
+    }
+
+    metric = BodyMetric.order(:id).last
+    assert_equal BigDecimal("18.4"), metric.body_fat_pct
+    # The weight beside it still converts, which is what makes this a real test.
+    assert_in_delta 90.72, metric.weight_kg.to_f, 0.01
+  end
+
+  test "a weigh-in with no body fat is still a weigh-in" do
+    post body_metrics_path, params: { body_metric: { measured_on: Date.current, weight_kg: 82.4 } }
+
+    assert_nil BodyMetric.order(:id).last.body_fat_pct
+  end
+
+  test "an impossible body fat percentage is refused" do
+    assert_no_difference "BodyMetric.count" do
+      post body_metrics_path, params: {
+        body_metric: { measured_on: Date.current, weight_kg: 82.4, body_fat_pct: 140 }
+      }
+    end
+  end
 end

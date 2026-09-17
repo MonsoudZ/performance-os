@@ -49,7 +49,9 @@ module Api
 
       # The weight is stored exactly as it arrives — kilograms, unconverted, like
       # every measurement on this boundary. The web form's converter is for a
-      # form, which posts whatever unit it displayed.
+      # form, which posts whatever unit it displayed. Body fat needs no
+      # conversion in either direction: a percentage is the same number to
+      # everybody.
       #
       # `source` is not accepted from the client, and that is a rule rather than
       # an omission: a row claiming "healthkit" is one the next sync will
@@ -58,7 +60,7 @@ module Api
       # nothing else owns.
       def body_metric_params
         params.require(:body_metric)
-          .permit(:measured_on, :weight_kg)
+          .permit(:measured_on, :weight_kg, :body_fat_pct)
           .with_defaults(measured_on: current_user.local_date)
           .merge(source: "manual")
       end
