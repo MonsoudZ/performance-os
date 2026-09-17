@@ -127,7 +127,7 @@
           <% if @check_in.sleep_from_watch? %>
             <div class="synced-field">
               <span>Sleep</span>
-              <strong><%= number_with_precision @check_in.sleep_hours, precision: 1, strip_insignificant_zeros: true %> h</strong>
+              <strong><%= sleep_length(@check_in.sleep_hours) %></strong>
               <small>synced from your watch</small>
             </div>
           <% else %>

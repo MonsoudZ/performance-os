@@ -25,6 +25,16 @@ module MeasurementsHelper
     Units.format_amount(Units.weight_from_kg(kg, unit_system), precision:)
   end
 
+  # The converted number as a number, for something that plots rather than
+  # prints — a chart needs a Float, not "82.4 kg". It exists so no view has to
+  # reach into `Units` itself: that is the conversion layer, and a view calling
+  # it directly is one refactor away from calling it without a unit system.
+  def weight_number(kg)
+    return if kg.nil?
+
+    Units.weight_from_kg(kg, unit_system).to_f
+  end
+
   # Numeric part plus unit, e.g. "102.5 kg" or "225 lb".
   def weight(kg, precision: nil)
     return if kg.nil?
@@ -40,6 +50,20 @@ module MeasurementsHelper
     return if pct.nil?
 
     "#{Units.format_amount(pct)}%"
+  end
+
+  # Sleep is stored in minutes and thought about in hours, which is why the
+  # model carries `sleep_hours` at all. Three places showed it three ways: the
+  # dashboard rounded to one decimal inline, the edit form used a select, and the
+  # history page printed the stored minutes — so a night entered as 7.5 hours
+  # read back as "450 min" on the one page whose job is reviewing what you put.
+  #
+  # Like a percentage, an hour is the same to everybody, so nothing converts; it
+  # goes through the same formatter for the trailing-zero trimming.
+  def sleep_length(hours)
+    return if hours.nil?
+
+    "#{Units.format_amount(hours)} h"
   end
 
   def length_amount(cm, precision: nil)

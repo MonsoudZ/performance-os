@@ -9,6 +9,7 @@ module CoachingDecisionsHelper
     "daily_readiness" => "Daily readiness",
     "double_progression" => "Lift progression",
     "daily_nutrition" => "Daily nutrition",
+    "nutrition_adjustment" => "Calorie adjustment",
     "weekly_review" => "Weekly review",
     "daily_training" => "Daily training plan"
   }.freeze
@@ -109,7 +110,28 @@ module CoachingDecisionsHelper
 
       label = session.template_name.presence || "Session on #{session.performed_at.to_date.strftime('%b %-d, %Y')}"
       link_to(label, workout_session_path(session))
+    when /decision_ids?\z/
+      decision_link(value)
     end
+  end
+
+  # A decision resting on other decisions is the whole point of the table, and
+  # this page is where somebody follows that chain. It used to print the id and
+  # stop — "Readiness decision: 168" — leaving the reader to paste a number into
+  # a URL to answer the question the page exists to answer.
+  #
+  # Matched by key shape rather than by listing every one, because the snapshot
+  # partial assumes nothing about shape and a new rule should need no work here.
+  # Scoped to this account: another account's id resolves to nothing and falls
+  # back to the raw value, like any other reference that no longer points
+  # anywhere.
+  def decision_link(id)
+    decision = Current.user.coaching_decisions.find_by(id: id)
+    return unless decision
+
+    label = decision_type_label(decision.decision_type)
+    headline = decision_headline(decision).to_s.truncate(48)
+    link_to(headline.present? ? "#{label}: #{headline}" : label, coaching_decision_path(decision))
   end
 
   # An array of plain scalars reads better inline than as a nested list.

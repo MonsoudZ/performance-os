@@ -63,6 +63,19 @@ about their shape, so a new rule needs no view work; add a case to
 `CoachingDecisionsHelper#decision_reference` if it snapshots a new kind of id, and
 a suffix to `MEASUREMENT_SUFFIXES` if it records a new kind of measurement.
 
+**A snapshotted decision id resolves to a link**, matched by key shape
+(`/decision_ids?\z/`) rather than by listing every one, so a new rule needs no
+work there either. It printed the id and stopped — "Readiness decision: 168" —
+which left the reader pasting a number into a URL to answer the question this
+page exists to answer. Lists of ids go through the same lookup as lone scalars,
+and the partial joins with `safe_join` because `join` would escape the links.
+Resolution is scoped to the reader's own decisions; anything that does not
+resolve falls back to the raw id rather than pretending it did.
+
+`DECISION_TYPE_LABELS` must name every type in `DECISION_TYPES` — a missing one
+falls back to `humanize`, which reads acceptably and hides the omission, so a
+test asserts the two agree.
+
 Say "withdrawn" to users and "retracted" in code. A new retraction reason needs
 an entry in `CoachingDecision::RETRACTION_EXPLANATIONS` so it reads as a sentence
 rather than a rule name, and decisions render through
@@ -324,6 +337,19 @@ Conversion happens at exactly two boundaries:
   building JSON. The check used to be `respond_to?(:each_value)`, which
   recognised only the first, so the same logical payload was converted or not
   depending on how it was written and nothing said which.
+
+`MeasurementRenderingTest` holds this over every template, the way
+`ResponsiveLayoutTest` and `ElementIdsTest` hold their own rules: **no view
+prints a canonical column, and no view calls `Units` itself.** A template that
+interpolates `weight_kg` shows an imperial reader a metric number, which reads
+as plausible and wrong. `weight_number` exists so a chart, which needs a Float
+rather than "82.4 kg", still goes through the helper.
+
+Two more figures convert in neither direction but are rendered one way
+everywhere, for the same reason: `body_fat` and `sleep_length`. Sleep is stored
+in minutes and thought about in hours, and three screens showed it three ways —
+the history page printed the stored minutes, so a night entered as 7.5 hours read
+back as "450 min" on the one screen whose job is reviewing what you put in.
 
 Two rules make measurements trustworthy, and both have tests that will fail if
 you break them:

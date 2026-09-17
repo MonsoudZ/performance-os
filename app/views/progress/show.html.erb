@@ -96,7 +96,7 @@
         </div>
       </div>
       <div class="line-chart-wrap line-chart-wrap--weight">
-        <%= line_chart(@weight_trend.map { |trend| Units.weight_from_kg(trend.ewma_kg, unit_system) }) %>
+        <%= line_chart(@weight_trend.map { |trend| weight_number(trend.ewma_kg) }) %>
       </div>
       <p class="evidence-note">Smoothed (EWMA) weight over the last <%= @weight_trend.size %> tracked days.</p>
     </article>

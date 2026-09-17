@@ -15,6 +15,19 @@ class ReadinessInputsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Past check-ins."
   end
 
+  # Sleep is stored in minutes and thought about in hours. This page printed the
+  # stored figure, so a night entered as 7 hours read back as "420 min" on the
+  # one screen whose job is reviewing what you put in.
+  test "a night reads back in the hours it was entered in" do
+    create_input(Date.current - 1.day) # 420 minutes
+
+    get readiness_inputs_path
+
+    assert_response :success
+    assert_select "span", { text: /sleep 7 h/ }, "the history shows hours, not stored minutes"
+    assert_not response.body.include?("420 min")
+  end
+
   test "edits a past check-in and re-evaluates readiness" do
     input = create_input(Date.current - 1.day)
 

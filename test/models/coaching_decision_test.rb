@@ -242,4 +242,20 @@ class CoachingDecisionTest < ActiveSupport::TestCase
       assert decision.valid?, "#{decision_type}: #{decision.errors.full_messages.to_sentence}"
     end
   end
+  # A type with no label falls back to `humanize`, which reads acceptably and
+  # hides the omission — the labels had five of the six, and the missing one was
+  # the same one missing from the table in CLAUDE.md.
+  test "every decision type the engine writes has a label written for it" do
+    missing = CoachingDecision::DECISION_TYPES -
+      CoachingDecisionsHelper::DECISION_TYPE_LABELS.keys
+
+    assert_empty missing, "these fall back to humanize instead of a written label"
+  end
+
+  test "no label names a type the engine does not write" do
+    extra = CoachingDecisionsHelper::DECISION_TYPE_LABELS.keys -
+      CoachingDecision::DECISION_TYPES
+
+    assert_empty extra
+  end
 end

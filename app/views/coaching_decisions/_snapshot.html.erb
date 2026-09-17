@@ -10,7 +10,11 @@
           <% if value.is_a?(Hash) %>
             <%= render "coaching_decisions/snapshot", data: value %>
           <% elsif scalar_list?(value) %>
-            <%= value.any? ? value.map { |item| decision_field_value(key, item) }.join(", ") : "—" %>
+            <%# Each item goes through the same reference lookup a lone scalar
+                does: a list of decision ids is as much a trail to follow as a
+                single one, and joining with `join` rather than `safe_join`
+                would escape the links it produced. %>
+            <%= value.any? ? safe_join(value.map { |item| decision_reference(key, item) || decision_field_value(key, item) }, ", ") : "—" %>
           <% elsif value.is_a?(Array) %>
             <ol class="snapshot__list">
               <% value.each do |item| %>

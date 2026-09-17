@@ -243,6 +243,67 @@ class CoachingDecisionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Green light"
   end
 
+  # The table exists so a recommendation can be traced to the evidence behind
+  # it, and this is the page where somebody does the tracing. It printed the id
+  # and stopped — "Readiness decision: 168" — leaving the reader to paste a
+  # number into a URL to answer the question the page is for.
+  test "a decision links to the decisions it rests on" do
+    readiness = create_decision(decision_type: "daily_readiness", inputs: { "metric_date" => Date.current.iso8601 },
+      output: { "headline" => "Green light" })
+    plan = create_decision(decision_type: "daily_training",
+      inputs: { "plan_date" => Date.current.iso8601, "readiness_decision_id" => readiness.id },
+      output: { "headline" => "Train as planned" })
+
+    get coaching_decision_path(plan)
+
+    assert_response :success
+    assert_select "a[href=?]", coaching_decision_path(readiness), text: /Daily readiness: Green light/
+  end
+
+  # A list of ids is as much a trail as a single one, and the snapshot partial
+  # used to route only lone scalars through the reference lookup.
+  test "a list of decision ids links every one of them" do
+    first = create_decision(decision_type: "double_progression", inputs: {}, output: { "headline" => "Add a rep" })
+    second = create_decision(decision_type: "double_progression", inputs: {}, output: { "headline" => "Hold the load" })
+    review = create_decision(decision_type: "weekly_review",
+      inputs: { "progression_decision_ids" => [ first.id, second.id ] },
+      output: { "headline" => "Keep going" })
+
+    get coaching_decision_path(review)
+
+    assert_response :success
+    assert_select "a[href=?]", coaching_decision_path(first)
+    assert_select "a[href=?]", coaching_decision_path(second)
+  end
+
+  test "another account's decision id resolves to nothing rather than a link" do
+    theirs = users(:two).coaching_decisions.create!(
+      decision_type: "daily_readiness", rule_key: "daily_readiness.v1", rule_version: "1.0.0",
+      confidence: "low", citations: [], inputs: {}, output: { "headline" => "Theirs" }
+    )
+    plan = create_decision(decision_type: "daily_training",
+      inputs: { "readiness_decision_id" => theirs.id }, output: { "headline" => "Mine" })
+
+    get coaching_decision_path(plan)
+
+    assert_response :success
+    assert_select "a[href=?]", coaching_decision_path(theirs), count: 0
+    # Falls back to the raw id, like any reference that no longer points
+    # anywhere, rather than pretending it resolved.
+    assert_match theirs.id.to_s, response.body
+  end
+
+  test "an id pointing at a decision that is gone falls back to the id" do
+    plan = create_decision(decision_type: "daily_training",
+      inputs: { "readiness_decision_id" => 999_999 }, output: { "headline" => "Mine" })
+
+    get coaching_decision_path(plan)
+
+    assert_response :success
+    assert_match "999999", response.body
+  end
+
+
   private
 
   def create_decision(user: @user, decision_type: "daily_readiness", inputs: {}, output: nil)

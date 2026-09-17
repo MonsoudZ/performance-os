@@ -23,4 +23,17 @@ class MeasurementsHelperBodyFatTest < ActionView::TestCase
   ensure
     Current.session = nil
   end
+  # Sleep is stored in minutes and thought about in hours. Three places showed
+  # it three ways, and the history page — the one whose job is reviewing what you
+  # put in — printed the stored minutes, so a night entered as 7.5 hours read
+  # back as "450 min".
+  test "a night renders in the hours it was entered in" do
+    assert_equal "7.5 h", sleep_length(7.5)
+    assert_equal "8 h", sleep_length(8.0)
+    assert_equal "7.45 h", sleep_length(7.45)
+  end
+
+  test "a night nobody recorded renders as nothing" do
+    assert_nil sleep_length(nil)
+  end
 end
