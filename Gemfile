@@ -32,7 +32,7 @@ gem "bcrypt", "~> 3.1.7"
 # attribute raises ArgumentError on deserialize. 2.19.9 carries the fix for
 # CVE-2026-54696, so the pin costs no security. Revisit when Rails supports
 # json 3.
-gem "json", "~> 2.19", ">= 2.19.9"
+gem "json", "~> 3.1"
 
 # Send Web Push notifications (daily check-in reminders) [https://github.com/pushpad/web-push]
 gem "web-push", "~> 3.0"
