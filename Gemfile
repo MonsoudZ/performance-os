@@ -47,7 +47,7 @@ gem "resolv", ">= 0.7.2"
 
 # Official Anthropic SDK — powers the AI coach narrative that explains the
 # auditable coaching-decision DAG in plain language [https://github.com/anthropics/anthropic-sdk-ruby]
-gem "anthropic", "~> 1.9"
+gem "anthropic", "~> 1.80"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
